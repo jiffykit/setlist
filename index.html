@@ -912,6 +912,7 @@
       applyTransform(g);
       svg.appendChild(g);
       enableSvgDrag(g);
+      selectNode(g); // immediately select newly added item for quick edits
       saveAll();
     }
 
@@ -1142,16 +1143,16 @@
     // Custom tools in full editor
     document.getElementById('addLabelTool').addEventListener('click',()=>{
       const text=prompt('Label text:','Mic 1'); if(!text) return; const svg=document.getElementById('stageSvgFull');
-      const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('transform','translate(120,120)'); g.setAttribute('data-draggable','1');
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.dataset.x='120'; g.dataset.y='120'; g.dataset.scale='1'; g.setAttribute('data-draggable','1');
       const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x','0'); t.setAttribute('y','0'); t.setAttribute('font-size','16'); t.textContent=text; g.appendChild(t);
-      svg.appendChild(g); enableSvgDrag(g);
+      applyTransform(g); svg.appendChild(g); enableSvgDrag(g); selectNode(g); saveAll();
     });
     document.getElementById('addRectTool').addEventListener('click',()=>{
       const w=parseInt(prompt('Rect width (px):','120')||'120',10), h=parseInt(prompt('Rect height (px):','60')||'60',10);
       const svg=document.getElementById('stageSvgFull');
-      const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('transform','translate(140,140)'); g.setAttribute('data-draggable','1');
-      const r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x','0'); r.setAttribute('y','0'); r.setAttribute('width',String(w)); r.setAttribute('height',String(h)); r.setAttribute('fill','none'); r.setAttribute('stroke','#000'); r.setAttribute('stroke-width','2');
-      g.appendChild(r); svg.appendChild(g); enableSvgDrag(g);
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.dataset.x='140'; g.dataset.y='140'; g.dataset.scale='1'; g.setAttribute('data-draggable','1');
+      const r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x','0'); r.setAttribute('y','0'); r.setAttribute('width',String(w)); r.setAttribute('height',String(h)); r.setAttribute('fill','#ffffff'); r.setAttribute('stroke','#000'); r.setAttribute('stroke-width','2'); r.setAttribute('data-bg','1');
+      g.appendChild(r); applyTransform(g); svg.appendChild(g); enableSvgDrag(g); selectNode(g); saveAll();
     });
     // Default layout placement
     document.getElementById('addDefaultLayout').addEventListener('click',()=>{
