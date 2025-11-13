@@ -109,6 +109,9 @@
   /* Global print FAB */
   .print-fab{position:fixed;right:18px;bottom:18px;z-index:70;border-radius:999px;padding:12px 16px;box-shadow:0 6px 18px rgba(0,0,0,.2)}
   @media print{ .print-fab{display:none} }
+  /* Touch optimizations */
+  #stageSvgFull{ touch-action:none; }
+  .stage-canvas{ -webkit-user-select:none; user-select:none; }
   /* Global sticky actions (top-left) */
   .global-actions{position:sticky;top:0;z-index:60;display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 6px 0;margin:-6px 0 8px 0;background:linear-gradient(180deg, rgba(249,250,251,0.96), rgba(249,250,251,0));backdrop-filter:saturate(1.2) blur(2px)}
   @media print{ .global-actions{display:none} }
@@ -122,7 +125,7 @@
 <body>
   <div class="wrap">
     <div class="hero">
-      <h1>FASTFAST Setlist Creator</h1>
+      <h1>Jiffykit: Setlist Creator v1.2</h1>
       <div>Build, arrange, and print a clean one-page setlist</div>
     </div>
 
@@ -279,7 +282,7 @@
   <!-- Help / Tutorial Modal -->
   <div class="modal" id="helpModal" style="display:none">
     <div class="sheet" style="max-width:760px;height:auto">
-      <h2>FASTFAST Setlist – Quick Tutorial</h2>
+      <h2>Jiffykit Setlist – Quick Tutorial</h2>
       <ol style="font-size:14px;line-height:1.5;margin-left:20px">
         <li><strong>Song Database</strong>: Add all your songs here. Mark moods & cover status to influence generation.</li>
         <li><strong>Generator</strong>: Enter gig details (band, venue, date, notes). Pick total length, break count, mood, and whether to include an encore, then click Generate.</li>
@@ -861,6 +864,12 @@
             b.innerHTML=`<span style="font-size:18px;margin-right:6px">${t.emoji}</span>${t.label}`;
             b.setAttribute('draggable','true');
             b.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain', t.key); });
+            // Touch drag support: begin a simulated drag sequence
+            b.addEventListener('touchstart',ev=>{
+              const touch=ev.touches[0]; if(!touch) return;
+              activeToolTouch={ key:t.key, x:touch.clientX, y:touch.clientY };
+              ev.preventDefault();
+            }, {passive:false});
             tools.appendChild(b);
           });
         }
@@ -932,6 +941,18 @@
       node.addEventListener('dblclick',()=>{
         const txt=findText(node); if(!txt) return; const nv=prompt('Rename item:', txt.textContent||''); if(nv!=null){ txt.textContent=nv; syncInspectorFrom(node); saveAll(); }
       });
+      // Touch drag
+      let touchId=null;
+      node.addEventListener('touchstart',e=>{
+        if(touchId!=null) return; const t=e.touches[0]; if(!t) return; touchId=t.identifier; start={x:t.clientX,y:t.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; selectNode(node); e.preventDefault();
+      }, {passive:false});
+      node.addEventListener('touchmove',e=>{
+        if(touchId==null) return; for(const t of e.touches){ if(t.identifier===touchId){ var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(t.clientX-start.x)/zoom, dy=(t.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); e.preventDefault(); break; } }
+      }, {passive:false});
+      node.addEventListener('touchend',e=>{
+        if(touchId==null) return; let still=false; for(const t of e.touches){ if(t.identifier===touchId){ still=true; break; } } if(!still){ touchId=null; saveAll(); }
+      });
+      node.addEventListener('touchcancel',()=>{ if(touchId!=null){ touchId=null; saveAll(); }});
     }
 
     function initDatasetFromTransform(node){
@@ -1019,6 +1040,18 @@
     selectNode(clone);
     saveAll();
   }); }
+  // Global touch-based toolbox drag handling
+  let activeToolTouch=null;
+  window.addEventListener('touchmove',e=>{
+    if(!activeToolTouch) return; const t=e.touches[0]; if(!t) return; activeToolTouch.x=t.clientX; activeToolTouch.y=t.clientY; }, {passive:true});
+  window.addEventListener('touchend',e=>{
+    if(!activeToolTouch) return; const stage=document.getElementById('stageSvgFull'); if(stage){ const rect=stage.getBoundingClientRect(); const x=activeToolTouch.x, y=activeToolTouch.y; if(x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom){ // inside stage
+        // convert to SVG coords
+        const pt=stage.createSVGPoint(); pt.x=x; pt.y=y; const ctm=stage.getScreenCTM().inverse(); const svgP=pt.matrixTransform(ctm);
+        addGlyphFull(activeToolTouch.key, {x:Math.round(svgP.x), y:Math.round(svgP.y)});
+      } }
+    activeToolTouch=null;
+  });
 
     // Print Tech Rider + Stage
   // Repurpose combined print button to open chooser; user can select Tech and/or Stage
