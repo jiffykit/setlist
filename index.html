@@ -12,8 +12,8 @@
   .wrap{max-width:min(1600px,98vw);margin:0 auto;padding:24px}
     .hero{background:linear-gradient(135deg,#e0ecff 0%,#f0f7ff 60%,#e6fbff 100%);border:1px solid #dbeafe;border-radius:16px;padding:28px;text-align:center;color:#111;box-shadow:0 8px 24px rgba(0,0,0,.08)}
     .hero h1{margin:0 0 6px;font-size:32px}
-    .tabs{display:flex;margin:16px 0;border-bottom:1px solid #e5e7eb}
-    .tab{flex:1;padding:12px 16px;background:transparent;border:none;color:#374151;font-weight:700;cursor:pointer}
+  .tabs{display:flex;margin:16px 0;border-bottom:1px solid #e5e7eb}
+  .tab{flex:1;padding:12px 16px;background:transparent;border:none;color:#374151;font-weight:700;cursor:pointer}
     .tab.active{color:#111;border-bottom:3px solid var(--accent)}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:16px}
@@ -48,16 +48,40 @@
   .hdr .notes{font-size:10pt;color:#333;margin-top:2px;font-style:italic}
   .hdr .logo{display:block}
   .hdr .logo img{max-height:56pt;max-width:100%;height:auto}
-    .songs{display:flex;flex-direction:column;gap:6px}
-  .line{display:flex;align-items:baseline;gap:10px;padding:4px 0}
+    .songs{display:flex;flex-direction:column;gap:2px}
+  .line{display:grid;grid-template-columns:22px 1fr minmax(90px,120px) 40px;align-items:baseline;column-gap:8px;padding:1px 0}
+  .line .no{font-weight:800;text-align:right;opacity:.85}
+  .line .title{font-weight:900;letter-spacing:.1px}
+  .line .title .notePrint{font-size:9pt;font-style:italic;font-weight:400;opacity:.75;margin-left:6px}
+  .line .key{font-size:10pt;color:#374151;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .line .time{font-size:10pt;text-align:right;opacity:.9}
     .no{font-weight:800;font-size:12pt;min-width:26px;text-align:right;color:#333}
   .title{flex:1;font-size:17pt;font-weight:900;letter-spacing:0.2px}
     .time{min-width:42px;text-align:right;font-size:10pt;color:#444}
-    .subnotes{font-size:10pt;color:#4b5563;font-style:italic;margin-top:-1px;margin-left:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .break{font-weight:900;text-transform:uppercase;font-size:18pt;color:#7b1fa2;text-align:center;border:2px dashed #7b1fa2;padding:8px 10px;border-radius:8px;background:#f7efff}
+  .subnotes{font-size:9pt;color:#4b5563;font-style:italic;margin-top:-2px;margin-left:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .break{font-weight:900;text-transform:uppercase;font-size:14pt;color:#7b1fa2;text-align:center;border:2px dashed #7b1fa2;padding:6px 8px;border-radius:8px;background:#f7efff}
 
   .tools{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:12px}
     .tools .paper{color:#374151}
+
+  /* Floating Song Pool */
+  .pool-flyout{position:fixed;top:76px;right:18px;width:320px;max-width:92vw;height:calc(100% - 100px);background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.18);display:none;flex-direction:column;z-index:65}
+  .pool-flyout.open{display:flex}
+  .pool-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e5e7eb}
+  .pool-body{padding:10px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+  .pool-sec h4{margin:0 0 6px 0;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px}
+  /* Base pill chip styling (used in Song Pool) */
+  .pill{display:inline-flex;align-items:center;gap:6px;border:2px solid #d1d5db;border-radius:999px;padding:4px 10px;background:#fff;font-size:12px;color:#111827}
+  .pool-sec .pill{cursor:grab}
+  /* Mood pastel chips */
+  .pill.mood-upbeat{background:#FECACA;border-color:#FCA5A5}
+  .pill.mood-happy{background:#FEF9C3;border-color:#FDE68A}
+  .pill.mood-energetic{background:#CFFAFE;border-color:#A5F3FC}
+  .pill.mood-mellow{background:#FFEDD5;border-color:#FED7AA}
+  .pill.mood-sad{background:#DBEAFE;border-color:#BFDBFE}
+  /* Drop indicator on set rows */
+  #setList .song.drop-before{box-shadow:inset 0 3px 0 0 #60a5fa}
+  #setList .song.drop-after{box-shadow:inset 0 -3px 0 0 #60a5fa}
 
     @media print{
       body,*{background:transparent!important}
@@ -68,6 +92,8 @@
       .tools{display:none}
       /* Never print the Print Options dialog */
       #printChooser{display:none!important}
+      .break.pagebreak{page-break-after:always}
+      #songPoolFlyout{display:none!important}
     }
 
   /* Fullscreen Stage Editor */
@@ -142,8 +168,7 @@
 
     <div class="tabs">
       <button class="tab active" data-tab="db">Song Database</button>
-      <button class="tab" data-tab="gen">Generate</button>
-  <button class="tab" data-tab="set">Current Setlist</button>
+      <button class="tab" data-tab="set">Setlist</button>
   <button class="tab" data-tab="adv">Advanced</button>
     </div>
 
@@ -170,8 +195,10 @@
         <div class="list" id="dbList"></div>
       </div>
 
-      <div class="card" id="gen" style="display:none">
-        <h2>Generator</h2>
+      <!-- Combined Setlist + Generator Tab -->
+      <div class="card" id="set" style="display:none">
+        <h2>Setlist</h2>
+        <h3 style="margin-top:0">Generator / Gig Info</h3>
         <div class="row">
           <div class="field"><label>Band Name</label><input id="gBand" placeholder="Band name"></div>
           <div class="field"><label>Date</label><input id="gDate" type="date"></div>
@@ -247,20 +274,19 @@
               <label class="chip"><input type="checkbox" id="hdrNotes" checked> Notes</label>
             </div>
           </div>
-        <div style="margin-top:10px;display:flex;gap:8px">
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;justify-content:space-between">
           <button class="btn" id="genBtn">Generate</button>
+          <button class="btn" id="openPool">Song Pool</button>
         </div>
         <div id="genStats" style="margin-top:10px;color:#a7b8e3;font-size:12px"></div>
-      </div>
-
-      <div class="card" id="set" style="display:none">
-        <h2>Current Setlist</h2>
+        <h3 style="margin-top:18px">Current Set</h3>
         <div id="setList"></div>
         <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
           <button class="btn secondary" id="shuffleBtn">Shuffle</button>
           <button class="btn danger" id="clearSet">Clear Setlist</button>
         </div>
-        <div id="missingSongs" class="missing"></div>
+        <h3 style="margin-top:22px">Encore Songs (drop here)</h3>
+        <div id="encoreList" style="display:flex;flex-wrap:wrap;gap:6px;min-height:42px;border:1px dashed #cbd5e1;padding:8px;border-radius:8px"></div>
         <div style="margin-top:16px">
           <div class="sheet" id="sheetInline">
             <div class="hdr" id="hdrInline"></div>
@@ -300,6 +326,28 @@
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end">
         <button class="btn" id="closeHelp">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Song Pool Flyout -->
+  <div class="pool-flyout" id="songPoolFlyout">
+    <div class="pool-head">
+      <strong>Song Pool</strong>
+      <button class="btn secondary" id="closePool" type="button">Close</button>
+    </div>
+    <div class="pool-body">
+      <div class="pool-sec">
+        <h4>Originals</h4>
+        <div id="poolOriginals" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+      <div class="pool-sec">
+        <h4>Covers</h4>
+        <div id="poolCovers" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+      <div class="pool-sec">
+        <h4>Breaks</h4>
+        <div id="poolBreaks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
       </div>
     </div>
   </div>
@@ -427,6 +475,8 @@
   let setlist = []; // array of {type:'song'|'break'|'encore', ...}
   let gig = { band:'', date:'', venue:'', address:'', contact:'', notes:'', breaks:0, breakLen:15, encore:false, font:'default', logo:'', headerFlags:{band:true,venue:true,sub:true,notes:true} };
   let gearSummary = '';
+  // Tech notes persist independently of the current set (keyed by song id)
+  let techNotes = {};
 
   // Storage
   const STORE_KEY='fastfast-setlist-v1';
@@ -434,7 +484,7 @@
     try{
       // Prefer full editor SVG if open; fallback to stored small one
       var stageEl=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
-      const payload={db,setlist,gig,gearSummary,stage:(stageEl? stageEl.outerHTML : '')};
+      const payload={db,setlist,gig,gearSummary,techNotes,stage:(stageEl? stageEl.outerHTML : '')};
       localStorage.setItem(STORE_KEY, JSON.stringify(payload));
     }catch(e){/* ignore */}
   }
@@ -451,11 +501,12 @@
   function loadAll(){
     try{
       const raw=localStorage.getItem(STORE_KEY); if(!raw) return;
-      const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,stage}=JSON.parse(raw);
+  const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage}=JSON.parse(raw);
       if(Array.isArray(dbIn)) db.push(...dbIn);
       if(Array.isArray(setIn)) setlist=setIn;
       if(gigIn) gig=Object.assign(gig,gigIn);
       if(gearIn) { gearSummary = gearIn; }
+  if(tnIn && typeof tnIn==='object') { techNotes = tnIn; }
   // header flag hydration
   if(!gig.headerFlags) gig.headerFlags={band:true,venue:true,sub:true,notes:true};
   ['hdrBand','hdrVenue','hdrSub','hdrNotes'].forEach(id=>{ const el=document.getElementById(id); if(el){ if(id==='hdrBand') el.checked=!!gig.headerFlags.band; else if(id==='hdrVenue') el.checked=!!gig.headerFlags.venue; else if(id==='hdrSub') el.checked=!!gig.headerFlags.sub; else if(id==='hdrNotes') el.checked=!!gig.headerFlags.notes; }});
@@ -479,16 +530,11 @@
     const shuffle = a=>{const r=[...a]; for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r}
 
     // Title shortening: trims, collapses, removes parentheticals, limits words, ensures width via characters
-    function shorten(title, maxChars=34){
+    function shorten(title, maxChars=48){
       if(!title) return '';
+      // Keep original wording; only trim whitespace and optional parentheticals for clutter
       let t=title.replace(/\s+/g,' ').trim();
       t=t.replace(/\s*\([^\)]*\)\s*/g,' '); // remove (feat), (live), etc
-      const smallMap = { and:'&', with:'w/', featuring:'feat.', the:'', of:'', to:'', a:'', an:'' };
-      t = t.split(' ').map(w=>{
-        const k=w.toLowerCase();
-        if(smallMap[k]!==undefined) return smallMap[k];
-        return w.length>10? w.slice(0,10)+'…' : w;
-      }).filter(Boolean).join(' ');
       if(t.length>maxChars) t=t.slice(0,maxChars-1)+'…';
       return t;
     }
@@ -499,7 +545,7 @@
     document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',e=>{
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      ['db','gen','set','adv'].forEach(id=> document.getElementById(id).style.display = 'none');
+      ['db','set','adv'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
       document.getElementById(btn.dataset.tab).style.display='block';
       if(btn.dataset.tab==='adv'){ buildTechTable(); refreshStageHeader(); try{ buildTools(); }catch(_){} try{ openStageModal(); }catch(err){ console && console.error && console.error(err); }}
     }));
@@ -536,15 +582,29 @@
       db.forEach(s=>{
         const row=el('div','song');
         const left=el('div');
-        left.appendChild(el('div',null,s.title));
+        const titleDiv=el('div',null,s.title); left.appendChild(titleDiv);
         left.appendChild(el('div','meta',`${s.artist} • ${s.length}m${s.key? ' • '+s.key:''}`));
-        const tags=el('div');
         [['Cover',s.isCover],['Upbeat',s.isUpbeat],['Happy',s.isHappy],['Mellow',s.isMellow],['Energetic',s.isEnergetic],['Sad',s.isSad]].forEach(([n,b])=>{ if(b) left.appendChild(el('span','chip',n)); });
-        const del=el('button','btn danger','Delete'); del.onclick=()=>{ const i=db.findIndex(x=>x.id===s.id); if(i>-1){db.splice(i,1); renderDB();}};
-        row.append(left,del); list.appendChild(row);
+        const edit=el('button','btn','Edit');
+        const del=el('button','btn danger','Delete');
+        del.onclick=()=>{ const i=db.findIndex(x=>x.id===s.id); if(i>-1){db.splice(i,1); renderDB(); saveAll();}};
+        edit.onclick=()=>{
+          // inline editor
+          row.innerHTML='';
+          const form=el('div');
+          const t=document.createElement('input'); t.value=s.title; t.placeholder='Title'; t.style.marginRight='6px';
+          const a=document.createElement('input'); a.value=s.artist||''; a.placeholder='Artist'; a.style.marginRight='6px';
+          const l=document.createElement('input'); l.type='number'; l.step='0.5'; l.min='0.5'; l.value=String(s.length||3.5); l.style.width='90px'; l.style.marginRight='6px';
+          const k=document.createElement('input'); k.value=s.key||''; k.placeholder='Key/Notes'; k.style.marginRight='6px'; k.style.width='160px';
+          const saveBtn=el('button','btn','Save'); const cancelBtn=el('button','btn secondary','Cancel');
+          form.append(t,a,l,k,saveBtn,cancelBtn); row.append(form);
+          saveBtn.onclick=()=>{ s.title=t.value.trim()||s.title; s.artist=(a.value||'Original'); s.length=parseFloat(l.value)||s.length; s.key=k.value||''; renderDB(); saveAll(); };
+          cancelBtn.onclick=()=> renderDB();
+        };
+        row.append(left,edit,del); list.appendChild(row);
       });
-      // Refresh missing suggestions in setlist pane
-      try{ renderMissingSongs(); }catch(_){ }
+      // Refresh song pool in Setlist pane
+      try{ renderSongPool(); }catch(_){ }
     }
 
     // Generate
@@ -557,63 +617,90 @@
       const encore=$('#gEncore').checked;
       const mood=$('#gMood').value;
 
+  // Preserve any manually selected songs and encore songs; exclude them from generation
+  const encIdx=setlist.findIndex(x=>x.type==='encore');
+  const manualEncoreSongs = encIdx>-1 ? setlist.slice(encIdx+1).filter(x=>x.type==='song') : [];
+  const manualMainSongs = setlist.filter((x,i)=> x.type==='song' && (encIdx===-1 || i<encIdx));
+  const manualSongIds = new Set([...manualMainSongs, ...manualEncoreSongs].map(s=>s.id));
+
   var gFontElTmp=document.getElementById('gFont');
   gig={ band:$('#gBand').value, date:$('#gDate').value, venue:$('#gVenue').value, address:$('#gAddr').value, contact:$('#gContact').value, notes:$('#gNotes').value, breaks, breakLen, encore, font:((gFontElTmp&&gFontElTmp.value)||gig.font||'default'), logo:(gig.logo||'') };
   if(!db.length){ alert('Add some songs first.'); return; }
 
       // filter by mood
-      let pool=[...db];
+  let pool=[...db.filter(s=> !manualSongIds.has(s.id))];
       if(mood!=='mixed'){
         const keyMap={upbeat:'isUpbeat',happy:'isHappy',mellow:'isMellow',energetic:'isEnergetic',sad:'isSad'};
         pool=pool.filter(s=>s[keyMap[mood]]);
         if(!pool.length){ alert('No songs match this mood.'); return; }
       }
 
-      const totalBreak=breaks*breakLen;
-      const musicTime=setLen-totalBreak; if(musicTime<=0){ alert('Set too short for breaks.'); return; }
+  // Do not subtract planned breaks; breaks are inserted manually via the pool chip
+  const totalBreak=0;
+  const musicTime=setLen; if(musicTime<=0){ alert('Set length invalid.'); return; }
 
       const covers=pool.filter(s=>s.isCover);
       const originals=pool.filter(s=>!s.isCover);
 
-      let plan=[]; let total=0;
-      const encoreTime=encore? musicTime*0.15 : 0; // reserve 15%
-      const mainTime=musicTime-encoreTime;
-      const targetCover = (mainTime*coverRatio)/100;
+  let plan=[]; let total=0; // total minutes of songs only
+  const targetCover = (musicTime*coverRatio)/100;
 
       let coverSum=0, origSum=0;
       for(const s of shuffle(covers)){
-        if(coverSum + s.length <= targetCover + 2 && total + s.length <= mainTime + 2){ plan.push({...s,type:'song',notes:''}); coverSum+=s.length; total+=s.length; }
+        if(coverSum + s.length <= targetCover && total + s.length <= musicTime){ plan.push({...s,type:'song',notes:''}); coverSum+=s.length; total+=s.length; }
       }
       for(const s of shuffle(originals)){
-        if(total + s.length <= mainTime + 2){ plan.push({...s,type:'song',notes:''}); origSum+=s.length; total+=s.length; }
+        if(total + s.length <= musicTime){ plan.push({...s,type:'song',notes:''}); origSum+=s.length; total+=s.length; }
       }
 
       plan=shuffle(plan);
-      if(breaks>0){
-        const songsOnly=plan.filter(x=>x.type==='song');
-        const per=Math.max(1,Math.floor(songsOnly.length/(breaks+1)));
-        const out=[]; let addBreaks=0; let counter=0;
-        for(const s of plan){
-          out.push(s); counter++;
-          if(counter%per===0 && addBreaks<breaks){
-            out.push({type:'break',title:`Break ${addBreaks+1}`,length:breakLen});
-            addBreaks++;
-          }
-        }
-        plan=out;
-      }
 
-      if(encore){
+      if(encore && manualEncoreSongs.length===0){
         const usedIds=new Set(plan.filter(x=>x.type==='song').map(x=>x.id));
         const remaining=pool.filter(s=>!usedIds.has(s.id));
-        if(remaining.length){
-          plan.push({type:'encore',title:'Encore'});
-          for(const s of shuffle(remaining).slice(0,2)) plan.push({...s,type:'song',notes:''});
+        let addedAny=false;
+        for(const s of shuffle(remaining)){
+          if(total + s.length <= musicTime){
+            if(!addedAny) { plan.push({type:'encore',title:'Encore'}); addedAny=true; }
+            plan.push({...s,type:'song',notes:''}); total+=s.length;
+            if(total>=musicTime-0.01) break;
+          }
+        }
+        // if we added the header but no songs fit, remove header
+        if(addedAny){
+          const lastHeaderIndex=plan.findIndex(x=>x.type==='encore');
+          const hasSongsAfter=plan.slice(lastHeaderIndex+1).some(x=>x.type==='song');
+          if(!hasSongsAfter){ plan=plan.filter(x=>x.type!=='encore'); }
         }
       }
 
-      setlist=plan;
-      $('#genStats').textContent=`Songs: ${setlist.filter(x=>x.type==='song').length} • Main music: ${mainTime.toFixed(1)}m • Covers ${coverSum.toFixed(1)}m / Originals ${origSum.toFixed(1)}m`;
+      // Append manual encore songs if they existed (authoritative)
+      if(manualEncoreSongs.length){
+        // Remove any auto-generated encore header/songs first
+        plan = plan.filter(x=> x.type!=='encore' && !(x.type==='song' && manualEncoreSongs.some(m=>m.id===x.id)) );
+        // Ensure no duplicates of manual main songs
+        const existingIds=new Set(plan.filter(x=>x.type==='song').map(x=>x.id));
+        // Add header
+        plan.push({type:'encore',title:'Encore'});
+        manualEncoreSongs.forEach(s=>{ if(!existingIds.has(s.id)){ plan.push({...s,type:'song'}); } });
+      }
+
+      // Prepend manual main songs at beginning if any (retain their order)
+      if(manualMainSongs.length){
+        const generatedSongIds=new Set(plan.filter(x=>x.type==='song').map(x=>x.id));
+        const prefix=[]; manualMainSongs.forEach(s=>{ if(!generatedSongIds.has(s.id)) prefix.push({...s,type:'song'}); });
+        plan=[...prefix, ...plan];
+      }
+
+      // If we somehow exceeded target (shouldn't), trim from end
+      while(total>musicTime){
+        const idx=plan.map((x,i)=>({x,i})).filter(y=>y.x.type==='song').map(y=>y.i).pop();
+        if(idx==null) break; total-=plan[idx].length; plan.splice(idx,1);
+      }
+
+  setlist=plan;
+  const actualMusic = setlist.filter(x=>x.type==='song').reduce((a,b)=>a+(b.length||0),0);
+  $('#genStats').textContent=`Songs: ${setlist.filter(x=>x.type==='song').length} • Music: ${actualMusic.toFixed(1)}m (≤ target ${musicTime.toFixed(1)}m) • Covers ${coverSum.toFixed(1)}m / Originals ${origSum.toFixed(1)}m`;
       (function(){ const pb=document.getElementById('previewBtn'); if(pb) pb.disabled = setlist.length===0; })();
   renderSet(); saveAll();
       // Switch to Set tab
@@ -622,11 +709,12 @@
 
     function renderSet(){
       const box=$('#setList'); box.innerHTML='';
-      if(!setlist.length){ box.textContent='No setlist yet.'; return; }
+      if(!setlist.length){ box.textContent='No setlist yet.'; buildSheet('sheetInline'); buildTechTable(); renderSongPool(); renderEncore(); return; }
       setlist.forEach((it,i)=>{
         const row=el('div','song');
         row.setAttribute('draggable', true);
         row.dataset.index=i;
+        row.dataset.type=it.type;
         if(it.type==='break'){
           const container=el('div');
           container.append(el('span','handle','⋮⋮'));
@@ -657,46 +745,54 @@
       enableDrag();
       // Update inline preview
       buildSheet('sheetInline');
-    buildTechTable(); // keep tech table in sync
-    renderMissingSongs();
+  buildTechTable(); // keep tech table in sync
+  renderSongPool();
+  renderEncore();
     }
 
     function enableDrag(){
       let dragIndex=null;
       const rows=[...document.querySelectorAll('#setList .song')];
       rows.forEach(r=>{
-        r.addEventListener('dragstart',e=>{ if(r.getAttribute('draggable')==='true'){ dragIndex=parseInt(r.dataset.index,10); r.classList.add('dragging'); }});
+        r.addEventListener('dragstart',e=>{ if(r.getAttribute('draggable')==='true'){ dragIndex=parseInt(r.dataset.index,10); r.classList.add('dragging'); try{ e.dataTransfer.setData('text/x-set-index', String(dragIndex)); }catch(_){ } }});
         r.addEventListener('dragend',()=> r.classList.remove('dragging'));
-        r.addEventListener('dragover',e=>{ e.preventDefault(); });
+        r.addEventListener('dragover',e=>{ e.preventDefault();
+          // if dragging from pool, show above/below indicator
+          const idRaw=e.dataTransfer.getData('text/plain');
+          if(idRaw){ const rect=r.getBoundingClientRect(); const before=e.clientY < rect.top + rect.height/2; r.classList.toggle('drop-before', before); r.classList.toggle('drop-after', !before); }
+        });
+        r.addEventListener('dragleave',()=>{ r.classList.remove('drop-before','drop-after'); });
         r.addEventListener('drop',e=>{
           e.preventDefault();
           const to=parseInt(r.dataset.index,10);
-          if(Number.isInteger(dragIndex) && dragIndex!==to){
+          const fromSetIdxRaw=e.dataTransfer.getData('text/x-set-index');
+          const incomingSongIdRaw=e.dataTransfer.getData('text/plain');
+          // Reorder existing
+          if(fromSetIdxRaw && Number.isInteger(dragIndex) && dragIndex!==to){
             const item=setlist.splice(dragIndex,1)[0];
             setlist.splice(to,0,item);
-            renderSet();
+            renderSet(); saveAll();
+            return;
+          }
+          // Insert new from pool at position (before/after based on cursor)
+          if(incomingSongIdRaw){
+            const id=parseInt(incomingSongIdRaw,10);
+            const song=db.find(s=>s.id===id); if(!song) return;
+            if(setlist.some(x=>x.id===song.id)) return;
+            const rect=r.getBoundingClientRect(); const before=e.clientY < rect.top + rect.height/2;
+            const insertAt = before ? to : to+1;
+            // If dropping on ENCORE header, always insert after header
+            if(r.dataset.type==='encore'){
+              const idx=to+1; setlist.splice(idx,0,{...song,type:'song',notes:''});
+            }else{
+              setlist.splice(insertAt,0,{...song,type:'song',notes:''});
+            }
+            renderSet(); saveAll();
           }
         });
       });
     }
-
-    // Suggest missing songs from DB with quick ADD buttons
-    function renderMissingSongs(){
-      const wrap=document.getElementById('missingSongs'); if(!wrap) return; wrap.innerHTML='';
-      if(!db.length) return;
-      const used=new Set(setlist.filter(x=>x.type==='song').map(x=>x.id));
-      const missing=db.filter(s=>!used.has(s.id)).sort((a,b)=> a.title.localeCompare(b.title));
-      const top=missing.slice(0,8);
-      if(!top.length){ wrap.textContent='All songs in database are already in this set.'; return; }
-      top.forEach(s=>{
-        const pill=el('div','pill');
-        pill.appendChild(document.createTextNode(`${s.title} (${s.artist})`));
-        const btn=document.createElement('button'); btn.className='add'; btn.textContent='Add';
-        btn.onclick=()=>{ setlist.push({...s,type:'song',notes:''}); renderSet(); saveAll(); };
-        pill.appendChild(btn);
-        wrap.appendChild(pill);
-      });
-    }
+    
 
     // Preview (guarded if button exists)
     (function(){ const pb=document.getElementById('previewBtn'); if(pb){ pb.addEventListener('click', ()=>{ buildSheet('sheet'); document.getElementById('modal').classList.add('open'); }); } })();
@@ -741,21 +837,26 @@
       songs.innerHTML='';
       // dynamic font scaling to fit one page
       // Start with base sizes and try to fit, shrink if overflow
-      const base = { title:14, lineGap:6 };
+  const base = { title:14, lineGap:3 };
 
       const lines=[];
+      let sinceBreak=0;
       setlist.forEach((it, idx)=>{
         if(it.type==='break'){
-          const br=el('div','break',`${it.title} — ${it.length}m`); lines.push(br); return;
+          const br=el('div','break',`${it.title} — ${it.length}m`);
+          if(sinceBreak>=15) br.classList.add('pagebreak');
+          lines.push(br); sinceBreak=0; return;
         }
-        if(it.type==='encore'){ const enc=el('div','break','ENCORE'); lines.push(enc); return; }
-  const row=el('div','line');
+        if(it.type==='encore'){ const enc=el('div','break','ENCORE'); if(sinceBreak>=15) enc.classList.add('pagebreak'); lines.push(enc); sinceBreak=0; return; }
+        const row=el('div','line');
         row.append(el('div','no', String(idx+1)));
-    const title=el('div','title', shorten(it.title)); row.append(title);
+        const title=el('div','title', shorten(it.title));
+        if(it.notes){ const noteSpan=el('span','notePrint',' – '+it.notes); title.appendChild(noteSpan); }
+        row.append(title);
+        const keyTxt = it.key ? String(it.key) : '';
+        row.append(el('div','key', keyTxt));
         row.append(el('div','time', `${it.length}m`));
-  lines.push(row);
-  const parts=[]; if(it.key) parts.push(`Key: ${it.key}`); if(it.notes) parts.push(it.notes);
-  if(parts.length){ const sub=el('div','subnotes', parts.join(' • ')); lines.push(sub); }
+        lines.push(row); sinceBreak++;
       });
 
       // Append, then check overflow; shrink title font until fits
@@ -765,18 +866,35 @@
       function fitToPage(){
         // fit within the target sheet element
         // Get available height inside sheet excluding padding already applied; rely on scrollHeight
-  let tSize=17; // start bigger
+  let tSize=16; // start slightly larger than base
         for(let i=0;i<12;i++){
           songs.style.setProperty('--t', tSize);
           Array.from(songs.querySelectorAll('.title')).forEach(d=> d.style.fontSize = tSize+'pt');
+          const minor = Math.max(8, tSize-4);
+          Array.from(songs.querySelectorAll('.key,.time,.no')).forEach(d=> d.style.fontSize = minor+'pt');
           if(sheet.scrollHeight<=sheet.clientHeight) return; // fits
           tSize -= 1; if(tSize<10) break; // lower bound
         }
   // If still overflowing, reduce subnotes
-  let sSize=10;
+  let sSize=9;
         for(let i=0;i<6 && sheet.scrollHeight>sheet.clientHeight;i++){
           Array.from(songs.querySelectorAll('.subnotes')).forEach(d=> d.style.fontSize = sSize+'pt');
           sSize -= 1; if(sSize<7) break;
+        }
+        // Reduce vertical gaps/padding progressively
+        const gapSteps=['3px','2px','1px','0px'];
+        for(const g of gapSteps){
+          if(sheet.scrollHeight<=sheet.clientHeight) break;
+          songs.style.gap=g;
+          Array.from(songs.querySelectorAll('.line')).forEach(d=> d.style.padding = (g==='0px'?'0px 0':'1px 0'));
+        }
+        // Shrink break banners as last resort
+        if(sheet.scrollHeight>sheet.clientHeight){
+          let bSize=14;
+          for(let i=0;i<4 && sheet.scrollHeight>sheet.clientHeight;i++){
+            bSize-=1; if(bSize<10) break;
+            Array.from(songs.querySelectorAll('.break')).forEach(d=>{ d.style.fontSize=bSize+'pt'; d.style.padding='4px 6px'; });
+          }
         }
         // If still overflowing, elide subnotes text more aggressively
         if(sheet.scrollHeight>sheet.clientHeight){
@@ -786,6 +904,85 @@
         }
       }
     }
+    // Render floating song pool chips (Originals vs Covers)
+    function renderSongPool(){
+      const pO=document.getElementById('poolOriginals');
+      const pC=document.getElementById('poolCovers');
+      const pB=document.getElementById('poolBreaks');
+      if(!pO || !pC) return;
+      pO.innerHTML=''; pC.innerHTML=''; if(pB) pB.innerHTML='';
+      if(!db.length){ pO.textContent='No songs.'; pC.textContent=''; return; }
+      const usedIds=new Set(setlist.filter(x=>x.type==='song').map(x=>x.id));
+      const originals=db.filter(s=>!s.isCover && !usedIds.has(s.id)).sort((a,b)=> a.title.localeCompare(b.title));
+      const covers=db.filter(s=>s.isCover && !usedIds.has(s.id)).sort((a,b)=> a.title.localeCompare(b.title));
+      const makeChip=(s)=>{
+        const chip=document.createElement('div'); chip.className='pill'; chip.setAttribute('draggable','true'); chip.style.cursor='grab'; chip.dataset.id=s.id;
+        // mood class mapping
+        const moodClass = s.isUpbeat ? 'mood-upbeat' : (s.isHappy ? 'mood-happy' : (s.isEnergetic ? 'mood-energetic' : (s.isMellow ? 'mood-mellow' : (s.isSad ? 'mood-sad' : ''))));
+        if(moodClass) chip.classList.add(moodClass);
+        chip.textContent=s.title; chip.title=`${s.artist} • ${s.length}m${s.key? ' • '+s.key:''}`;
+        chip.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', String(s.id)); });
+        return chip;
+      };
+      originals.forEach(s=> pO.appendChild(makeChip(s)));
+      covers.forEach(s=> pC.appendChild(makeChip(s)));
+      if(pB){
+        const len = parseFloat((document.getElementById('gBreakLen') && document.getElementById('gBreakLen').value) || gig.breakLen || 15);
+        const chip=document.createElement('div'); chip.className='pill'; chip.style.cursor='grab'; chip.setAttribute('draggable','true'); chip.textContent=`Break (${len}m)`;
+        chip.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/x-break', String(len)); e.dataTransfer.setData('text/plain','__break__'); });
+        pB.appendChild(chip);
+      }
+    }
+    function renderEncore(){
+      const enc=document.getElementById('encoreList'); if(!enc) return; enc.innerHTML='';
+      const idxHeader=setlist.findIndex(x=>x.type==='encore');
+      if(idxHeader===-1){ enc.textContent='(none)'; return; }
+      const encoreSongs=setlist.slice(idxHeader+1).filter(x=>x.type==='song');
+      if(!encoreSongs.length){ enc.textContent='(none)'; return; }
+      encoreSongs.forEach(s=>{
+        const chip=document.createElement('div'); chip.className='pill'; chip.textContent=s.title; chip.title=`${s.artist} • ${s.length}m`; const rm=document.createElement('button'); rm.className='add'; rm.textContent='Remove'; rm.onclick=()=>{ // remove song from encore
+          const pos=setlist.findIndex(x=>x.id===s.id && x.type==='song'); if(pos>-1){ setlist.splice(pos,1); // if no more encore songs, remove header
+            if(!setlist.some(x=>x.type==='song' && setlist.indexOf(x)>idxHeader)) setlist=setlist.filter(x=>x.type!=='encore');
+            renderSet(); saveAll(); }
+        }; chip.appendChild(rm); enc.appendChild(chip);
+      });
+    }
+    // Drop handling for set and encore
+    const setBox=document.getElementById('setList');
+    if(setBox){ setBox.addEventListener('dragover',e=> e.preventDefault()); setBox.addEventListener('drop',e=>{ e.preventDefault(); const br=e.dataTransfer.getData('text/x-break'); if(br){ const len=parseFloat(br)||gig.breakLen||15; // insert before encore if exists
+            const encIdx=setlist.findIndex(x=>x.type==='encore'); if(encIdx>-1){ setlist.splice(encIdx,0,{type:'break',title:'Break',length:len}); } else { setlist.push({type:'break',title:'Break',length:len}); } renderSet(); saveAll(); return; }
+          const idRaw=e.dataTransfer.getData('text/plain'); if(!idRaw) return; const id=parseInt(idRaw,10); const song=db.find(s=>s.id===id); if(!song) return; if(setlist.some(x=>x.id===song.id)) return; setlist.push({...song,type:'song',notes:''}); renderSet(); saveAll(); }); }
+    const encoreBox=document.getElementById('encoreList');
+    if(encoreBox){ encoreBox.addEventListener('dragover',e=> e.preventDefault()); encoreBox.addEventListener('drop',e=>{ e.preventDefault(); const idRaw=e.dataTransfer.getData('text/plain'); if(!idRaw) return; const id=parseInt(idRaw,10); const song=db.find(s=>s.id===id); if(!song) return; if(setlist.some(x=>x.id===song.id)) return; // ensure encore header exists
+        if(!setlist.some(x=>x.type==='encore')) setlist.push({type:'encore',title:'Encore'}); setlist.push({...song,type:'song',notes:''}); renderSet(); saveAll(); }); }
+    // Pool open/close and drop-to-remove
+    const openPoolBtn=document.getElementById('openPool');
+    const closePoolBtn=document.getElementById('closePool');
+    const poolFly=document.getElementById('songPoolFlyout');
+    function positionPool(){
+      if(!poolFly) return;
+      const setCard=document.getElementById('set'); if(!setCard) return;
+      const rect=setCard.getBoundingClientRect();
+      const left=Math.min(window.innerWidth - poolFly.offsetWidth - 12, rect.right + 12);
+      const top=Math.max(12, rect.top);
+      poolFly.style.left=left+"px"; poolFly.style.top=top+"px";
+      poolFly.style.right=""; // ensure left-based positioning
+      poolFly.style.height = Math.min(window.innerHeight - top - 20, 720) + 'px';
+    }
+    if(openPoolBtn && poolFly){ openPoolBtn.addEventListener('click',()=>{ poolFly.classList.add('open'); renderSongPool(); positionPool(); }); }
+    if(closePoolBtn && poolFly){ closePoolBtn.addEventListener('click',()=> poolFly.classList.remove('open')); }
+    window.addEventListener('scroll',()=>{ if(poolFly && poolFly.classList.contains('open')) positionPool(); }, {passive:true});
+    window.addEventListener('resize',()=>{ if(poolFly && poolFly.classList.contains('open')) positionPool(); });
+    if(poolFly){
+      poolFly.addEventListener('dragover',e=> e.preventDefault());
+      poolFly.addEventListener('drop',e=>{ e.preventDefault(); const idxRaw=e.dataTransfer.getData('text/x-set-index'); if(idxRaw){ const idx=parseInt(idxRaw,10); if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){ const removed=setlist.splice(idx,1)[0]; // clean empty encore header
+            const encIdx=setlist.findIndex(x=>x.type==='encore'); if(encIdx>-1){ const anyAfter=setlist.slice(encIdx+1).some(x=>x.type==='song'); if(!anyAfter){ setlist=setlist.filter((x,i)=> i!==encIdx); } }
+            renderSet(); saveAll(); }
+        }
+      });
+    }
+    // Initial pool render (kept ready; open with button)
+    renderSongPool();
 
     // Advanced: Tech Rider table generation synced to setlist (populates inline or fullscreen as available)
     function buildTechTable(){
@@ -797,7 +994,7 @@
         const td2=document.createElement('td'); td2.textContent=s.title;
         const td3=document.createElement('td');
         const inp=document.createElement('input'); inp.style.width='100%'; inp.placeholder='Lighting/FX notes (e.g., Blue fade to orange, delays in chorus)';
-        inp.value=s.tech||''; inp.onchange=()=>{s.tech=inp.value; saveAll();};
+        inp.value=techNotes[s.id]||''; inp.onchange=()=>{ techNotes[s.id]=inp.value; s.tech=inp.value; saveAll(); };
         td3.appendChild(inp);
         tr.append(td1,td2,td3); body.appendChild(tr);
       });
@@ -812,7 +1009,7 @@
         const td2=document.createElement('td'); td2.textContent=s.title;
         const td3=document.createElement('td');
         const inp=document.createElement('input'); inp.style.width='100%'; inp.placeholder='Lighting/FX notes (e.g., Blue fade to orange, delays in chorus)';
-        inp.value=s.tech||''; inp.onchange=()=>{s.tech=inp.value; saveAll();};
+        inp.value=techNotes[s.id]||''; inp.onchange=()=>{ techNotes[s.id]=inp.value; s.tech=inp.value; saveAll(); };
         td3.appendChild(inp);
         tr.append(td1,td2,td3); body.appendChild(tr);
       });
@@ -980,7 +1177,7 @@
     let selectedNode=null;
     function bindSelection(svg){
       svg.addEventListener('click',ev=>{
-        const g=ev.target.closest('g[data-draggable]');
+        const g=ev.target.closest && ev.target.closest('g[data-draggable]');
         if(g) selectNode(g); else selectNode(null);
       });
     }
@@ -1147,7 +1344,38 @@
       const trg=ev.target && ev.target.closest ? ev.target.closest('#openStage') : null;
       if(trg){ ev.preventDefault(); openStageModal(); }
     });
-    document.getElementById('closeStage').addEventListener('click',()=> document.getElementById('stageModal').classList.remove('open'));
+    document.getElementById('closeStage').addEventListener('click',()=>{
+      // Sync full editor back to stored compact SVG so reopening reflects latest layout
+      const full=document.getElementById('stageSvgFull');
+      let small=document.getElementById('stageSvg');
+      if(full){
+        if(!small){
+          // create a small stored SVG container if missing
+          const store=document.getElementById('stageStore');
+          if(store){ small=full.cloneNode(false); small.id='stageSvg'; small.classList.add('bw'); store.appendChild(small); }
+        }
+        if(small){
+          // remove previous draggable groups
+          Array.from(small.querySelectorAll('g[data-draggable]')).forEach(n=> n.remove());
+          // clone all current groups from full
+          Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=> small.appendChild(g.cloneNode(true)));
+          // rebind drags on stored copy for any inline interactions
+          Array.from(small.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
+          // sync title text
+          const fullTitle=document.getElementById('stageTitleFull');
+          let smallTitle=document.getElementById('stageTitle');
+          if(!smallTitle && small){
+            // attempt to find title node by id inside small
+            smallTitle=small.querySelector('#stageTitle');
+          }
+          if(fullTitle){
+            if(smallTitle){ smallTitle.textContent=fullTitle.textContent; }
+          }
+        }
+      }
+      saveAll();
+      document.getElementById('stageModal').classList.remove('open');
+    });
     // Clear full stage editor
     const clearStageBtn=document.getElementById('clearStage');
     if(clearStageBtn){ clearStageBtn.addEventListener('click',()=>{
@@ -1277,6 +1505,9 @@
   document.getElementById('printTechModal').addEventListener('click',()=> openPrintChooser('tech'));
 
     async function printSelected(){
+      // Ensure content is built even if user hasn't opened views yet
+      try{ buildSheet('sheetInline'); }catch(_){}
+      try{ prepHdrTech(); }catch(_){}
       const wantSet=document.getElementById('pSet').checked;
       const wantStage=document.getElementById('pStage').checked;
       const wantTech=document.getElementById('pTech').checked;
@@ -1296,6 +1527,8 @@
         alert('PDF/ZIP libraries failed to load. Check your internet connection and try a hard refresh (Ctrl+F5).');
         return;
       }
+      try{ buildSheet('sheetInline'); }catch(_){}
+      try{ prepHdrTech(); }catch(_){}
       const wantSet=document.getElementById('pSet').checked;
       const wantStage=document.getElementById('pStage').checked;
       const wantTech=document.getElementById('pTech').checked;
@@ -1361,7 +1594,10 @@
     }
     async function createStagePdfBlob(){
       prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML=''; const stageOut=$('#stagePrint'); stageOut.innerHTML='';
-      const src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg'); if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in'; stageOut.appendChild(clone); }
+      // Ensure we have a stored stage SVG even if fullscreen editor hasn't been opened
+      let src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
+      if(!src){ const store=document.getElementById('stageStore'); if(store){ src=store.querySelector('svg'); } }
+      if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in'; stageOut.appendChild(clone); }
       const el=document.getElementById('sheetTech');
       const canvas = await withOffscreen(el, ()=> html2canvas(el, {backgroundColor:'#ffffff', scale:2}));
       const blob = makePdfFromCanvas(canvas, 'letter');
@@ -1369,7 +1605,7 @@
     }
     async function createTechPdfBlob(){
       prepHdrTech(); const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const techOut=$('#techPrint'); techOut.innerHTML='';
-      const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${s.tech||''}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl);
+      const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); const note=(techNotes && techNotes[s.id]) || s.tech || ''; tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${note}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl);
       const el=document.getElementById('sheetTech');
       const canvas = await withOffscreen(el, ()=> html2canvas(el, {backgroundColor:'#ffffff', scale:2}));
       const blob = makePdfFromCanvas(canvas, 'letter');
@@ -1386,8 +1622,8 @@
       if(hf.sub){ const subTxt=[gig.date||'', gig.address||'', gig.contact||''].filter(Boolean).join(' • '); if(subTxt) hdr.append(el('div','sub', subTxt)); }
       if(hf.notes && gig.notes) hdr.append(el('div','notes', gig.notes));
     }
-    async function printStageOnce(){ prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML=''; const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg'); if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in'; stageOut.appendChild(clone); } document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
-    async function printTechOnlyOnce(){ prepHdrTech(); const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const techOut=$('#techPrint'); techOut.innerHTML=''; const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${s.tech||''}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl); document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
+  async function printStageOnce(){ prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML=''; const stageOut=$('#stagePrint'); stageOut.innerHTML=''; let src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg'); if(!src){ const store=document.getElementById('stageStore'); if(store){ src=store.querySelector('svg'); } } if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in'; stageOut.appendChild(clone); } document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
+    async function printTechOnlyOnce(){ prepHdrTech(); const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const techOut=$('#techPrint'); techOut.innerHTML=''; const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); const note=(techNotes && techNotes[s.id]) || s.tech || ''; tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${note}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl); document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
 
     // Save/Load Profile (.BAND)
     const saveProfileBtn=document.getElementById('saveProfile');
