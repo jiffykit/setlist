@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --muted:#4b5563; --accent:#2563eb; --accent2:#0ea5e9; --danger:#dc2626;
+      --paperText:#111; --paperRule:#444;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-size:16px;font-family:Segoe UI,system-ui,-apple-system,Helvetica,Arial,sans-serif;background:#f3f4f6;color:#1f2937}
+  .wrap{max-width:min(1600px,98vw);margin:0 auto;padding:24px}
+    .hero{background:linear-gradient(135deg,#e0ecff 0%,#f0f7ff 60%,#e6fbff 100%);border:1px solid #dbeafe;border-radius:16px;padding:28px;text-align:center;color:#111;box-shadow:0 8px 24px rgba(0,0,0,.08)}
+    .hero h1{margin:0 0 6px;font-size:32px}
+    .tabs{display:flex;margin:16px 0;border-bottom:1px solid #e5e7eb}
+    .tab{flex:1;padding:12px 16px;background:transparent;border:none;color:#374151;font-weight:700;cursor:pointer}
+    .tab.active{color:#111;border-bottom:3px solid var(--accent)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+    .card h2{margin:0 0 12px;font-size:20px;color:#111}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .row>.field{flex:1;min-width:220px}
+    .field{margin:8px 0}
+    label{display:block;margin-bottom:6px;font-size:13px;color:#374151;font-weight:600}
+    input,select,textarea{width:100%;padding:12px 12px;border-radius:10px;border:1px solid #d1d5db;background:#ffffff;color:#111;font-size:15px}
+    input[type="checkbox"]{width:auto}
+    .checks{display:flex;flex-wrap:wrap;gap:12px}
+    .btn{padding:11px 16px;border-radius:10px;border:1px solid #c7d2fe;color:white;background:linear-gradient(135deg,#2563eb,#0ea5e9);cursor:pointer;font-weight:800}
+    .btn.secondary{background:linear-gradient(135deg,#f59e0b,#ef4444);border-color:#fcd34d}
+    .btn.danger{background:linear-gradient(135deg,#ef4444,#b91c1c);border-color:#fecaca}
+    .list{display:grid;gap:10px;margin-top:12px}
+  .song{display:flex;gap:12px;align-items:center;justify-content:space-between;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px}
+    .song.dragging{opacity:.6}
+    .song .meta{font-size:13px;color:#4b5563}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#eef2ff;color:#374151;border:1px solid #c7d2fe;margin-right:6px}
+  .handle{cursor:grab;color:#6b7280;font-size:18px;user-select:none;margin-right:6px}
+  .handle:active{cursor:grabbing}
+
+    /* Print preview (paper look) */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:80}
+    .modal.open{display:flex}
+    .sheet{width:8.5in;max-width:100%;height:11in;background:white;color:var(--paperText);border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0.65in;overflow:auto}
+    .sheet.a4{width:210mm;height:297mm}
+  .hdr{text-align:center;padding-bottom:8px;margin-bottom:8px}
+    .hdr .band{font-size:26pt;font-weight:900;letter-spacing:.6px}
+    .hdr .venue{font-size:22pt;font-weight:800;letter-spacing:.5px;margin-top:2px}
+  .hdr .sub{font-size:10pt;color:#444;margin-top:4px}
+  .hdr .notes{font-size:10pt;color:#333;margin-top:2px;font-style:italic}
+  .hdr .logo{display:block}
+  .hdr .logo img{max-height:56pt;max-width:100%;height:auto}
+    .songs{display:flex;flex-direction:column;gap:6px}
+  .line{display:flex;align-items:baseline;gap:10px;padding:4px 0}
+    .no{font-weight:800;font-size:12pt;min-width:26px;text-align:right;color:#333}
+  .title{flex:1;font-size:17pt;font-weight:900;letter-spacing:0.2px}
+    .time{min-width:42px;text-align:right;font-size:10pt;color:#444}
+    .subnotes{font-size:10pt;color:#4b5563;font-style:italic;margin-top:-1px;margin-left:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .break{font-weight:900;text-transform:uppercase;font-size:18pt;color:#7b1fa2;text-align:center;border:2px dashed #7b1fa2;padding:8px 10px;border-radius:8px;background:#f7efff}
+
+  .tools{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:12px}
+    .tools .paper{color:#374151}
+
+    @media print{
+      body,*{background:transparent!important}
+      .wrap{display:none}
+      .modal{position:static;display:none;background:none;padding:0}
+      .modal.open{display:block}
+      .sheet{box-shadow:none;height:auto}
+      .tools{display:none}
+      /* Never print the Print Options dialog */
+      #printChooser{display:none!important}
+    }
+
+  /* Fullscreen Stage Editor */
+  .stage-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:60}
+  .stage-modal.open{display:flex}
+  .stage-editor{display:grid;grid-template-columns:280px 1fr;gap:12px;background:#fff;width:100%;height:100%}
+  .stage-pane{padding:12px;overflow:auto;border-right:1px solid #e5e7eb}
+  .stage-canvas{padding:12px;display:flex;align-items:center;justify-content:center;overflow:auto}
+  .tool[draggable="true"]{user-select:none}
+  .stage-actions{position:absolute;top:10px;right:10px;display:flex;gap:8px}
+  /* Advanced: tech rider + stage plot (B&W) */
+  .advanced-grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+  .tech-table{width:100%;border-collapse:collapse}
+  .tech-table th,.tech-table td{border:1px solid #e5e7eb;padding:8px;font-size:14px}
+  .stage-wrap{border:1px solid #e5e7eb;border-radius:8px;background:#fff;padding:10px}
+  .stage-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .tool{border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;padding:6px 8px;font-size:13px;cursor:pointer}
+  .stage{width:100%;height:90vh;min-height:640px;border:1px dashed #cbd5e1;background:#ffffff}
+  .stage svg{width:100%;height:100%;background:white}
+  /* B&W outlines for glyphs, keep background white */
+  .bw .stage-bg{fill:#fff;stroke:#000}
+  /* Allow colored emoji backgrounds: only force outline for rects without data-bg */
+  .bw rect:not([data-bg]){fill:none;stroke:#000}
+  .bw path,.bw circle,.bw ellipse,.bw line,.bw polyline,.bw polygon{fill:none;stroke:#000}
+  .bw text{fill:#000;stroke:none}
+  /* selection visual (editor only; not printed) */
+  g[data-draggable].selected path,
+  g[data-draggable].selected rect,
+  g[data-draggable].selected circle,
+  g[data-draggable].selected ellipse,
+  g[data-draggable].selected line,
+  g[data-draggable].selected polyline,
+  g[data-draggable].selected polygon{stroke:#1d4ed8}
+  g[data-draggable].selected text{text-decoration:underline}
+  .stage-inspector{margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .stage-inspector .muted{color:#6b7280;font-size:13px}
+  .gear-wrap{margin-top:8px}
+  .gear-wrap textarea{width:100%;min-height:42px}
+  /* Global print FAB */
+  .print-fab{position:fixed;right:18px;bottom:18px;z-index:70;border-radius:999px;padding:12px 16px;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+  @media print{ .print-fab{display:none} }
+  /* Global sticky actions (top-left) */
+  .global-actions{position:sticky;top:0;z-index:60;display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 6px 0;margin:-6px 0 8px 0;background:linear-gradient(180deg, rgba(249,250,251,0.96), rgba(249,250,251,0));backdrop-filter:saturate(1.2) blur(2px)}
+  @media print{ .global-actions{display:none} }
+  /* Missing songs list */
+  .missing{margin:8px 0 6px 0;display:flex;flex-wrap:wrap;gap:6px}
+  .missing .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-size:12px;color:#111827}
+  .missing .pill .add{background:#1d4ed8;color:#fff;border:none;border-radius:999px;padding:2px 8px;cursor:pointer}
+  .missing .pill .add:hover{background:#1e40af}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>FASTFAST Setlist Creator</h1>
+      <div>Build, arrange, and print a clean one-page setlist</div>
+    </div>
+
+    <!-- Global sticky actions: always available top-left -->
+    <div class="global-actions">
+      <button class="btn" id="saveProfile">Save Profile (.BAND)</button>
+      <button class="btn" id="loadProfile">Load Profile (.BAND)</button>
+      <input type="file" id="loadProfileFile" accept=".band,application/json" style="display:none" />
+      <button class="btn" id="saveSet">Save .SET</button>
+      <button class="btn" id="loadSet">Load .SET</button>
+      <input type="file" id="loadSetFile" accept=".set,application/json" style="display:none" />
+      <button class="btn secondary" id="helpBtn" title="Help / Tutorial">?</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="db">Song Database</button>
+      <button class="tab" data-tab="gen">Generate</button>
+  <button class="tab" data-tab="set">Current Setlist</button>
+  <button class="tab" data-tab="adv">Advanced</button>
+    </div>
+
+    <div class="grid">
+      <div class="card" id="db">
+        <h2>Add Song</h2>
+        <div class="field"><label>Title</label><input id="t" placeholder="Song Title" /></div>
+        <div class="row">
+          <div class="field"><label>Artist (blank=Original)</label><input id="a" placeholder="Artist or leave blank" /></div>
+          <div class="field"><label>Length (min)</label><input id="l" type="number" min="0.5" step="0.5" value="3.5" placeholder="3.5" /></div>
+        </div>
+        <div class="field"><label>Key / Notes</label><input id="k" placeholder="e.g., Am, G-C-D, Capo 2" /></div>
+        <div class="checks">
+          <label class="chip"><input type="checkbox" id="c"> Cover</label>
+          <label class="chip"><input type="checkbox" id="u"> Upbeat</label>
+          <label class="chip"><input type="checkbox" id="h"> Happy</label>
+          <label class="chip"><input type="checkbox" id="m"> Mellow</label>
+          <label class="chip"><input type="checkbox" id="e"> Energetic</label>
+          <label class="chip"><input type="checkbox" id="s"> Sad</label>
+        </div>
+        <div style="margin-top:10px"><button class="btn" id="add">Add Song</button></div>
+        <div style="margin-top:8px"><button class="btn danger" id="clearDB">Clear Database</button></div>
+        <!-- Profile buttons moved to global-actions -->
+        <div class="list" id="dbList"></div>
+      </div>
+
+      <div class="card" id="gen" style="display:none">
+        <h2>Generator</h2>
+        <div class="row">
+          <div class="field"><label>Band Name</label><input id="gBand" placeholder="Band name"></div>
+          <div class="field"><label>Date</label><input id="gDate" type="date"></div>
+          <div class="field"><label>Venue</label><input id="gVenue" placeholder="Venue name"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Setlist Font</label>
+            <select id="gFont">
+              <option value="default">Default</option>
+              <option value="helvetica">Helvetica/Arial</option>
+              <option value="georgia">Georgia (serif)</option>
+              <option value="roboto-condensed">Roboto Condensed</option>
+              <option value="courier">Courier New (mono)</option>
+            </select>
+          </div>
+          <div class="field"><label>Logo (overrides Band Name in print)</label>
+            <input id="gLogo" type="file" accept="image/*" />
+            <div style="margin-top:6px;display:flex;gap:8px;align-items:center">
+              <img id="gLogoPrev" alt="logo preview" style="max-height:48px;display:none" />
+              <button class="btn danger" id="gLogoClear" type="button">Remove Logo</button>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Address</label><input id="gAddr" placeholder="123 Main St, City"></div>
+          <div class="field"><label>Contact</label><input id="gContact" placeholder="Name / phone"></div>
+        </div>
+        <div class="field"><label>Notes (small, under header)</label><textarea id="gNotes" rows="2" placeholder="Load-in, request, etc"></textarea></div>
+
+        <div class="row">
+          <div class="field"><label>Set length (min)</label><input id="gLen" type="number" min="10" value="60" placeholder="60"></div>
+          <div class="field"><label>Cover ratio</label>
+            <select id="gCover">
+              <option value="0">100% Originals</option>
+              <option value="25">25% Covers</option>
+              <option value="50">50/50</option>
+              <option value="75">75% Covers</option>
+              <option value="90">90% Covers</option>
+              <option value="100">100% Covers</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Breaks</label>
+            <select id="gBreaks">
+              <option value="0">No breaks</option>
+              <option value="1">1 break</option>
+              <option value="2">2 breaks</option>
+              <option value="3">3 breaks</option>
+            </select>
+          </div>
+          <div class="field"><label>Break length (min)</label><input id="gBreakLen" type="number" min="5" value="15"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label><input type="checkbox" id="gEncore"> Include Encore</label></div>
+          <div class="field"><label>Mood</label>
+            <select id="gMood">
+              <option value="mixed">Mixed</option>
+              <option value="upbeat">Upbeat</option>
+              <option value="happy">Happy</option>
+              <option value="mellow">Mellow</option>
+              <option value="energetic">Energetic</option>
+              <option value="sad">Sad</option>
+            </select>
+          </div>
+        </div>
+          <div class="field" style="margin-top:4px">
+            <label>Header print elements</label>
+            <div class="checks" style="gap:6px">
+              <label class="chip"><input type="checkbox" id="hdrBand" checked> Band/Logo</label>
+              <label class="chip"><input type="checkbox" id="hdrVenue" checked> Venue</label>
+              <label class="chip"><input type="checkbox" id="hdrSub" checked> Date / Address / Contact</label>
+              <label class="chip"><input type="checkbox" id="hdrNotes" checked> Notes</label>
+            </div>
+          </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn" id="genBtn">Generate</button>
+        </div>
+        <div id="genStats" style="margin-top:10px;color:#a7b8e3;font-size:12px"></div>
+      </div>
+
+      <div class="card" id="set" style="display:none">
+        <h2>Current Setlist</h2>
+        <div id="setList"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn secondary" id="shuffleBtn">Shuffle</button>
+          <button class="btn danger" id="clearSet">Clear Setlist</button>
+        </div>
+        <div id="missingSongs" class="missing"></div>
+        <div style="margin-top:16px">
+          <div class="sheet" id="sheetInline">
+            <div class="hdr" id="hdrInline"></div>
+            <div class="songs" id="songsInline"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="adv" style="display:none">
+        <h2>Advanced: Tech Rider & Stage Plot</h2>
+        <div class="row" style="gap:8px">
+          <button class="btn" id="openStage" onclick="openStageModal()">Stage Plot (Fullscreen)</button>
+          <button class="btn" id="openNotes">Lighting Notes (Fullscreen)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help / Tutorial Modal -->
+  <div class="modal" id="helpModal" style="display:none">
+    <div class="sheet" style="max-width:760px;height:auto">
+      <h2>FASTFAST Setlist – Quick Tutorial</h2>
+      <ol style="font-size:14px;line-height:1.5;margin-left:20px">
+        <li><strong>Song Database</strong>: Add all your songs here. Mark moods & cover status to influence generation.</li>
+        <li><strong>Generator</strong>: Enter gig details (band, venue, date, notes). Pick total length, break count, mood, and whether to include an encore, then click Generate.</li>
+        <li><strong>Current Setlist</strong>: Drag songs to reorder with the handle (⋮⋮). Type notes inline and they appear immediately below titles in the preview. Use the “Missing” pills to quickly add songs from your database.</li>
+        <li><strong>Advanced</strong>: Fullscreen Stage Plot lets you drag emoji instruments & labels; Lighting Notes table captures per-song FX cues. Color an item via the color picker, duplicate to speed layout, and Clear to start over.</li>
+        <li><strong>Printing & Export</strong>: The Print… button opens options for Setlist, Stage Plot, and Tech Notes—each prints separately. You can also download selected pages as PDF or a ZIP bundle.</li>
+        <li><strong>Profiles & Sets</strong>: Save Profile (.BAND) to archive your whole song DB + gig settings. Load Profile to merge. Save .SET to export just the current setlist arrangement.</li>
+        <li><strong>Persistence</strong>: Everything auto-saves locally. Closing and reopening the browser restores your last session.</li>
+        <li><strong>Stage Plot Tips</strong>: Drag from Toolbox, double‑click a label to rename, use size slider & color picker, duplicate for symmetrical setups, Clear to wipe everything except background & title.</li>
+      </ol>
+      <div style="margin-top:16px;font-size:14px;background:#f1f5f9;padding:12px;border-radius:8px">
+        This app is free. If it saves you time and you’d like to support development, you can donate:
+        <p style="margin:10px 0"><a href="https://paypal.me/jamesmulvale" target="_blank" rel="noopener" class="btn" style="text-decoration:none">Donate via PayPal</a></p>
+        Thank you and have a great show!
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn" id="closeHelp">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Print FAB -->
+  <button class="btn print-fab" id="openPrintOptions" title="Print…">Print…</button>
+
+  <!-- Stage Fullscreen Modal -->
+  <div class="stage-modal" id="stageModal">
+    <div class="stage-editor">
+      <div class="stage-pane">
+  <h3>Toolbox <span style="font-weight:400;font-size:12px;color:#6b7280">(Drag and drop items)</span></h3>
+        <div class="stage-tools" id="stageToolsFull"></div>
+        <div style="margin-top:10px">
+          <h4>Custom</h4>
+          <button class="tool" id="addLabelTool">Text Label</button>
+          <button class="tool" id="addRectTool">Rectangle</button>
+          <button class="tool" id="addDefaultLayout">Default Layout</button>
+        </div>
+      </div>
+      <div class="stage-canvas">
+        <svg id="stageSvgFull" class="bw" viewBox="0 0 1500 900" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+          <rect class="stage-bg" x="1" y="1" width="1498" height="898"/>
+          <text x="750" y="50" text-anchor="middle" font-size="26" font-weight="bold" id="stageTitleFull">Band • Date</text>
+        </svg>
+        <div class="stage-inspector">
+          <span class="muted">Selected:</span>
+          <input id="selName" placeholder="Label (double‑click item to rename)" style="min-width:220px" />
+          <label class="muted" for="selSize">Size</label>
+          <input id="selSize" type="range" min="0.5" max="2" step="0.1" value="1" style="width:160px" />
+          <label class="muted" for="selColor">Color</label>
+          <input id="selColor" type="color" value="#000000" />
+          <button class="btn danger" id="delSel">Delete</button>
+          <button class="btn" id="dupSel" type="button">Duplicate</button>
+        </div>
+        <div class="stage-actions">
+          <button class="btn secondary" id="closeStage">Close</button>
+          <button class="btn danger" id="clearStage">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lighting Notes Fullscreen Modal -->
+  <div class="stage-modal" id="notesModal">
+    <div class="stage-editor" style="grid-template-columns:1fr">
+      <div class="stage-pane" style="border-right:none">
+        <h3>Lighting Notes</h3>
+        <table class="tech-table">
+          <thead><tr><th>#</th><th>Song</th><th>Notes (e.g., Blue fade to orange, Delays in chorus)</th></tr></thead>
+          <tbody id="techBodyFull"></tbody>
+        </table>
+        <div class="gear-wrap">
+          <label>Gear list (printed under stage)</label>
+          <textarea id="gear" placeholder="e.g., DI x3 • Guitar amp x2 • Vox x3 • Wireless x2"></textarea>
+        </div>
+        <div class="stage-actions">
+          <button class="btn secondary" id="closeNotes">Close</button>
+          <button class="btn" id="printTech">Print Tech Rider + Stage</button>
+          <button class="btn" id="printTechOnly">Print Tech Only</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print Modal -->
+  <div class="modal" id="modal">
+    <div class="sheet" id="sheet">
+      <div class="hdr" id="hdr"></div>
+      <div class="songs" id="songs"></div>
+    </div>
+    <div class="tools">
+      <span class="paper">Paper:</span>
+      <select id="paperSel">
+        <option value="letter">Letter 8.5×11</option>
+        <option value="a4">A4 210×297mm</option>
+      </select>
+  <button class="btn" id="printSheet">Print</button>
+      <button class="btn secondary" id="closeModal">Close</button>
+    </div>
+  </div>
+
+  <!-- Tech/Stage Print Modal -->
+  <div class="modal" id="modalTech">
+    <div class="sheet" id="sheetTech">
+      <div class="hdr" id="hdrTech"></div>
+      <div id="techPrint"></div>
+      <div id="stagePrint"></div>
+    </div>
+    <div class="tools">
+      <button class="btn" id="printTechModal">Print</button>
+      <button class="btn secondary" id="closeTech">Close</button>
+    </div>
+  </div>
+
+  <!-- Print Options Modal -->
+  <div class="modal" id="printChooser">
+    <div class="sheet" style="width:560px;height:auto;max-width:95vw">
+      <div class="hdr"><div class="band">Print Options</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label class="chip"><input type="checkbox" id="pSet"> Setlist</label>
+        <label class="chip"><input type="checkbox" id="pStage"> Stage Plot</label>
+        <label class="chip"><input type="checkbox" id="pTech"> Lighting / Tech Notes</label>
+        <div class="muted">Select one or more. Each prints separately.</div>
+      </div>
+    </div>
+    <div class="tools">
+      <button class="btn" id="doPrint">Print Selected</button>
+      <button class="btn" id="downloadSelected">Download as PDF/ZIP</button>
+      <button class="btn secondary" id="closePrintChooser">Close</button>
+    </div>
+  </div>
+
+  <!-- Hidden storage for Stage SVG (used for save/print) -->
+  <div id="stageStore" style="display:none">
+    <svg id="stageSvg" class="bw" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+      <rect class="stage-bg" x="1" y="1" width="998" height="598"/>
+      <text x="500" y="36" text-anchor="middle" font-size="22" font-weight="bold" id="stageTitle">Band • Date</text>
+    </svg>
+  </div>
+
+  <script>
+    // Data
+  const db = []; // {id,title,artist,length,key,isCover,isUpbeat,isHappy,isMellow,isEnergetic,isSad}
+  let setlist = []; // array of {type:'song'|'break'|'encore', ...}
+  let gig = { band:'', date:'', venue:'', address:'', contact:'', notes:'', breaks:0, breakLen:15, encore:false, font:'default', logo:'', headerFlags:{band:true,venue:true,sub:true,notes:true} };
+  let gearSummary = '';
+
+  // Storage
+  const STORE_KEY='fastfast-setlist-v1';
+  function saveAll(){
+    try{
+      // Prefer full editor SVG if open; fallback to stored small one
+      var stageEl=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
+      const payload={db,setlist,gig,gearSummary,stage:(stageEl? stageEl.outerHTML : '')};
+      localStorage.setItem(STORE_KEY, JSON.stringify(payload));
+    }catch(e){/* ignore */}
+  }
+    // Clear database
+    const clearDBBtn=document.getElementById('clearDB');
+    if(clearDBBtn){ clearDBBtn.addEventListener('click',()=>{ if(!db.length) return; if(!confirm('Clear entire song database? This cannot be undone (unless you reload a .BAND profile).')) return; db.splice(0,db.length); renderDB(); saveAll(); }); }
+    // Clear setlist
+    const clearSetBtn=document.getElementById('clearSet');
+    if(clearSetBtn){ clearSetBtn.addEventListener('click',()=>{ if(!setlist.length) return; if(!confirm('Clear current setlist?')) return; setlist=[]; renderSet(); saveAll(); }); }
+    // Help modal open/close
+    const helpBtn=document.getElementById('helpBtn'); const helpModal=document.getElementById('helpModal'); const closeHelp=document.getElementById('closeHelp');
+    if(helpBtn && helpModal){ helpBtn.addEventListener('click',()=>{ helpModal.style.display='block'; helpModal.classList.add('open'); }); }
+    if(closeHelp){ closeHelp.addEventListener('click',()=>{ helpModal.classList.remove('open'); helpModal.style.display='none'; }); }
+  function loadAll(){
+    try{
+      const raw=localStorage.getItem(STORE_KEY); if(!raw) return;
+      const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,stage}=JSON.parse(raw);
+      if(Array.isArray(dbIn)) db.push(...dbIn);
+      if(Array.isArray(setIn)) setlist=setIn;
+      if(gigIn) gig=Object.assign(gig,gigIn);
+      if(gearIn) { gearSummary = gearIn; }
+  // header flag hydration
+  if(!gig.headerFlags) gig.headerFlags={band:true,venue:true,sub:true,notes:true};
+  ['hdrBand','hdrVenue','hdrSub','hdrNotes'].forEach(id=>{ const el=document.getElementById(id); if(el){ if(id==='hdrBand') el.checked=!!gig.headerFlags.band; else if(id==='hdrVenue') el.checked=!!gig.headerFlags.venue; else if(id==='hdrSub') el.checked=!!gig.headerFlags.sub; else if(id==='hdrNotes') el.checked=!!gig.headerFlags.notes; }});
+      // UI hydrate
+      if(gig.band) document.getElementById('gBand').value=gig.band;
+      if(gig.date) document.getElementById('gDate').value=gig.date;
+      if(gig.venue) document.getElementById('gVenue').value=gig.venue;
+      if(gig.address) document.getElementById('gAddr').value=gig.address;
+      if(gig.contact) document.getElementById('gContact').value=gig.contact;
+      if(gig.notes) document.getElementById('gNotes').value=gig.notes;
+      const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value = gearSummary || '';
+      renderDB(); renderSet();
+      if(stage){ const container=document.getElementById('stageStore'); container.innerHTML=stage; const svg=container.querySelector('svg'); if(svg){ svg.id='stageSvg'; svg.classList.add('bw'); }
+      }
+    }catch(e){/* ignore */}
+  }
+
+    // Helpers
+    const $ = s=>document.querySelector(s);
+    const el = (t,cls,txt)=>{const n=document.createElement(t); if(cls) n.className=cls; if(txt!=null) n.textContent=txt; return n;}
+    const shuffle = a=>{const r=[...a]; for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r}
+
+    // Title shortening: trims, collapses, removes parentheticals, limits words, ensures width via characters
+    function shorten(title, maxChars=34){
+      if(!title) return '';
+      let t=title.replace(/\s+/g,' ').trim();
+      t=t.replace(/\s*\([^\)]*\)\s*/g,' '); // remove (feat), (live), etc
+      const smallMap = { and:'&', with:'w/', featuring:'feat.', the:'', of:'', to:'', a:'', an:'' };
+      t = t.split(' ').map(w=>{
+        const k=w.toLowerCase();
+        if(smallMap[k]!==undefined) return smallMap[k];
+        return w.length>10? w.slice(0,10)+'…' : w;
+      }).filter(Boolean).join(' ');
+      if(t.length>maxChars) t=t.slice(0,maxChars-1)+'…';
+      return t;
+    }
+
+    function minutes(sum){ return `${sum.toFixed(1)}m`; }
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',e=>{
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      ['db','gen','set','adv'].forEach(id=> document.getElementById(id).style.display = 'none');
+      document.getElementById(btn.dataset.tab).style.display='block';
+      if(btn.dataset.tab==='adv'){ buildTechTable(); refreshStageHeader(); try{ buildTools(); }catch(_){} try{ openStageModal(); }catch(err){ console && console.error && console.error(err); }}
+    }));
+
+    // Prefill date today
+    (function prefill(){
+      const d=$('#gDate'); if(d && !d.value){ const t=new Date(); const iso=new Date(t.getTime()-t.getTimezoneOffset()*60000).toISOString().slice(0,10); d.value=iso; }
+      loadAll();
+      // Build initial inline preview
+      try{ buildSheet('sheetInline'); }catch(_){ }
+    })();
+
+    // Add song
+    $('#add').addEventListener('click', ()=>{
+      const title=$('#t').value.trim();
+      const artist=$('#a').value.trim()||'Original';
+      const lengthRaw=$('#l').value.trim();
+      const length = lengthRaw? parseFloat(lengthRaw) : 3.5;
+      const key=$('#k').value.trim();
+      if(!title){ alert('Please enter a song title'); return; }
+      if(!length||length<=0){ alert('Length invalid, using 3.5'); }
+      const s={id:Date.now(),title,artist,length,key,
+        isCover:$('#c').checked,isUpbeat:$('#u').checked,isHappy:$('#h').checked,
+        isMellow:$('#m').checked,isEnergetic:$('#e').checked,isSad:$('#s').checked};
+      db.push(s);
+      $('#t').value=''; $('#a').value=''; $('#l').value='3.5'; $('#k').value='';
+      ['c','u','h','m','e','s'].forEach(id=>$('#'+id).checked=false);
+  renderDB(); saveAll();
+    });
+
+    function renderDB(){
+      const list=$('#dbList'); list.innerHTML='';
+      if(!db.length){ list.textContent='No songs yet.'; return; }
+      db.forEach(s=>{
+        const row=el('div','song');
+        const left=el('div');
+        left.appendChild(el('div',null,s.title));
+        left.appendChild(el('div','meta',`${s.artist} • ${s.length}m${s.key? ' • '+s.key:''}`));
+        const tags=el('div');
+        [['Cover',s.isCover],['Upbeat',s.isUpbeat],['Happy',s.isHappy],['Mellow',s.isMellow],['Energetic',s.isEnergetic],['Sad',s.isSad]].forEach(([n,b])=>{ if(b) left.appendChild(el('span','chip',n)); });
+        const del=el('button','btn danger','Delete'); del.onclick=()=>{ const i=db.findIndex(x=>x.id===s.id); if(i>-1){db.splice(i,1); renderDB();}};
+        row.append(left,del); list.appendChild(row);
+      });
+      // Refresh missing suggestions in setlist pane
+      try{ renderMissingSongs(); }catch(_){ }
+    }
+
+    // Generate
+    $('#genBtn').addEventListener('click', ()=>{
+  const setLenRaw=$('#gLen').value.trim();
+  const setLen = setLenRaw? parseFloat(setLenRaw) : 60;
+      const coverRatio=parseInt($('#gCover').value);
+      const breaks=parseInt($('#gBreaks').value);
+      const breakLen=parseFloat($('#gBreakLen').value)||15;
+      const encore=$('#gEncore').checked;
+      const mood=$('#gMood').value;
+
+  var gFontElTmp=document.getElementById('gFont');
+  gig={ band:$('#gBand').value, date:$('#gDate').value, venue:$('#gVenue').value, address:$('#gAddr').value, contact:$('#gContact').value, notes:$('#gNotes').value, breaks, breakLen, encore, font:((gFontElTmp&&gFontElTmp.value)||gig.font||'default'), logo:(gig.logo||'') };
+  if(!db.length){ alert('Add some songs first.'); return; }
+
+      // filter by mood
+      let pool=[...db];
+      if(mood!=='mixed'){
+        const keyMap={upbeat:'isUpbeat',happy:'isHappy',mellow:'isMellow',energetic:'isEnergetic',sad:'isSad'};
+        pool=pool.filter(s=>s[keyMap[mood]]);
+        if(!pool.length){ alert('No songs match this mood.'); return; }
+      }
+
+      const totalBreak=breaks*breakLen;
+      const musicTime=setLen-totalBreak; if(musicTime<=0){ alert('Set too short for breaks.'); return; }
+
+      const covers=pool.filter(s=>s.isCover);
+      const originals=pool.filter(s=>!s.isCover);
+
+      let plan=[]; let total=0;
+      const encoreTime=encore? musicTime*0.15 : 0; // reserve 15%
+      const mainTime=musicTime-encoreTime;
+      const targetCover = (mainTime*coverRatio)/100;
+
+      let coverSum=0, origSum=0;
+      for(const s of shuffle(covers)){
+        if(coverSum + s.length <= targetCover + 2 && total + s.length <= mainTime + 2){ plan.push({...s,type:'song',notes:''}); coverSum+=s.length; total+=s.length; }
+      }
+      for(const s of shuffle(originals)){
+        if(total + s.length <= mainTime + 2){ plan.push({...s,type:'song',notes:''}); origSum+=s.length; total+=s.length; }
+      }
+
+      plan=shuffle(plan);
+      if(breaks>0){
+        const songsOnly=plan.filter(x=>x.type==='song');
+        const per=Math.max(1,Math.floor(songsOnly.length/(breaks+1)));
+        const out=[]; let addBreaks=0; let counter=0;
+        for(const s of plan){
+          out.push(s); counter++;
+          if(counter%per===0 && addBreaks<breaks){
+            out.push({type:'break',title:`Break ${addBreaks+1}`,length:breakLen});
+            addBreaks++;
+          }
+        }
+        plan=out;
+      }
+
+      if(encore){
+        const usedIds=new Set(plan.filter(x=>x.type==='song').map(x=>x.id));
+        const remaining=pool.filter(s=>!usedIds.has(s.id));
+        if(remaining.length){
+          plan.push({type:'encore',title:'Encore'});
+          for(const s of shuffle(remaining).slice(0,2)) plan.push({...s,type:'song',notes:''});
+        }
+      }
+
+      setlist=plan;
+      $('#genStats').textContent=`Songs: ${setlist.filter(x=>x.type==='song').length} • Main music: ${mainTime.toFixed(1)}m • Covers ${coverSum.toFixed(1)}m / Originals ${origSum.toFixed(1)}m`;
+      (function(){ const pb=document.getElementById('previewBtn'); if(pb) pb.disabled = setlist.length===0; })();
+  renderSet(); saveAll();
+      // Switch to Set tab
+      document.querySelector('.tab[data-tab="set"]').click();
+    });
+
+    function renderSet(){
+      const box=$('#setList'); box.innerHTML='';
+      if(!setlist.length){ box.textContent='No setlist yet.'; return; }
+      setlist.forEach((it,i)=>{
+        const row=el('div','song');
+        row.setAttribute('draggable', true);
+        row.dataset.index=i;
+        if(it.type==='break'){
+          const container=el('div');
+          container.append(el('span','handle','⋮⋮'));
+          container.append(el('div','break',`${it.title} — ${it.length}m`));
+          row.append(container);
+        }else if(it.type==='encore'){
+          const container=el('div');
+          container.append(el('span','handle','⋮⋮'));
+          container.append(el('div','break','ENCORE'));
+          row.append(container);
+        }else{
+          const left=el('div');
+          const top=el('div');
+          top.append(el('span','handle','⋮⋮'));
+          top.append(document.createTextNode(`${i+1}. ${it.title}`));
+          left.append(top);
+          left.append(el('div','meta',`${it.artist} • ${it.length}m${it.key? ' • '+it.key:''}`));
+          const noteIn=el('input'); noteIn.placeholder='Add notes…'; noteIn.value=it.notes||'';
+          // Update notes live while typing and refresh preview immediately
+          noteIn.oninput=()=>{ it.notes=noteIn.value; saveAll(); buildSheet('sheetInline'); };
+          noteIn.onchange=()=>{ it.notes=noteIn.value; saveAll(); buildSheet('sheetInline'); };
+          noteIn.style.maxWidth='320px';
+      const rm=el('button','btn danger','Remove'); rm.onclick=()=>{ setlist.splice(i,1); renderSet(); saveAll(); };
+          row.append(left,noteIn,rm);
+        }
+        box.append(row);
+      });
+      enableDrag();
+      // Update inline preview
+      buildSheet('sheetInline');
+    buildTechTable(); // keep tech table in sync
+    renderMissingSongs();
+    }
+
+    function enableDrag(){
+      let dragIndex=null;
+      const rows=[...document.querySelectorAll('#setList .song')];
+      rows.forEach(r=>{
+        r.addEventListener('dragstart',e=>{ if(r.getAttribute('draggable')==='true'){ dragIndex=parseInt(r.dataset.index,10); r.classList.add('dragging'); }});
+        r.addEventListener('dragend',()=> r.classList.remove('dragging'));
+        r.addEventListener('dragover',e=>{ e.preventDefault(); });
+        r.addEventListener('drop',e=>{
+          e.preventDefault();
+          const to=parseInt(r.dataset.index,10);
+          if(Number.isInteger(dragIndex) && dragIndex!==to){
+            const item=setlist.splice(dragIndex,1)[0];
+            setlist.splice(to,0,item);
+            renderSet();
+          }
+        });
+      });
+    }
+
+    // Suggest missing songs from DB with quick ADD buttons
+    function renderMissingSongs(){
+      const wrap=document.getElementById('missingSongs'); if(!wrap) return; wrap.innerHTML='';
+      if(!db.length) return;
+      const used=new Set(setlist.filter(x=>x.type==='song').map(x=>x.id));
+      const missing=db.filter(s=>!used.has(s.id)).sort((a,b)=> a.title.localeCompare(b.title));
+      const top=missing.slice(0,8);
+      if(!top.length){ wrap.textContent='All songs in database are already in this set.'; return; }
+      top.forEach(s=>{
+        const pill=el('div','pill');
+        pill.appendChild(document.createTextNode(`${s.title} (${s.artist})`));
+        const btn=document.createElement('button'); btn.className='add'; btn.textContent='Add';
+        btn.onclick=()=>{ setlist.push({...s,type:'song',notes:''}); renderSet(); saveAll(); };
+        pill.appendChild(btn);
+        wrap.appendChild(pill);
+      });
+    }
+
+    // Preview (guarded if button exists)
+    (function(){ const pb=document.getElementById('previewBtn'); if(pb){ pb.addEventListener('click', ()=>{ buildSheet('sheet'); document.getElementById('modal').classList.add('open'); }); } })();
+  $('#closeModal').addEventListener('click', ()=> $('#modal').classList.remove('open'));
+    $('#paperSel').addEventListener('change', ()=>{
+      const sheet=$('#sheet');
+      if($('#paperSel').value==='a4') sheet.classList.add('a4'); else sheet.classList.remove('a4');
+    });
+  // Setlist modal print opens print chooser for consistency
+  document.getElementById('printSheet').addEventListener('click',()=> openPrintChooser('set'));
+
+    function buildSheet(target='sheet'){
+      const isInline = (target!=='sheet');
+      const sheet = document.getElementById(target);
+      const hdr = document.getElementById(isInline? 'hdrInline' : 'hdr');
+      const songs = document.getElementById(isInline? 'songsInline' : 'songs');
+      if(!sheet || !hdr || !songs) return;
+      // Header
+      hdr.innerHTML='';
+      const b = gig.logo ? (function(){ const d=el('div','logo'); const img=document.createElement('img'); img.src=gig.logo; img.alt='Band Logo'; d.appendChild(img); return d; })() : el('div','band',(gig.band||'').trim()||'BAND NAME');
+      const v=el('div','venue',gig.venue||'VENUE');
+      const sub=el('div','sub', [gig.date||'', gig.address||'', gig.contact||''].filter(Boolean).join(' • '));
+      const n=el('div','notes', gig.notes||'');
+      // Effective header flags: if all off, show all
+      const hf = (function(){ const f=(gig.headerFlags||{band:true,venue:true,sub:true,notes:true}); if(!f.band && !f.venue && !f.sub && !f.notes) return {band:true,venue:true,sub:true,notes:true}; return f; })();
+      if(hf.band) hdr.appendChild(b);
+      if(hf.venue) hdr.appendChild(v);
+      if(hf.sub && sub.textContent.trim()) hdr.appendChild(sub);
+      if(hf.notes && gig.notes) hdr.appendChild(n);
+
+      // Apply font selection
+      const fontMap={
+        'default':'Segoe UI,system-ui,-apple-system,Helvetica,Arial,sans-serif',
+        'helvetica':'Helvetica, Arial, sans-serif',
+        'georgia':'Georgia, Times, serif',
+        'roboto-condensed':'"Roboto Condensed", Roboto, Arial, sans-serif',
+        'courier':'"Courier New", Courier, monospace'
+      };
+      sheet.style.fontFamily = fontMap[gig.font||'default']||fontMap.default;
+
+      // Songs
+      songs.innerHTML='';
+      // dynamic font scaling to fit one page
+      // Start with base sizes and try to fit, shrink if overflow
+      const base = { title:14, lineGap:6 };
+
+      const lines=[];
+      setlist.forEach((it, idx)=>{
+        if(it.type==='break'){
+          const br=el('div','break',`${it.title} — ${it.length}m`); lines.push(br); return;
+        }
+        if(it.type==='encore'){ const enc=el('div','break','ENCORE'); lines.push(enc); return; }
+  const row=el('div','line');
+        row.append(el('div','no', String(idx+1)));
+    const title=el('div','title', shorten(it.title)); row.append(title);
+        row.append(el('div','time', `${it.length}m`));
+  lines.push(row);
+  const parts=[]; if(it.key) parts.push(`Key: ${it.key}`); if(it.notes) parts.push(it.notes);
+  if(parts.length){ const sub=el('div','subnotes', parts.join(' • ')); lines.push(sub); }
+      });
+
+      // Append, then check overflow; shrink title font until fits
+      songs.append(...lines);
+      fitToPage();
+
+      function fitToPage(){
+        // fit within the target sheet element
+        // Get available height inside sheet excluding padding already applied; rely on scrollHeight
+  let tSize=17; // start bigger
+        for(let i=0;i<12;i++){
+          songs.style.setProperty('--t', tSize);
+          Array.from(songs.querySelectorAll('.title')).forEach(d=> d.style.fontSize = tSize+'pt');
+          if(sheet.scrollHeight<=sheet.clientHeight) return; // fits
+          tSize -= 1; if(tSize<10) break; // lower bound
+        }
+  // If still overflowing, reduce subnotes
+  let sSize=10;
+        for(let i=0;i<6 && sheet.scrollHeight>sheet.clientHeight;i++){
+          Array.from(songs.querySelectorAll('.subnotes')).forEach(d=> d.style.fontSize = sSize+'pt');
+          sSize -= 1; if(sSize<7) break;
+        }
+        // If still overflowing, elide subnotes text more aggressively
+        if(sheet.scrollHeight>sheet.clientHeight){
+          Array.from(songs.querySelectorAll('.subnotes')).forEach(d=>{
+            if(d.textContent.length>40) d.textContent=d.textContent.slice(0,37)+'…';
+          });
+        }
+      }
+    }
+
+    // Advanced: Tech Rider table generation synced to setlist (populates inline or fullscreen as available)
+    function buildTechTable(){
+      const body=$('#techBody'); if(!body) return; body.innerHTML='';
+      const items=setlist.filter(x=>x.type==='song');
+      items.forEach((s,idx)=>{
+        const tr=document.createElement('tr');
+        const td1=document.createElement('td'); td1.textContent=String(idx+1);
+        const td2=document.createElement('td'); td2.textContent=s.title;
+        const td3=document.createElement('td');
+        const inp=document.createElement('input'); inp.style.width='100%'; inp.placeholder='Lighting/FX notes (e.g., Blue fade to orange, delays in chorus)';
+        inp.value=s.tech||''; inp.onchange=()=>{s.tech=inp.value; saveAll();};
+        td3.appendChild(inp);
+        tr.append(td1,td2,td3); body.appendChild(tr);
+      });
+    }
+
+    function buildTechTableFull(){
+      const body=document.getElementById('techBodyFull'); if(!body) return; body.innerHTML='';
+      const items=setlist.filter(x=>x.type==='song');
+      items.forEach((s,idx)=>{
+        const tr=document.createElement('tr');
+        const td1=document.createElement('td'); td1.textContent=String(idx+1);
+        const td2=document.createElement('td'); td2.textContent=s.title;
+        const td3=document.createElement('td');
+        const inp=document.createElement('input'); inp.style.width='100%'; inp.placeholder='Lighting/FX notes (e.g., Blue fade to orange, delays in chorus)';
+        inp.value=s.tech||''; inp.onchange=()=>{s.tech=inp.value; saveAll();};
+        td3.appendChild(inp);
+        tr.append(td1,td2,td3); body.appendChild(tr);
+      });
+    }
+
+    // Stage Plot: simple B&W draggable glyphs
+    const TOOLBOX=[
+  {key:'mic', label:'Vocal Mic', svg:'M0 0 h16 v48 h-16z M8 48 a8 8 0 1 0 0.01 0'},
+  {key:'monitor', label:'Monitor', svg:'M0 44 l36 -18 v18 l-36 18z'},
+  {key:'guitar', label:'Electric Guitar', svg:'M0 0 h16 v32 h-16z M16 10 l30 -8 l3 10 l-30 8z'},
+  {key:'bassamp', label:'Bass Amp', svg:'M0 0 h34 v44 h-34z'},
+  {key:'keyboard', label:'Keyboard', svg:'M0 0 h60 v16 h-60z M3 2 v12 M8 2 v12 M13 2 v12 M18 2 v12 M23 2 v12 M28 2 v12 M33 2 v12 M38 2 v12 M43 2 v12 M48 2 v12 M53 2 v12 M58 2 v12'},
+  {key:'drums', label:'Drums', svg:'M15 20 a14 10 0 1 0 0.01 0 M42 20 a14 10 0 1 0 0.01 0 M28 34 a10 7 0 1 0 0.01 0'},
+  {key:'di', label:'DI Box', svg:'M0 0 h40 v18 h-40z'},
+      {key:'gtramp', label:'Guitar Amp', svg:'M0 0 h34 v44 h-34z'},
+      {key:'label', label:'Custom Label', custom:'label'},
+      {key:'rect', label:'Rectangle', custom:'rect'},
+    ];
+
+    // Emoji toolbox items
+    const EMOJI_ITEMS=[
+      {key:'keys', label:'Keys', emoji:'🎹'},
+      {key:'violin', label:'Violin', emoji:'🎻'},
+      {key:'sax', label:'Sax', emoji:'🎷'},
+      {key:'guitar', label:'Guitar', emoji:'🎸'},
+      {key:'bass', label:'Bass', emoji:'🎸'},
+      {key:'trumpet', label:'Trumpet', emoji:'🎺'},
+      {key:'drums', label:'Drums', emoji:'🥁'},
+      {key:'mic', label:'Vocal Mic', emoji:'🎤'},
+      {key:'studioMic', label:'Studio Mic', emoji:'🎙'},
+      {key:'headphones', label:'Monitor', emoji:'◣'},
+      {key:'mixer', label:'Amp', emoji:'▩'},
+      {key:'block', label:'DI', emoji:'⬛'},
+      {key:'disc', label:'Disc', emoji:'💽'},
+      {key:'star', label:'Lead Singer', emoji:'⭐'},
+      {key:'notes', label:'Other', emoji:'🎶'},
+      {key:'banjo', label:'Banjo', emoji:'🪕'},
+      {key:'phone', label:'FX', emoji:'📱'},
+    ];
+
+    function buildTools(){
+      ['stageTools','stageToolsFull'].forEach(cid=>{
+        const tools=document.getElementById(cid);
+        if(tools){
+          tools.innerHTML='';
+          EMOJI_ITEMS.forEach(t=>{
+            const b=document.createElement('button');
+            b.className='tool';
+            b.innerHTML=`<span style="font-size:18px;margin-right:6px">${t.emoji}</span>${t.label}`;
+            b.setAttribute('draggable','true');
+            b.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain', t.key); });
+            tools.appendChild(b);
+          });
+        }
+      });
+    }
+    buildTools();
+
+    function refreshStageHeader(){
+      const text=`${(gig.band||'Band').trim()} • ${(gig.date||'Date')}`;
+      const elT=document.getElementById('stageTitle'); if(elT) elT.textContent=text;
+      const elTF=document.getElementById('stageTitleFull'); if(elTF) elTF.textContent=text;
+    }
+
+    // Note: small stage removed; glyphs are added via fullscreen only
+
+    function addGlyphFull(key, at){
+      const emojiSpec=EMOJI_ITEMS.find(x=>x.key===key);
+      const svg=document.getElementById('stageSvgFull');
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+      const x = (at && typeof at.x==='number') ? at.x : 100, y = (at && typeof at.y==='number') ? at.y : 120;
+      g.dataset.x=String(x); g.dataset.y=String(y); g.dataset.scale='1';
+      g.setAttribute('data-draggable','1');
+      if(emojiSpec){
+        // background block for color (base 70x70 centered)
+        const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        r.setAttribute('x','-35'); r.setAttribute('y','-35'); r.setAttribute('width','70'); r.setAttribute('height','70'); r.setAttribute('rx','10');
+        r.setAttribute('data-bg','1');
+        r.setAttribute('fill','#ffffff'); // default white background
+        r.setAttribute('stroke','#000'); r.setAttribute('stroke-width','2');
+        g.appendChild(r);
+        const em=document.createElementNS('http://www.w3.org/2000/svg','text');
+        em.setAttribute('x','0'); em.setAttribute('y','20'); em.setAttribute('font-size','50'); em.setAttribute('text-anchor','middle'); em.setAttribute('data-role','emoji'); em.textContent=emojiSpec.emoji;
+        g.appendChild(em);
+        const label=document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('x','0'); label.setAttribute('y','70'); label.setAttribute('font-size','16'); label.setAttribute('text-anchor','middle'); label.setAttribute('data-role','label'); label.textContent=emojiSpec.label;
+        g.appendChild(label);
+      }else{
+        const spec=TOOLBOX.find(x=>x.key===key); if(!spec) return;
+        const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+        path.setAttribute('d', toPath(spec.svg));
+        path.setAttribute('fill','none');
+        path.setAttribute('stroke','#000');
+        path.setAttribute('stroke-width','2');
+        g.appendChild(path);
+        const label=document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('x','0'); label.setAttribute('y','58'); label.setAttribute('font-size','14'); label.setAttribute('data-role','label'); label.textContent=spec.label;
+        g.appendChild(label);
+      }
+      applyTransform(g);
+      svg.appendChild(g);
+      enableSvgDrag(g);
+      saveAll();
+    }
+
+    function toPath(simple){
+      // simple mini-language passthrough for small glyphs (already path commands)
+      return simple;
+    }
+
+    function enableSvgDrag(node){
+      // initialize dataset from existing transform if missing
+      initDatasetFromTransform(node);
+      let start=null; let orig=null;
+      node.addEventListener('mousedown',e=>{ start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
+  function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); }
+      function up(){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); saveAll(); }
+      // rename on double click
+      node.addEventListener('dblclick',()=>{
+        const txt=findText(node); if(!txt) return; const nv=prompt('Rename item:', txt.textContent||''); if(nv!=null){ txt.textContent=nv; syncInspectorFrom(node); saveAll(); }
+      });
+    }
+
+    function initDatasetFromTransform(node){
+      if(node.dataset.x && node.dataset.y) return;
+      const m=node.transform.baseVal.consolidate();
+      const t=m? m.matrix : {e:0,f:0,a:1,d:1};
+      node.dataset.x=String(t.e||0);
+      node.dataset.y=String(t.f||0);
+      // scale approx from matrix a/d
+      const s=(t.a&&t.d)? Math.max(1e-3, Math.sqrt(Math.abs(t.a*t.d))) : 1;
+      node.dataset.scale=String(s);
+      applyTransform(node);
+    }
+
+    function applyTransform(node){
+      const x=parseFloat(node.dataset.x||'0');
+      const y=parseFloat(node.dataset.y||'0');
+      const s=parseFloat(node.dataset.scale||'1');
+      node.setAttribute('transform',`translate(${x},${y}) scale(${s})`);
+    }
+
+  function findText(node){ return node.querySelector('text[data-role="label"]') || node.querySelector('text'); }
+
+    // selection + inspector
+    let selectedNode=null;
+    function bindSelection(svg){
+      svg.addEventListener('click',ev=>{
+        const g=ev.target.closest('g[data-draggable]');
+        if(g) selectNode(g); else selectNode(null);
+      });
+    }
+  function ensureSelectionBindings(){ const svg=document.getElementById('stageSvgFull'); if(svg && !svg._boundSel){ bindSelection(svg); svg._boundSel=true; } }
+    function selectNode(g){
+      if(selectedNode) selectedNode.classList.remove('selected');
+      selectedNode=g;
+      const nameInp=document.getElementById('selName');
+      const sizeInp=document.getElementById('selSize');
+      const colorInp=document.getElementById('selColor');
+      if(!nameInp||!sizeInp) return;
+      if(!g){ nameInp.value=''; sizeInp.value='1'; return; }
+      g.classList.add('selected');
+      initDatasetFromTransform(g);
+      const txt=findText(g); nameInp.value=txt? (txt.textContent||'') : '';
+      sizeInp.value=g.dataset.scale||'1';
+      // Try to reflect current color into color picker
+      if(colorInp){
+        let col=null;
+        const shape=g.querySelector('rect, path, circle, ellipse, line, polyline, polygon');
+        const lbl=g.querySelector('text[data-role="label"]');
+        if(shape && shape.getAttribute('stroke')) col=shape.getAttribute('stroke');
+        if(!col && lbl && lbl.getAttribute('fill')) col=lbl.getAttribute('fill');
+        // normalize only if hex; otherwise fallback to black
+        if(col && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(col)) colorInp.value=col; else colorInp.value='#000000';
+      }
+    }
+    function syncInspectorFrom(g){ if(!g) return; const nameInp=document.getElementById('selName'); const sizeInp=document.getElementById('selSize'); if(nameInp){ const txt=findText(g); nameInp.value=txt? (txt.textContent||'') : ''; } if(sizeInp){ sizeInp.value=g.dataset.scale||'1'; } }
+  document.getElementById('selName').addEventListener('change',()=>{ if(!selectedNode) return; const t=findText(selectedNode); if(t){ t.textContent=document.getElementById('selName').value; saveAll(); }});
+  document.getElementById('selSize').addEventListener('input',()=>{ if(!selectedNode) return; selectedNode.dataset.scale=String(document.getElementById('selSize').value); applyTransform(selectedNode); saveAll(); });
+  document.getElementById('selSize').addEventListener('change',()=> saveAll());
+  document.getElementById('delSel').addEventListener('click',()=>{ if(!selectedNode) return; selectedNode.remove(); selectedNode=null; document.getElementById('selName').value=''; saveAll(); });
+  // Color picker & duplicate
+  const selColor=document.getElementById('selColor');
+  if(selColor){
+    selColor.addEventListener('input',()=>{
+      if(!selectedNode) return;
+      const color=selColor.value;
+      // Only colorize background rectangle; keep strokes/text default for clarity
+      const bg=selectedNode.querySelector('rect[data-bg]');
+      if(bg){ bg.setAttribute('fill', color); }
+      saveAll();
+    });
+    selColor.addEventListener('change',()=> saveAll());
+  }
+  const dupBtn=document.getElementById('dupSel');
+  if(dupBtn){ dupBtn.addEventListener('click',()=>{
+    if(!selectedNode) return;
+    const clone=selectedNode.cloneNode(true);
+    const svg=selectedNode.closest('svg');
+    initDatasetFromTransform(clone);
+    clone.dataset.x=String(parseFloat(clone.dataset.x||'0')+40);
+    clone.dataset.y=String(parseFloat(clone.dataset.y||'0')+40);
+    applyTransform(clone);
+    svg.appendChild(clone);
+    enableSvgDrag(clone);
+    selectNode(clone);
+    saveAll();
+  }); }
+
+    // Print Tech Rider + Stage
+  // Repurpose combined print button to open chooser; user can select Tech and/or Stage
+  document.getElementById('printTech').addEventListener('click',()=>{
+    openPrintChooser('tech');
+    return;
+    /* legacy combined flow retained below but unused */
+      // Header
+      const hdr=$('#hdrTech'); hdr.innerHTML='';
+    if(gig.headerFlags?.band) hdr.append(el('div','band',(gig.band||'BAND')));
+    if(gig.headerFlags?.venue) hdr.append(el('div','venue', (gig.venue||'VENUE')));
+    if(gig.headerFlags?.sub){ const subTxt=[gig.date||'', gig.address||'', gig.contact||''].filter(Boolean).join(' • '); if(subTxt) hdr.append(el('div','sub', subTxt)); }
+    if(gig.headerFlags?.notes && gig.notes) hdr.append(el('div','notes', gig.notes));
+      // Tech table clone
+      const techOut=$('#techPrint'); techOut.innerHTML='';
+      const tbl=document.createElement('table'); tbl.className='tech-table';
+      const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>';
+      const body=document.createElement('tbody');
+      setlist.filter(x=>x.type==='song').forEach((s,i)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${s.tech||''}</td>`; body.appendChild(tr);
+      });
+      tbl.append(head,body); techOut.appendChild(tbl);
+      // Stage SVG clone
+      const stageOut=$('#stagePrint'); stageOut.innerHTML='';
+  var svgEl=document.getElementById('stageSvg'); if(svgEl){ const svg=svgEl.cloneNode(true); svg.removeAttribute('id'); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.style.width='100%'; svg.style.height='auto'; svg.style.maxHeight='9in'; stageOut.appendChild(svg); }
+  if(gearSummary){ const gdiv=document.createElement('div'); gdiv.style.marginTop='8px'; gdiv.textContent='Gear: '+gearSummary; stageOut.appendChild(gdiv); }
+      // Show modal
+      document.getElementById('modalTech').classList.add('open');
+    });
+    document.getElementById('closeTech').addEventListener('click',()=> document.getElementById('modalTech').classList.remove('open'));
+      // Print Tech only (no stage)
+      const printTechOnlyBtn=document.getElementById('printTechOnly');
+      if(printTechOnlyBtn){ printTechOnlyBtn.addEventListener('click',()=>{
+        // Header
+        const hdr=$('#hdrTech'); hdr.innerHTML='';
+        if(gig.headerFlags?.band) hdr.append(el('div','band',(gig.band||'BAND')));
+        if(gig.headerFlags?.venue) hdr.append(el('div','venue', (gig.venue||'VENUE')));
+        if(gig.headerFlags?.sub){ const subTxt=[gig.date||'', gig.address||'', gig.contact||''].filter(Boolean).join(' • '); if(subTxt) hdr.append(el('div','sub', subTxt)); }
+        if(gig.headerFlags?.notes && gig.notes) hdr.append(el('div','notes', gig.notes));
+        // Tech table only
+        const techOut=$('#techPrint'); techOut.innerHTML='';
+        const stageOut=$('#stagePrint'); stageOut.innerHTML='';
+        const tbl=document.createElement('table'); tbl.className='tech-table';
+        const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>';
+        const body=document.createElement('tbody');
+        setlist.filter(x=>x.type==='song').forEach((s,i)=>{
+          const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${s.tech||''}</td>`; body.appendChild(tr);
+        });
+        tbl.append(head,body); techOut.appendChild(tbl);
+        document.getElementById('modalTech').classList.add('open');
+      }); }
+
+    // Save tech notes on edit (kept above); buildTechTableFull populates fullscreen modal
+
+    // Small embedded stage removed. All interactions are in fullscreen editor.
+
+    // Fullscreen toggle for stage
+  // No inline fullscreen toggle button anymore
+
+    // Fullscreen stage editor open/close
+    function openStageModal(){
+      // ensure header reflects current gig
+      try{
+        refreshStageHeader();
+        // ensure toolbox is populated
+        try{ buildTools(); }catch(_){ /* ignore */ }
+        // seed full editor from stored svg
+        const store=document.getElementById('stageSvg');
+        const full=document.getElementById('stageSvgFull');
+        if(!full){ throw new Error('Stage SVG not found'); }
+        // reset children (keep first two nodes: bg rect and title)
+        while(full.childNodes.length>2) full.removeChild(full.lastChild);
+        if(store){
+          Array.from(store.querySelectorAll('g[data-draggable]')).forEach(g=> full.appendChild(g.cloneNode(true)));
+          var tnode=store.querySelector('#stageTitle'); var ttl=document.getElementById('stageTitleFull'); if(ttl){ ttl.textContent=(tnode && tnode.textContent) || ttl.textContent; }
+        }
+        Array.from(full.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
+        bindSelection(full);
+        const modal=document.getElementById('stageModal'); if(!modal){ throw new Error('Stage modal not found'); }
+        modal.classList.add('open');
+      }catch(err){
+        if(window && window.alert){ alert('Could not open Stage Plot editor. See console for details.'); }
+        if(console && console.error) console.error(err);
+      }
+    }
+    const openStageBtn=document.getElementById('openStage');
+    if(openStageBtn){ openStageBtn.addEventListener('click',openStageModal); }
+    // make function available to inline onclick as a hard fallback
+    window.openStageModal = openStageModal;
+    // final safety: delegate click in case listeners were missed
+    document.addEventListener('click',ev=>{
+      const trg=ev.target && ev.target.closest ? ev.target.closest('#openStage') : null;
+      if(trg){ ev.preventDefault(); openStageModal(); }
+    });
+    document.getElementById('closeStage').addEventListener('click',()=> document.getElementById('stageModal').classList.remove('open'));
+    // Clear full stage editor
+    const clearStageBtn=document.getElementById('clearStage');
+    if(clearStageBtn){ clearStageBtn.addEventListener('click',()=>{
+      const full=document.getElementById('stageSvgFull'); if(!full) return;
+      // preserve background rect and title only
+      while(full.childNodes.length>2) full.removeChild(full.lastChild);
+      saveAll();
+    }); }
+
+    // Open/close Lighting Notes fullscreen
+    document.getElementById('openNotes').addEventListener('click',()=>{ buildTechTableFull(); const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value=gearSummary||''; document.getElementById('notesModal').classList.add('open'); });
+  const closeNotesBtn=document.getElementById('closeNotes');
+  if(closeNotesBtn){ closeNotesBtn.addEventListener('click',()=> document.getElementById('notesModal').classList.remove('open')); }
+
+    // Drag from toolbox into full SVG at drop position
+  const fullSvg=document.getElementById('stageSvgFull');
+    fullSvg.addEventListener('dragover',ev=> ev.preventDefault());
+    fullSvg.addEventListener('drop',ev=>{
+      ev.preventDefault();
+      const key=ev.dataTransfer.getData('text/plain');
+      if(!key) return;
+      const pt=fullSvg.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY; const ctm=fullSvg.getScreenCTM().inverse(); const svgP=pt.matrixTransform(ctm);
+      addGlyphFull(key,{x:Math.round(svgP.x), y:Math.round(svgP.y)});
+    });
+
+    // Custom tools in full editor
+    document.getElementById('addLabelTool').addEventListener('click',()=>{
+      const text=prompt('Label text:','Mic 1'); if(!text) return; const svg=document.getElementById('stageSvgFull');
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('transform','translate(120,120)'); g.setAttribute('data-draggable','1');
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x','0'); t.setAttribute('y','0'); t.setAttribute('font-size','16'); t.textContent=text; g.appendChild(t);
+      svg.appendChild(g); enableSvgDrag(g);
+    });
+    document.getElementById('addRectTool').addEventListener('click',()=>{
+      const w=parseInt(prompt('Rect width (px):','120')||'120',10), h=parseInt(prompt('Rect height (px):','60')||'60',10);
+      const svg=document.getElementById('stageSvgFull');
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('transform','translate(140,140)'); g.setAttribute('data-draggable','1');
+      const r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x','0'); r.setAttribute('y','0'); r.setAttribute('width',String(w)); r.setAttribute('height',String(h)); r.setAttribute('fill','none'); r.setAttribute('stroke','#000'); r.setAttribute('stroke-width','2');
+      g.appendChild(r); svg.appendChild(g); enableSvgDrag(g);
+    });
+    // Default layout placement
+    document.getElementById('addDefaultLayout').addEventListener('click',()=>{
+      const svg=document.getElementById('stageSvgFull');
+      const cx=750, cy=450; // center of 1500x900
+      // Drums center back
+      addGlyphFull('drums',{x:cx, y:cy-120});
+      // Bass left
+      addGlyphFull('bass',{x:cx-280, y:cy});
+      // Guitar right
+      addGlyphFull('guitar',{x:cx+280, y:cy});
+      // Vox mics front left/right
+      addGlyphFull('mic',{x:cx-120, y:cy+140});
+      addGlyphFull('mic',{x:cx+120, y:cy+140});
+      // Monitors (blocks) near mics
+      addGlyphFull('block',{x:cx-140, y:cy+100});
+      addGlyphFull('block',{x:cx+140, y:cy+100});
+      // Keys if needed (place left mid)
+      addGlyphFull('keys',{x:cx-360, y:cy+40});
+      saveAll();
+    });
+
+    // Shuffle playlist
+    document.getElementById('shuffleBtn').addEventListener('click',()=>{
+      const songs=setlist.filter(x=>x.type==='song');
+      const others=setlist.filter(x=>x.type!=='song');
+      const shuffled=shuffle(songs);
+      // keep others in their relative positions (insert breaks/encore by index mapping)
+      let i=0; setlist=setlist.map(x=> x.type==='song' ? shuffled[i++] : x);
+      renderSet(); saveAll();
+    });
+
+    // Persist gig band name as default as you type
+    document.getElementById('gBand').addEventListener('change',()=>{ gig.band=document.getElementById('gBand').value; saveAll(); refreshStageHeader(); });
+      document.getElementById('gVenue').addEventListener('change',()=>{ gig.venue=document.getElementById('gVenue').value; saveAll(); buildSheet('sheetInline'); });
+      document.getElementById('gDate').addEventListener('change',()=>{ gig.date=document.getElementById('gDate').value; saveAll(); refreshStageHeader(); buildSheet('sheetInline'); });
+      document.getElementById('gAddr').addEventListener('change',()=>{ gig.address=document.getElementById('gAddr').value; saveAll(); buildSheet('sheetInline'); });
+      document.getElementById('gContact').addEventListener('change',()=>{ gig.contact=document.getElementById('gContact').value; saveAll(); buildSheet('sheetInline'); });
+      document.getElementById('gNotes').addEventListener('change',()=>{ gig.notes=document.getElementById('gNotes').value; saveAll(); buildSheet('sheetInline'); });
+    // Header flag persistence & listeners
+    ;['hdrBand','hdrVenue','hdrSub','hdrNotes'].forEach(id=>{
+      const box=document.getElementById(id);
+      if(box){
+        box.addEventListener('change',()=>{
+          if(!gig.headerFlags) gig.headerFlags={band:true,venue:true,sub:true,notes:true};
+          if(id==='hdrBand') gig.headerFlags.band=box.checked;
+          else if(id==='hdrVenue') gig.headerFlags.venue=box.checked;
+          else if(id==='hdrSub') gig.headerFlags.sub=box.checked;
+          else if(id==='hdrNotes') gig.headerFlags.notes=box.checked;
+          saveAll();
+          if(document.getElementById('modal').classList.contains('open')){ buildSheet(); }
+        });
+      }
+    });
+  // Font selection persistence
+  const gFontEl=document.getElementById('gFont'); if(gFontEl){ gFontEl.addEventListener('change',()=>{ gig.font=gFontEl.value; saveAll(); buildSheet('sheetInline'); }); if(gig.font) gFontEl.value=gig.font; }
+  // Logo upload/preview/clear
+  const logoIn=document.getElementById('gLogo'); const logoPrev=document.getElementById('gLogoPrev'); const logoClear=document.getElementById('gLogoClear');
+  function refreshLogoPreview(){ if(logoPrev){ if(gig.logo){ logoPrev.src=gig.logo; logoPrev.style.display='block'; } else { logoPrev.removeAttribute('src'); logoPrev.style.display='none'; } } }
+  if(logoIn){ logoIn.addEventListener('change',()=>{ const f=logoIn.files && logoIn.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ gig.logo=String(e.target.result||''); saveAll(); refreshLogoPreview(); }; r.readAsDataURL(f); }); }
+  if(logoClear){ logoClear.addEventListener('click',()=>{ gig.logo=''; if(logoIn) logoIn.value=''; saveAll(); refreshLogoPreview(); }); }
+  refreshLogoPreview();
+    // Gear summary persistence
+  const gearEl2=document.getElementById('gear'); if(gearEl2){ gearEl2.addEventListener('input',()=>{ gearSummary=gearEl2.value; }); gearEl2.addEventListener('change',()=>{ gearSummary=gearEl2.value; saveAll(); }); }
+
+    // Global print chooser wiring
+    function openPrintChooser(pref){
+      const dlg=document.getElementById('printChooser');
+      // Close other modals so chooser is visible above everything and not printed with them
+      ['stageModal','notesModal','modal','modalTech'].forEach(id=>{ const m=document.getElementById(id); if(m) m.classList.remove('open'); });
+      const cSet=document.getElementById('pSet');
+      const cStage=document.getElementById('pStage');
+      const cTech=document.getElementById('pTech');
+      // default: at least one checked
+      const all=[cSet,cStage,cTech];
+      all.forEach(c=> c.checked=false);
+      if(pref==='set') cSet.checked=true; else if(pref==='stage') cStage.checked=true; else if(pref==='tech') cTech.checked=true; else cSet.checked=true;
+      dlg.classList.add('open');
+      validatePrintSelection();
+    }
+    function validatePrintSelection(){
+      const btn=document.getElementById('doPrint');
+      const any= document.getElementById('pSet').checked || document.getElementById('pStage').checked || document.getElementById('pTech').checked;
+      btn.disabled = !any;
+    }
+    ['pSet','pStage','pTech'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.addEventListener('change',validatePrintSelection); }});
+    document.getElementById('openPrintOptions').addEventListener('click',()=> openPrintChooser());
+    document.getElementById('closePrintChooser').addEventListener('click',()=> document.getElementById('printChooser').classList.remove('open'));
+  document.getElementById('printTechModal').addEventListener('click',()=> openPrintChooser('tech'));
+
+    async function printSelected(){
+      const wantSet=document.getElementById('pSet').checked;
+      const wantStage=document.getElementById('pStage').checked;
+      const wantTech=document.getElementById('pTech').checked;
+      const tasks=[];
+      if(wantSet) tasks.push(()=> printSetOnce());
+      if(wantStage) tasks.push(()=> printStageOnce());
+      if(wantTech) tasks.push(()=> printTechOnlyOnce());
+      // Close chooser before printing to prevent it from being captured by print
+      document.getElementById('printChooser').classList.remove('open');
+      for(const t of tasks){ await t(); }
+    }
+    document.getElementById('doPrint').addEventListener('click',printSelected);
+
+    // Download PDFs/ZIP
+    document.getElementById('downloadSelected').addEventListener('click', async ()=>{
+      if(!(window.html2canvas && window.jspdf && window.JSZip)){
+        alert('PDF/ZIP libraries failed to load. Check your internet connection and try a hard refresh (Ctrl+F5).');
+        return;
+      }
+      const wantSet=document.getElementById('pSet').checked;
+      const wantStage=document.getElementById('pStage').checked;
+      const wantTech=document.getElementById('pTech').checked;
+      if(!wantSet && !wantStage && !wantTech) return;
+      document.getElementById('printChooser').classList.remove('open');
+      const files=[]; // {name, blob}
+      if(wantSet){ const blob=await createSetlistPdfBlob(); files.push({name: (gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'setlist.pdf', blob}); }
+      if(wantStage){ const blob=await createStagePdfBlob(); files.push({name: (gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'stage.pdf', blob}); }
+      if(wantTech){ const blob=await createTechPdfBlob(); files.push({name: (gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'tech.pdf', blob}); }
+      if(files.length===1){
+        const a=document.createElement('a'); a.href=URL.createObjectURL(files[0].blob); a.download=files[0].name; a.click(); URL.revokeObjectURL(a.href); return;
+      }
+      const zip=new JSZip();
+      files.forEach(f=> zip.file(f.name, f.blob));
+      const zipBlob=await zip.generateAsync({type:'blob'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(zipBlob); a.download=(gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'printouts.zip'; a.click(); URL.revokeObjectURL(a.href);
+    });
+
+    function makePdfFromCanvas(canvas, paper){
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'pt', paper||'letter');
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgData = canvas.toDataURL('image/png');
+      let imgW = pageW;
+      let imgH = canvas.height * (imgW / canvas.width);
+      if(imgH > pageH){ imgH = pageH; imgW = canvas.width * (imgH / canvas.height); }
+      const x = (pageW - imgW)/2, y=(pageH - imgH)/2;
+      pdf.addImage(imgData, 'PNG', x, y, imgW, imgH);
+      return pdf.output('blob');
+    }
+
+    function withOffscreen(el, fn){
+      // Ensure element AND its hidden ancestors are visible for layout so html2canvas gets real size
+      const stack=[]; let node=el;
+      while(node && node.nodeType===1){
+        stack.push({node, style:{display:node.style.display, visibility:node.style.visibility, position:node.style.position, left:node.style.left, top:node.style.top}});
+        node.style.display='block';
+        node.style.visibility='visible';
+        node = node.parentElement;
+      }
+      // Position target far offscreen to avoid flicker
+      el.style.position='fixed'; el.style.left='-10000px'; el.style.top='0';
+      return Promise.resolve(fn()).finally(()=>{
+        // Restore styles in reverse order
+        for(let i=0;i<stack.length;i++){
+          const {node, style}=stack[i];
+          node.style.display=style.display;
+          node.style.visibility=style.visibility;
+          node.style.position=style.position;
+          node.style.left=style.left;
+          node.style.top=style.top;
+        }
+      });
+    }
+    async function createSetlistPdfBlob(){
+      // Use inline sheet for export (already WYSIWYG)
+      buildSheet('sheetInline');
+      const el=document.getElementById('sheetInline');
+      const canvas = await withOffscreen(el, ()=> html2canvas(el, {backgroundColor:'#ffffff', scale:2}));
+      const blob = makePdfFromCanvas(canvas, (el.classList.contains('a4')? 'a4' : 'letter'));
+      return blob;
+    }
+    async function createStagePdfBlob(){
+      prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML=''; const stageOut=$('#stagePrint'); stageOut.innerHTML='';
+      const src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg'); if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in'; stageOut.appendChild(clone); }
+      const el=document.getElementById('sheetTech');
+      const canvas = await withOffscreen(el, ()=> html2canvas(el, {backgroundColor:'#ffffff', scale:2}));
+      const blob = makePdfFromCanvas(canvas, 'letter');
+      return blob;
+    }
+    async function createTechPdfBlob(){
+      prepHdrTech(); const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const techOut=$('#techPrint'); techOut.innerHTML='';
+      const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${s.tech||''}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl);
+      const el=document.getElementById('sheetTech');
+      const canvas = await withOffscreen(el, ()=> html2canvas(el, {backgroundColor:'#ffffff', scale:2}));
+      const blob = makePdfFromCanvas(canvas, 'letter');
+      return blob;
+    }
+
+    function printPromise(){ return new Promise(res=> setTimeout(res, 150)); }
+    async function printSetOnce(){ buildSheet(); document.getElementById('modal').classList.add('open'); await printPromise(); window.print(); document.getElementById('modal').classList.remove('open'); await printPromise(); }
+    function prepHdrTech(){
+      const hdr=$('#hdrTech'); hdr.innerHTML='';
+      const hf=(function(){ const f=(gig.headerFlags||{band:true,venue:true,sub:true,notes:true}); if(!f.band&&!f.venue&&!f.sub&&!f.notes) return {band:true,venue:true,sub:true,notes:true}; return f; })();
+      if(hf.band) hdr.append(el('div','band',(gig.band||'BAND')));
+      if(hf.venue) hdr.append(el('div','venue', (gig.venue||'VENUE')));
+      if(hf.sub){ const subTxt=[gig.date||'', gig.address||'', gig.contact||''].filter(Boolean).join(' • '); if(subTxt) hdr.append(el('div','sub', subTxt)); }
+      if(hf.notes && gig.notes) hdr.append(el('div','notes', gig.notes));
+    }
+    async function printStageOnce(){ prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML=''; const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg'); if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in'; stageOut.appendChild(clone); } document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
+    async function printTechOnlyOnce(){ prepHdrTech(); const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const techOut=$('#techPrint'); techOut.innerHTML=''; const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${s.tech||''}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl); document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
+
+    // Save/Load Profile (.BAND)
+    const saveProfileBtn=document.getElementById('saveProfile');
+    if(saveProfileBtn){ saveProfileBtn.addEventListener('click',()=>{
+      var stageEl=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
+      const stage = stageEl ? stageEl.outerHTML : '';
+      const data={version:2,type:'fastfast-band', db, gig, gearSummary, stage};
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=((gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'profile.band'); a.click(); URL.revokeObjectURL(a.href);
+    }); }
+    const loadProfileBtn=document.getElementById('loadProfile'); const loadProfileFile=document.getElementById('loadProfileFile');
+    if(loadProfileBtn && loadProfileFile){
+      loadProfileBtn.addEventListener('click',()=> loadProfileFile.click());
+      loadProfileFile.addEventListener('change',()=>{
+        const f=loadProfileFile.files && loadProfileFile.files[0]; if(!f) return;
+        const r=new FileReader(); r.onload=e=>{
+          try{
+            const obj=JSON.parse(String(e.target.result||'{}'));
+            if(obj && Array.isArray(obj.db)){
+              // merge db by title+artist (case-insensitive)
+              const keyOf=s=> ((s.title||'').toLowerCase().trim()+'|'+((s.artist||'Original').toLowerCase().trim()));
+              const existing=new Set(db.map(keyOf));
+              obj.db.forEach(s=>{
+                const item={...s};
+                if(!item.id) item.id=Date.now()+Math.random();
+                if(!item.artist) item.artist='Original';
+                if(!item.length) item.length=3.5;
+                if(!existing.has(keyOf(item))){ db.push(item); existing.add(keyOf(item)); }
+              });
+              renderDB();
+            }
+            if(obj && obj.gig){
+              // merge gig fields only if missing
+              const fields=['band','date','venue','address','contact','notes','font','logo'];
+              fields.forEach(k=>{ if(!gig[k] && obj.gig[k]) gig[k]=obj.gig[k]; });
+              if(obj.gig.headerFlags){ gig.headerFlags=Object.assign({band:true,venue:true,sub:true,notes:true}, gig.headerFlags, obj.gig.headerFlags); }
+              // hydrate UI
+              if(gig.band) document.getElementById('gBand').value=gig.band;
+              if(gig.date) document.getElementById('gDate').value=gig.date;
+              if(gig.venue) document.getElementById('gVenue').value=gig.venue;
+              if(gig.address) document.getElementById('gAddr').value=gig.address;
+              if(gig.contact) document.getElementById('gContact').value=gig.contact;
+              if(gig.notes) document.getElementById('gNotes').value=gig.notes;
+              const gFontElTmp=document.getElementById('gFont'); if(gFontElTmp && gig.font) gFontElTmp.value=gig.font;
+              // header flags checkboxes
+              ['hdrBand','hdrVenue','hdrSub','hdrNotes'].forEach(id=>{ const el=document.getElementById(id); if(el){ if(id==='hdrBand') el.checked=!!gig.headerFlags.band; else if(id==='hdrVenue') el.checked=!!gig.headerFlags.venue; else if(id==='hdrSub') el.checked=!!gig.headerFlags.sub; else if(id==='hdrNotes') el.checked=!!gig.headerFlags.notes; }});
+              refreshLogoPreview();
+            }
+            // hydrate gear and stage if present
+            if(obj && 'gearSummary' in obj){ gearSummary = obj.gearSummary || ''; const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value=gearSummary; }
+            if(obj && obj.stage){ const container=document.getElementById('stageStore'); if(container){ container.innerHTML=obj.stage; const svg=container.querySelector('svg'); if(svg){ svg.id='stageSvg'; svg.classList.add('bw'); } } }
+            saveAll();
+          }catch(err){ alert('Failed to read .BAND file'); }
+        };
+        r.readAsText(f);
+      });
+    }
+
+    // Zoom control for stage (applies to small canvas)
+    // No inline zoom control anymore
+
+    // Save .SET (export setlist only)
+    const saveSetBtn=document.getElementById('saveSet'); if(saveSetBtn){ saveSetBtn.addEventListener('click',()=>{
+      const data={version:1,type:'fastfast-set',setlist};
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(gig.band? gig.band.replace(/\s+/g,'_')+'_' : '')+'setlist.set'; a.click(); URL.revokeObjectURL(a.href);
+    }); }
+    // Load .SET (import setlist only, keep current gig)
+    const loadSetBtn=document.getElementById('loadSet'); const loadSetFile=document.getElementById('loadSetFile');
+    if(loadSetBtn && loadSetFile){
+      loadSetBtn.addEventListener('click',()=> loadSetFile.click());
+      loadSetFile.addEventListener('change',()=>{
+        const f=loadSetFile.files && loadSetFile.files[0]; if(!f) return;
+        const r=new FileReader(); r.onload=e=>{
+          try{
+            const obj=JSON.parse(String(e.target.result||'{}'));
+            if(obj && obj.setlist && Array.isArray(obj.setlist)){
+              setlist=obj.setlist; renderSet(); saveAll();
+            }else{ alert('Invalid .SET file'); }
+          }catch(err){ alert('Failed to read .SET file'); }
+        };
+        r.readAsText(f);
+      });
+    }
+  </script>
+  <!-- Lightweight libs for client PDF/ZIP export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>
