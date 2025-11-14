@@ -103,10 +103,19 @@
   .stage-modal.open{display:flex}
   .stage-editor{display:grid;grid-template-columns:280px 1fr;gap:12px;background:#fff;width:100%;height:100%}
   .stage-pane{padding:12px;overflow:auto;border-right:1px solid #e5e7eb}
-  .stage-canvas{padding:12px;display:flex;align-items:center;justify-content:center;overflow:auto}
+  .stage-canvas{padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:auto}
+  /* Preserve full-size stage canvas regardless of legend height */
+  #stageSvgFull{width:100% !important;height:100% !important;aspect-ratio:1500/900;flex:0 0 auto}
+  .stage-legend{width:100%;border:1px solid #e5e7eb;background:#f9fafb;border-radius:6px;padding:4px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1}
+  .stage-legend .row{display:grid;grid-template-columns:60px 1fr 110px 160px;align-items:center;gap:6px;padding:1px 4px;}
+  .stage-legend .row:nth-child(odd){background:#fff}
+  .stage-legend img{width:16px;height:16px;object-fit:contain;display:block;margin:0 auto}
+  .stage-legend .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+  .stage-legend select,.stage-legend input[type=number]{font-size:11px;padding:0 2px;height:18px}
+  .stage-legend .chain{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tool[draggable="true"]{user-select:none}
   .stage-actions{position:absolute;top:10px;right:10px;display:flex;gap:8px}
-  /* Advanced: tech rider + stage plot (B&W) */
+  /* Tech / Stage: tech rider & stage plot (B&W) */
   .advanced-grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
   .tech-table{width:100%;border-collapse:collapse}
   .tech-table th,.tech-table td{border:1px solid #e5e7eb;padding:8px;font-size:14px}
@@ -116,7 +125,7 @@
   .stage{width:100%;height:90vh;min-height:640px;border:1px dashed #cbd5e1;background:#ffffff}
   .stage svg{width:100%;height:100%;background:white}
   /* B&W outlines for glyphs, keep background white */
-  .bw .stage-bg{fill:#fff;stroke:#000}
+  .bw .stage-bg{fill:#fff;stroke:#000;stroke-width:2}
   /* Allow colored emoji backgrounds: only force outline for rects without data-bg */
   .bw rect:not([data-bg]){fill:none;stroke:#000}
   .bw path,.bw circle,.bw ellipse,.bw line,.bw polyline,.bw polygon{fill:none;stroke:#000}
@@ -131,6 +140,15 @@
   g[data-draggable].selected polygon{stroke:#1d4ed8}
   g[data-draggable].selected text{text-decoration:underline}
   .stage-inspector{margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  /* Stage frame & resize handles */
+  #stageFrame{outline:3px solid #000;pointer-events:none}
+  #stageFrame .stage-handle{position:absolute;width:16px;height:16px;background:#000;border:2px solid #fff;border-radius:4px;z-index:85;pointer-events:auto;box-shadow:0 0 0 1px #000}
+  #stageFrame .stage-handle.tl{top:-10px;left:-10px;cursor:nwse-resize}
+  #stageFrame .stage-handle.tr{top:-10px;right:-10px;cursor:nesw-resize}
+  #stageFrame .stage-handle.bl{bottom:-10px;left:-10px;cursor:nesw-resize}
+  #stageFrame .stage-handle.br{bottom:-10px;right:-10px;cursor:nwse-resize}
+  #stageFrame .stage-handle:active{background:#1d4ed8}
+  #stageSvgFull{pointer-events:auto}
   .stage-inspector .muted{color:#6b7280;font-size:13px}
   .gear-wrap{margin-top:8px}
   .gear-wrap textarea{width:100%;min-height:42px}
@@ -171,7 +189,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="db">Song Database</button>
       <button class="tab" data-tab="set">Setlist</button>
-  <button class="tab" data-tab="adv">Advanced</button>
+  <button class="tab" data-tab="adv">Tech / Stage</button>
     </div>
 
     <div class="grid">
@@ -298,7 +316,7 @@
       </div>
 
       <div class="card" id="adv" style="display:none">
-        <h2>Advanced: Tech Rider & Stage Plot</h2>
+  <h2>Tech / Stage: Tech Rider & Stage Plot</h2>
         <div class="row" style="gap:8px">
           <button class="btn" id="openStage" onclick="openStageModal()">Stage Plot (Fullscreen)</button>
           <button class="btn" id="openNotes">Lighting Notes (Fullscreen)</button>
@@ -315,11 +333,11 @@
         <li><strong>Song Database</strong>: Add all your songs here. Mark moods & cover status to influence generation.</li>
         <li><strong>Generator</strong>: Enter gig details (band, venue, date, notes). Pick total length, break count, mood, and whether to include an encore, then click Generate.</li>
         <li><strong>Current Setlist</strong>: Drag songs to reorder with the handle (⋮⋮). Type notes inline and they appear immediately below titles in the preview. Use the “Missing” pills to quickly add songs from your database.</li>
-        <li><strong>Advanced</strong>: Fullscreen Stage Plot lets you drag emoji instruments & labels; Lighting Notes table captures per-song FX cues. Color an item via the color picker, duplicate to speed layout, and Clear to start over.</li>
+  <li><strong>Tech / Stage</strong>: Fullscreen Stage Plot lets you drag icon images & labels; Lighting Notes table captures per-song FX cues. Assign mixer channels in the legend, duplicate to speed layout, and Clear to start over.</li>
         <li><strong>Printing & Export</strong>: The Print… button opens options for Setlist, Stage Plot, and Tech Notes—each prints separately. You can also download selected pages as PDF or a ZIP bundle.</li>
         <li><strong>Profiles & Sets</strong>: Save Profile (.BAND) to archive your whole song DB + gig settings. Load Profile to merge. Save .SET to export just the current setlist arrangement.</li>
         <li><strong>Persistence</strong>: Everything auto-saves locally. Closing and reopening the browser restores your last session.</li>
-        <li><strong>Stage Plot Tips</strong>: Drag from Toolbox, double‑click a label to rename, use size slider & color picker, duplicate for symmetrical setups, Clear to wipe everything except background & title.</li>
+  <li><strong>Stage Plot Tips</strong>: Drag from Toolbox, double‑click a label to rename, use the size slider, duplicate for symmetrical setups, Clear to wipe everything except background & title.</li>
       </ol>
       <div style="margin-top:16px;font-size:14px;background:#f1f5f9;padding:12px;border-radius:8px">
         This app is free. If it saves you time and you’d like to support development, you can donate:
@@ -371,20 +389,27 @@
         </div>
       </div>
       <div class="stage-canvas">
-        <svg id="stageSvgFull" class="bw" viewBox="0 0 1500 900" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
-          <rect class="stage-bg" x="1" y="1" width="1498" height="898"/>
-          <text x="750" y="50" text-anchor="middle" font-size="26" font-weight="bold" id="stageTitleFull">Band • Date</text>
-        </svg>
-        <div class="stage-inspector">
+        <div id="stageFrame" style="position:relative;display:inline-block;">
+          <svg id="stageSvgFull" class="bw" viewBox="0 0 1500 900" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+            <rect class="stage-bg" x="1" y="1" width="1498" height="898"/>
+            <text x="750" y="50" text-anchor="middle" font-size="26" font-weight="bold" id="stageTitleFull">Band • Date</text>
+          </svg>
+          <div class="stage-handle tl" data-handle="tl"></div>
+          <div class="stage-handle tr" data-handle="tr"></div>
+          <div class="stage-handle bl" data-handle="bl"></div>
+          <div class="stage-handle br" data-handle="br"></div>
+        </div>
+        <div class="stage-inspector" id="stageInspector">
           <span class="muted">Selected:</span>
           <input id="selName" placeholder="Label (double‑click item to rename)" style="min-width:220px" />
           <label class="muted" for="selSize">Size</label>
-          <input id="selSize" type="range" min="0.5" max="2" step="0.1" value="1" style="width:160px" />
-          <label class="muted" for="selColor">Color</label>
-          <input id="selColor" type="color" value="#000000" />
+          <input id="selSize" type="range" min="0.3" max="5" step="0.05" value="1" style="width:160px" />
+          
+          <label class="muted" for="selShowLabel" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="selShowLabel" /> Show Label</label>
           <button class="btn danger" id="delSel">Delete</button>
           <button class="btn" id="dupSel" type="button">Duplicate</button>
         </div>
+        <div id="stageLegend" class="stage-legend"></div>
         <div class="stage-actions">
           <button class="btn secondary" id="closeStage">Close</button>
           <button class="btn danger" id="clearStage">Clear</button>
@@ -1075,7 +1100,7 @@
     const origRenderSet = renderSet;
     renderSet = function(){ origRenderSet(); bindTouchReorder(); };
 
-    // Advanced: Tech Rider table generation synced to setlist (populates inline or fullscreen as available)
+  // Tech / Stage: Tech Rider table generation synced to setlist (populates inline or fullscreen as available)
     function buildTechTable(){
       const body=$('#techBody'); if(!body) return; body.innerHTML='';
       const items=setlist.filter(x=>x.type==='song');
@@ -1120,36 +1145,97 @@
       {key:'rect', label:'Rectangle', custom:'rect'},
     ];
 
-    // Emoji toolbox items
-    const EMOJI_ITEMS=[
-      {key:'keys', label:'Keys', emoji:'🎹'},
-      {key:'violin', label:'Violin', emoji:'🎻'},
-      {key:'sax', label:'Sax', emoji:'🎷'},
-      {key:'guitar', label:'Guitar', emoji:'🎸'},
-      {key:'bass', label:'Bass', emoji:'🎸'},
-      {key:'trumpet', label:'Trumpet', emoji:'🎺'},
-      {key:'drums', label:'Drums', emoji:'🥁'},
-      {key:'mic', label:'Vocal Mic', emoji:'🎤'},
-      {key:'studioMic', label:'Studio Mic', emoji:'🎙'},
-      {key:'headphones', label:'Monitor', emoji:'◣'},
-      {key:'mixer', label:'Amp', emoji:'▩'},
-      {key:'block', label:'DI', emoji:'⬛'},
-      {key:'disc', label:'Disc', emoji:'💽'},
-      {key:'star', label:'Lead Singer', emoji:'⭐'},
-      {key:'notes', label:'Other', emoji:'🎶'},
-      {key:'banjo', label:'Banjo', emoji:'🪕'},
-      {key:'phone', label:'FX', emoji:'📱'},
+    // Image-based toolbox items (replace emojis)
+    // Files must exist alongside index.html
+    const ICON_ITEMS=[
+      {key:'acoustic', label:'Acoustic', src:'Acoustic.png'},
+      {key:'banjo', label:'Banjo', src:'Banjo.png'},
+      {key:'bass', label:'Bass', src:'Bass.png'},
+      {key:'bassamp', label:'Bass Amp', src:'Bassamp.png'},
+      {key:'bongoes', label:'Bongoes', src:'Bongoes.png'},
+      {key:'clarinet', label:'Clarinet', src:'Clarinet.png'},
+      {key:'combo', label:'Gtr Combo', src:'Combo.png'},
+      {key:'congas', label:'Congas', src:'Congas.png'},
+      {key:'crash', label:'Crash', src:'Crash.png'},
+      {key:'cymbal1', label:'Cymbal', src:'Cymbal_1.png'},
+      {key:'cymbal2', label:'Cymbal', src:'Cymbal_2.png'},
+      {key:'deck', label:'Deck', src:'Deck.png'},
+      {key:'di', label:'DI', src:'DI.png'},
+      {key:'electric', label:'Electric', src:'Electric.png'},
+      {key:'fan', label:'Fan', src:'Fan.png'},
+      {key:'hihat', label:'Hi-hat', src:'Hihat.png'},
+      {key:'hihat2', label:'Hi-hat', src:'Hihat_2.png'},
+      {key:'kick', label:'Kick', src:'Kick.png'},
+      {key:'laptop', label:'Laptop', src:'Laptop.png'},
+      {key:'monitor', label:'Monitor', src:'Monitor.png'},
+  {key:'overhead', label:'Instrument Mic', src:'Overhead.png'},
+      {key:'snare', label:'Snare', src:'Snare.png'},
+      {key:'power', label:'Power', src:'Power.png'},
+      {key:'sampler', label:'Sampler', src:'Sampler.png'},
+      {key:'stack', label:'Amp Stack', src:'Stack.png'},
+      {key:'tom', label:'Tom', src:'Tom.png'},
+      {key:'floor', label:'Floor Tom', src:'Floor.png'},
+      {key:'stereoPair', label:'Stereo Pair', src:'Stereo%20Pair.png'},
+      {key:'stool', label:'Stool', src:'Stool.png'},
+      {key:'table', label:'Table', src:'Table.png'},
+      {key:'tipjar', label:'Tip Jar', src:'Tipjar.png'},
+      {key:'violin', label:'Violin', src:'Violin.png'},
+      {key:'vocal', label:'Vocal Mic', src:'Vocal%20Mic.png'},
     ];
+
+    // Type mapping for routing logic
+    const TYPE_MAP={
+      acoustic:'acoustic', banjo:'acoustic', violin:'acoustic',
+      electric:'electric', combo:'amp', stack:'amp', bassamp:'amp', bass:'electric',
+      vocal:'mic', overhead:'mic', stereoPair:'mic', hihat:'drum', hihat2:'drum', kick:'drum', snare:'drum', tom:'drum', floor:'drum', crash:'drum', cymbal1:'drum', cymbal2:'drum', bongoes:'drum', congas:'drum',
+      deck:'deck', sampler:'sampler', laptop:'sampler',
+      di:'di',
+      monitor:'monitor',
+      power:'utility', fan:'utility', table:'utility', stool:'utility', tipjar:'utility'
+    };
+
+    // Allowed routing targets by source type (routeTo). 'channel' is represented by selecting a channel directly, not via routeTo.
+    const ROUTE_TARGETS={
+      drum:['mic','channel'], // drums can go to instrument/vocal/stereo mic or direct channel (kick/snare often direct)
+      mic:['channel'], // mic feeds channel only (no DI after mic)
+      di:['channel'],
+      fx:['di','channel'],
+      amp:['mic','di'], // amps -> mic or DI
+      acoustic:['di','mic'], // must pass through mic or DI first (no direct channel)
+      electric:['fx','amp','di','channel'],
+      deck:['fx','di','channel'],
+      sampler:['fx','di','channel'],
+      // wind & hand percussion treated under acoustic/drum already; ensure explicit mapping if custom types emerge
+    };
+
+    // Effective per-node targets (adds key-specific rules, e.g., bass amp can go direct to channel)
+    function effectiveTargets(node){
+      const base=(ROUTE_TARGETS[node.dataset.type||'other']||[]).slice();
+      const key=node.dataset.key||'';
+      if((node.dataset.type||'')==='amp'){
+        if(key==='bassamp'){ // bass amps can feed DI or mic or direct channel (via built-in DI out)
+          if(!base.includes('di')) base.push('di');
+          if(!base.includes('mic')) base.push('mic');
+          if(!base.includes('channel')) base.push('channel');
+        } else { // guitar amps must only go to mics
+          return ['mic'];
+        }
+      }
+      return base;
+    }
+
+    // Items considered processors (appear prioritized at top of legend)
+    const PRIORITY_TYPES=new Set(['di','fx','amp','sampler']);
 
     function buildTools(){
       ['stageTools','stageToolsFull'].forEach(cid=>{
         const tools=document.getElementById(cid);
         if(tools){
           tools.innerHTML='';
-          EMOJI_ITEMS.forEach(t=>{
+          ICON_ITEMS.forEach(t=>{
             const b=document.createElement('button');
             b.className='tool';
-            b.innerHTML=`<span style="font-size:18px;margin-right:6px">${t.emoji}</span>${t.label}`;
+            b.innerHTML=`<img src="${t.src}" alt="${t.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${t.label}`;
             b.setAttribute('draggable','true');
             b.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain', t.key); });
             // Touch drag support: begin a simulated drag sequence
@@ -1165,6 +1251,15 @@
     }
     buildTools();
 
+    let _suppressBgClick=false;
+    // Ensure arrow marker exists in SVG for arrow drawing
+    function ensureStageMarkers(svg){ if(!svg) return; let defs=svg.querySelector('defs'); if(!defs){ defs=document.createElementNS('http://www.w3.org/2000/svg','defs'); svg.insertBefore(defs, svg.firstChild); }
+      if(!svg.querySelector('marker#arrowHead')){
+        const m=document.createElementNS('http://www.w3.org/2000/svg','marker'); m.setAttribute('id','arrowHead'); m.setAttribute('markerWidth','8'); m.setAttribute('markerHeight','8'); m.setAttribute('refX','8'); m.setAttribute('refY','3'); m.setAttribute('orient','auto');
+        const p=document.createElementNS('http://www.w3.org/2000/svg','path'); p.setAttribute('d','M0,0 L8,3 L0,6 Z'); p.setAttribute('fill','#000'); m.appendChild(p); defs.appendChild(m);
+      }
+    }
+
     function refreshStageHeader(){
       const text=`${(gig.band||'Band').trim()} • ${(gig.date||'Date')}`;
       const elT=document.getElementById('stageTitle'); if(elT) elT.textContent=text;
@@ -1173,26 +1268,46 @@
 
     // Note: small stage removed; glyphs are added via fullscreen only
 
+    let _nextStageId=1;
     function addGlyphFull(key, at){
-      const emojiSpec=EMOJI_ITEMS.find(x=>x.key===key);
+      const iconSpec=ICON_ITEMS.find(x=>x.key===key);
       const svg=document.getElementById('stageSvgFull');
       const g=document.createElementNS('http://www.w3.org/2000/svg','g');
       const x = (at && typeof at.x==='number') ? at.x : 100, y = (at && typeof at.y==='number') ? at.y : 120;
-      g.dataset.x=String(x); g.dataset.y=String(y); g.dataset.scale='1';
+      // Compute initial scale so the visible icon is ~100px wide on screen
+      const vbw = (svg && svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width) ? svg.viewBox.baseVal.width : 1500;
+      const pxPerUnit = svg ? (svg.getBoundingClientRect().width / vbw) : (1000/1500);
+      const targetPx = 100; const baseUnits = 60; // image width set below
+      let initScale = targetPx / (baseUnits * Math.max(0.01, pxPerUnit));
+      initScale = Math.max(0.3, Math.min(5, initScale));
+      g.dataset.x=String(x); g.dataset.y=String(y); g.dataset.scale=String(initScale);
+      g.dataset.key=key; g.dataset.channel=g.dataset.channel||'';
+      g.dataset.id=String(_nextStageId++);
+      const type=TYPE_MAP[key]||'other';
+      g.dataset.type=type;
+      g.dataset.showLabel='0'; // default hidden
       g.setAttribute('data-draggable','1');
-      if(emojiSpec){
-        // background block for color (base 70x70 centered)
-        const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
-        r.setAttribute('x','-35'); r.setAttribute('y','-35'); r.setAttribute('width','70'); r.setAttribute('height','70'); r.setAttribute('rx','10');
-        r.setAttribute('data-bg','1');
-        r.setAttribute('fill','#ffffff'); // default white background
-        r.setAttribute('stroke','#000'); r.setAttribute('stroke-width','2');
-        g.appendChild(r);
-        const em=document.createElementNS('http://www.w3.org/2000/svg','text');
-        em.setAttribute('x','0'); em.setAttribute('y','20'); em.setAttribute('font-size','50'); em.setAttribute('text-anchor','middle'); em.setAttribute('data-role','emoji'); em.textContent=emojiSpec.emoji;
-        g.appendChild(em);
+      // Auto-assign next channel for common sources (drums, mics)
+      const autoTypes=new Set(['drum','mic']);
+      const canChannel=(ROUTE_TARGETS[type]||[]).includes('channel');
+      if(autoTypes.has(type) && canChannel){
+        const existing=getStageGroups();
+        const assigned=existing.map(r=> parseInt(r.dataset.channel||'0',10)).filter(n=> n>0);
+        const next=(assigned.length? Math.max(...assigned):0)+1;
+        g.dataset.channel=String(next);
+      }
+      if(iconSpec){
+        // Place icon image centered; no background rectangle (transparent icons expected)
+  const img=document.createElementNS('http://www.w3.org/2000/svg','image');
+  // set both href and xlink:href for compatibility
+  img.setAttribute('href', iconSpec.src);
+  img.setAttributeNS('http://www.w3.org/1999/xlink','href', iconSpec.src);
+  img.setAttribute('x','-30'); img.setAttribute('y','-30'); img.setAttribute('width','60'); img.setAttribute('height','60');
+        img.setAttribute('preserveAspectRatio','xMidYMid meet');
+        g.appendChild(img);
         const label=document.createElementNS('http://www.w3.org/2000/svg','text');
-        label.setAttribute('x','0'); label.setAttribute('y','70'); label.setAttribute('font-size','16'); label.setAttribute('text-anchor','middle'); label.setAttribute('data-role','label'); label.textContent=emojiSpec.label;
+        label.setAttribute('x','0'); label.setAttribute('y','70'); label.setAttribute('font-size','16'); label.setAttribute('text-anchor','middle'); label.setAttribute('data-role','label'); label.textContent=iconSpec.label;
+        label.style.display='none';
         g.appendChild(label);
       }else{
         const spec=TOOLBOX.find(x=>x.key===key); if(!spec) return;
@@ -1204,13 +1319,16 @@
         g.appendChild(path);
         const label=document.createElementNS('http://www.w3.org/2000/svg','text');
         label.setAttribute('x','0'); label.setAttribute('y','58'); label.setAttribute('font-size','14'); label.setAttribute('data-role','label'); label.textContent=spec.label;
+        label.style.display='none';
         g.appendChild(label);
       }
       applyTransform(g);
       svg.appendChild(g);
       enableSvgDrag(g);
       selectNode(g); // immediately select newly added item for quick edits
-      saveAll();
+      // focus name field so user can rename right away
+      const nameInp=document.getElementById('selName'); if(nameInp){ nameInp.focus(); if(nameInp.select) nameInp.select(); }
+      refreshStageLegend(); saveAll();
     }
 
     function toPath(simple){
@@ -1222,8 +1340,8 @@
       // initialize dataset from existing transform if missing
       initDatasetFromTransform(node);
       let start=null; let orig=null;
-      node.addEventListener('mousedown',e=>{ start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
-  function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); }
+      node.addEventListener('mousedown',e=>{ if(e.button===2){ return; } start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
+  function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } }
       function up(){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); saveAll(); }
       // rename on double click
       node.addEventListener('dblclick',()=>{
@@ -1235,13 +1353,48 @@
         if(touchId!=null) return; const t=e.touches[0]; if(!t) return; touchId=t.identifier; start={x:t.clientX,y:t.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; selectNode(node); e.preventDefault();
       }, {passive:false});
       node.addEventListener('touchmove',e=>{
-        if(touchId==null) return; for(const t of e.touches){ if(t.identifier===touchId){ var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(t.clientX-start.x)/zoom, dy=(t.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); e.preventDefault(); break; } }
+        if(touchId==null) return; for(const t of e.touches){ if(t.identifier===touchId){ var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(t.clientX-start.x)/zoom, dy=(t.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } e.preventDefault(); break; } }
       }, {passive:false});
       node.addEventListener('touchend',e=>{
         if(touchId==null) return; let still=false; for(const t of e.touches){ if(t.identifier===touchId){ still=true; break; } } if(!still){ touchId=null; saveAll(); }
       });
       node.addEventListener('touchcancel',()=>{ if(touchId!=null){ touchId=null; saveAll(); }});
     }
+
+    // Right-click cable drag connection gesture
+    (function setupCableDrag(){
+      const svg=document.getElementById('stageSvgFull'); if(!svg) return;
+      let cableDrag=null; // {source, x1,y1, line}
+      function clientToSvg(x,y){ const pt=svg.createSVGPoint(); pt.x=x; pt.y=y; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+      svg.addEventListener('contextmenu',e=>{ if(e.target.closest('svg#stageSvgFull')){ e.preventDefault(); }});
+      svg.addEventListener('mousedown',e=>{
+        if(e.button!==2) return; // only right-click
+        const g=e.target.closest && e.target.closest('g[data-draggable]');
+        if(!g) return; e.preventDefault();
+        const p=clientToSvg(e.clientX,e.clientY);
+        const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', p.x); line.setAttribute('y1', p.y); line.setAttribute('x2', p.x); line.setAttribute('y2', p.y);
+        line.setAttribute('stroke','#000'); line.setAttribute('stroke-width','2'); line.setAttribute('stroke-dasharray','6,4'); line.setAttribute('data-temp','cable');
+        svg.appendChild(line);
+        cableDrag={source:g, x1:p.x, y1:p.y, line:line};
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseup',onUp);
+      });
+      function onMove(e){ if(!cableDrag) return; const p=clientToSvg(e.clientX,e.clientY); cableDrag.line.setAttribute('x2',p.x); cableDrag.line.setAttribute('y2',p.y); }
+      function onUp(e){ if(!cableDrag) return; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp);
+        const line=cableDrag.line; const source=cableDrag.source; line.remove();
+        // determine drop target
+        const el=document.elementFromPoint(e.clientX,e.clientY);
+        const target= el && el.closest && el.closest('g[data-draggable]');
+        if(target && target!==source){
+          const sAllowed=effectiveTargets(source); const tAllowed=effectiveTargets(target);
+          if(sAllowed.includes(target.dataset.type||'other')){ source.dataset.routeTo=target.dataset.id; }
+          else if(tAllowed.includes(source.dataset.type||'other')){ target.dataset.routeTo=source.dataset.id; }
+          saveAll(); refreshStageLegend();
+        }
+        cableDrag=null;
+      }
+    })();
 
     function initDatasetFromTransform(node){
       if(node.dataset.x && node.dataset.y) return;
@@ -1267,10 +1420,25 @@
     // selection + inspector
     let selectedNode=null;
     function bindSelection(svg){
-      svg.addEventListener('click',ev=>{
-        const g=ev.target.closest && ev.target.closest('g[data-draggable]');
-        if(g) selectNode(g); else selectNode(null);
-      });
+        svg.addEventListener('click',ev=>{
+          const g=ev.target.closest && ev.target.closest('g[data-draggable]');
+          if(g){ selectNode(g); refreshStageLegend(); return; }
+          // click on whitespace creates a text label at click position
+          const bg=ev.target.closest && ev.target.closest('.stage-bg');
+          if(bg){
+            if(_suppressBgClick){ _suppressBgClick=false; ev.stopPropagation(); return; }
+            const pt=svg.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY; const ctm=svg.getScreenCTM().inverse(); const p=pt.matrixTransform(ctm);
+            // Ask first; cancel or empty -> do nothing
+            let entered=prompt('Text label:',''); if(entered==null) return; entered=String(entered).trim(); if(!entered) return;
+            const gN=document.createElementNS('http://www.w3.org/2000/svg','g'); gN.dataset.x=String(Math.round(p.x)); gN.dataset.y=String(Math.round(p.y)); gN.dataset.scale='1'; gN.setAttribute('data-draggable','1'); gN.dataset.key='label'; gN.dataset.type='other'; gN.dataset.showLabel='1';
+            const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x','0'); t.setAttribute('y','0'); t.setAttribute('font-size','16'); t.setAttribute('data-role','label'); t.textContent=entered; gN.appendChild(t);
+            applyTransform(gN); svg.appendChild(gN); enableSvgDrag(gN); selectNode(gN); refreshStageLegend(); saveAll();
+            const nameInp=document.getElementById('selName'); if(nameInp){ nameInp.focus(); nameInp.select && nameInp.select(); }
+            ev.stopPropagation();
+            return;
+          }
+          selectNode(null); refreshStageLegend();
+        });
     }
   function ensureSelectionBindings(){ const svg=document.getElementById('stageSvgFull'); if(svg && !svg._boundSel){ bindSelection(svg); svg._boundSel=true; } }
     function selectNode(g){
@@ -1278,42 +1446,32 @@
       selectedNode=g;
       const nameInp=document.getElementById('selName');
       const sizeInp=document.getElementById('selSize');
-      const colorInp=document.getElementById('selColor');
+      
+        const showLabelChk=document.getElementById('selShowLabel');
       if(!nameInp||!sizeInp) return;
       if(!g){ nameInp.value=''; sizeInp.value='1'; return; }
       g.classList.add('selected');
       initDatasetFromTransform(g);
       const txt=findText(g); nameInp.value=txt? (txt.textContent||'') : '';
       sizeInp.value=g.dataset.scale||'1';
-      // Try to reflect current color into color picker
-      if(colorInp){
-        let col=null;
-        const shape=g.querySelector('rect, path, circle, ellipse, line, polyline, polygon');
-        const lbl=g.querySelector('text[data-role="label"]');
-        if(shape && shape.getAttribute('stroke')) col=shape.getAttribute('stroke');
-        if(!col && lbl && lbl.getAttribute('fill')) col=lbl.getAttribute('fill');
-        // normalize only if hex; otherwise fallback to black
-        if(col && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(col)) colorInp.value=col; else colorInp.value='#000000';
-      }
+        if(showLabelChk){ showLabelChk.checked = g.dataset.showLabel==='1'; }
+      
     }
     function syncInspectorFrom(g){ if(!g) return; const nameInp=document.getElementById('selName'); const sizeInp=document.getElementById('selSize'); if(nameInp){ const txt=findText(g); nameInp.value=txt? (txt.textContent||'') : ''; } if(sizeInp){ sizeInp.value=g.dataset.scale||'1'; } }
   document.getElementById('selName').addEventListener('change',()=>{ if(!selectedNode) return; const t=findText(selectedNode); if(t){ t.textContent=document.getElementById('selName').value; saveAll(); }});
-  document.getElementById('selSize').addEventListener('input',()=>{ if(!selectedNode) return; selectedNode.dataset.scale=String(document.getElementById('selSize').value); applyTransform(selectedNode); saveAll(); });
+  document.getElementById('selName').addEventListener('change',()=> refreshStageLegend());
+  document.getElementById('selSize').addEventListener('input',()=>{ if(!selectedNode) return; const v=parseFloat(document.getElementById('selSize').value); const k=selectedNode.dataset.key||''; if(k==='arrow' || k==='label'){ const lbl=findText(selectedNode); if(lbl){ const base = (k==='arrow')?14:16; const fs=Math.max(8, Math.round(base*v)); lbl.setAttribute('font-size', String(fs)); } } else { selectedNode.dataset.scale=String(v); applyTransform(selectedNode); } saveAll(); });
   document.getElementById('selSize').addEventListener('change',()=> saveAll());
   document.getElementById('delSel').addEventListener('click',()=>{ if(!selectedNode) return; selectedNode.remove(); selectedNode=null; document.getElementById('selName').value=''; saveAll(); });
-  // Color picker & duplicate
-  const selColor=document.getElementById('selColor');
-  if(selColor){
-    selColor.addEventListener('input',()=>{
-      if(!selectedNode) return;
-      const color=selColor.value;
-      // Only colorize background rectangle; keep strokes/text default for clarity
-      const bg=selectedNode.querySelector('rect[data-bg]');
-      if(bg){ bg.setAttribute('fill', color); }
-      saveAll();
+  document.getElementById('delSel').addEventListener('click',()=> refreshStageLegend());
+  // Show label toggle
+  const showLabelChk=document.getElementById('selShowLabel');
+  if(showLabelChk){
+    showLabelChk.addEventListener('change',()=>{
+      if(!selectedNode) return; selectedNode.dataset.showLabel= showLabelChk.checked ? '1':'0'; const lbl=findText(selectedNode); if(lbl){ lbl.style.display= showLabelChk.checked ? 'block':'none'; } saveAll(); refreshStageLegend();
     });
-    selColor.addEventListener('change',()=> saveAll());
   }
+  // Duplicate button
   const dupBtn=document.getElementById('dupSel');
   if(dupBtn){ dupBtn.addEventListener('click',()=>{
     if(!selectedNode) return;
@@ -1326,7 +1484,7 @@
     svg.appendChild(clone);
     enableSvgDrag(clone);
     selectNode(clone);
-    saveAll();
+    refreshStageLegend(); saveAll();
   }); }
   // Global touch-based toolbox drag handling
   let activeToolTouch=null;
@@ -1340,6 +1498,162 @@
       } }
     activeToolTouch=null;
   });
+  function getStageGroups(){ const full=document.getElementById('stageSvgFull'); if(!full) return []; return Array.from(full.querySelectorAll('g[data-draggable]')); }
+  // Draw curvy dotted cables between connected items (routeTo chains)
+  function refreshCables(svg){ if(!svg) return; const nodes=Array.from(svg.querySelectorAll('g[data-draggable]'));
+    // ensure a dedicated layer
+    let layer=svg.querySelector('g[data-layer="cables"]'); if(layer){ layer.remove(); }
+    layer=document.createElementNS('http://www.w3.org/2000/svg','g'); layer.setAttribute('data-layer','cables'); layer.setAttribute('pointer-events','none'); svg.appendChild(layer);
+    const byId=new Map(nodes.map(n=> [n.dataset.id, n]));
+    function centerOf(n){ return {x:parseFloat(n.dataset.x||'0')||0, y:parseFloat(n.dataset.y||'0')||0}; }
+    function nodeRadius(n){ const s=Math.max(0.3, parseFloat(n.dataset.scale||'1')||1); const k=n.dataset.key||''; const base=(k==='label'||k==='arrow')? 20 : 30; return base*s; }
+    function sampleQuad(a,c,b,t){ const x=(1-t)*(1-t)*a.x + 2*(1-t)*t*c.x + t*t*b.x; const y=(1-t)*(1-t)*a.y + 2*(1-t)*t*c.y + t*t*b.y; return {x,y}; }
+    function pickControl(a,b,initial, obstacles){ let c={x:initial.x,y:initial.y}; const clamp=(v,min,max)=> Math.max(min, Math.min(max,v)); const vb=svg.viewBox && svg.viewBox.baseVal; const bx={x:0,y:0,w:(vb?vb.width:1500),h:(vb?vb.height:900)};
+      for(let it=0; it<3; it++){
+        // sample along curve, compute repulsion from obstacles
+        let rx=0, ry=0; const steps=10; for(let i=1;i<steps;i++){ const t=i/steps; const p=sampleQuad(a,c,b,t); obstacles.forEach(o=>{
+            const dx=p.x-o.x, dy=p.y-o.y; const d=Math.hypot(dx,dy); const th=o.r+40; if(d<th && d>1e-3){ const f=(th-d)/th; rx += (dx/d)*f; ry += (dy/d)*f; }
+        }); }
+        // apply small push
+        const push=30; c.x = clamp(c.x + rx*push, bx.x+4, bx.x+bx.w-4); c.y = clamp(c.y + ry*push, bx.y+4, bx.y+bx.h-4);
+      }
+      return c;
+    }
+    // build obstacle list (centers + radii)
+    const obstacles = nodes.map(n=>{ const c=centerOf(n); return {x:c.x,y:c.y,r:nodeRadius(n)}; });
+    nodes.forEach(src=>{
+      const to=src.dataset.routeTo; if(!to) return; const dst=byId.get(to); if(!dst) return;
+      // make sure the connection is allowed; use effectiveTargets if available
+      try{ if(typeof effectiveTargets==='function'){ const ok=effectiveTargets(src).includes(dst.dataset.type||'other'); if(!ok) return; } }catch(_){ /* ignore */ }
+      const a=centerOf(src), b=centerOf(dst); const dx=b.x-a.x, dy=b.y-a.y; const len=Math.hypot(dx,dy)||1; const mx=(a.x+b.x)/2, my=(a.y+b.y)/2; const nx=-dy/len, ny=dx/len; const baseK=30; const init={x:mx+nx*baseK, y:my+ny*baseK};
+      const c=pickControl(a,b,init, obstacles);
+      const d=`M ${a.x} ${a.y} Q ${c.x} ${c.y} ${b.x} ${b.y}`;
+      const p=document.createElementNS('http://www.w3.org/2000/svg','path'); p.setAttribute('d', d); p.setAttribute('fill','none'); p.setAttribute('stroke','#111'); p.setAttribute('stroke-width','1.5'); p.setAttribute('stroke-dasharray','4 3'); layer.appendChild(p);
+    });
+  }
+  function refreshStageLegend(){
+    const host=document.getElementById('stageLegend'); if(!host) return;
+    const rows=getStageGroups();
+    host.innerHTML='';
+    // sort with priority processors first
+    rows.sort((a,b)=>{
+      const ta=a.dataset.type||'other', tb=b.dataset.type||'other';
+      const pa=PRIORITY_TYPES.has(ta), pb=PRIORITY_TYPES.has(tb);
+      if(pa&&!pb) return -1; if(pb&&!pa) return 1; return parseInt(a.dataset.id||'0')-parseInt(b.dataset.id||'0');
+    });
+
+    // helpers for channels and chains
+    function isStereo(node){ return (node.dataset.key||'')==='stereoPair'; }
+    function occupiesChannel(node, ch){ if(!ch) return false; const a=parseInt(node.dataset.channel||'0',10); if(!a) return false; if(isStereo(node)){ return ch===a || ch===a+1; } return ch===a; }
+    function channelTaken(ch, except){ return rows.find(r=> r!==except && occupiesChannel(r, ch)); }
+    function nextFreeChannel(start, dir, stereo){ let c=start; const upper=stereo?63:64; const lower=1; while(true){ if(c<lower || c>upper) return null; const occupied = channelTaken(c, null) || (stereo && channelTaken(c+1, null)); if(!occupied) return c; c += dir; }
+    }
+    // helper to build chain string
+    function buildChain(from){
+      const seen=new Set();
+      const parts=[];
+      let cur=from;
+      while(cur){
+        if(seen.has(cur)) { parts.push('[loop]'); break; }
+        seen.add(cur);
+        const t=findText(cur); const base=(t && t.textContent)||cur.dataset.key||'Item';
+        parts.push(base);
+        const nextId=cur.dataset.routeTo || '';
+        if(!nextId) break;
+        const next=rows.find(r=> r.dataset.id===nextId);
+        if(!next) break;
+        // validate that next type is an allowed target from current type
+        const allowed=effectiveTargets(cur);
+        if(allowed.indexOf(next.dataset.type||'other')===-1){ break; }
+        cur=next;
+      }
+      const last=cur||from;
+      if(last.dataset.channel){
+        if(isStereo(last)){
+          const a=parseInt(last.dataset.channel,10); parts.push('Ch '+a+' & '+(a+1));
+        }else{
+          parts.push('Ch '+last.dataset.channel);
+        }
+      }
+      return parts.join(' - ');
+    }
+
+      // Build incoming map to identify roots (start of chains)
+      const incoming=new Set(); rows.forEach(r=>{ const to=r.dataset.routeTo; if(to) incoming.add(to); });
+      // Filter: hide annotations & utility props; compact view = only root items OR items that expose a channel directly (need channel editing)
+      const displayRows = rows.filter(r=>{
+        const k=r.dataset.key||''; const tp=r.dataset.type||'other';
+        if(k==='label' || k==='arrow') return false;
+        if(tp==='utility') return false;
+        const targets=ROUTE_TARGETS[tp]||[];
+        const exposesChannel=targets.includes('channel');
+        const isRoot=!incoming.has(r.dataset.id);
+        return isRoot || exposesChannel; // keep if chain start or endpoint with channel
+      });
+    // Precompute candidates map for routing dropdown population
+    const byType={}; displayRows.forEach(r=>{ const t=r.dataset.type||'other'; (byType[t]||(byType[t]=[])).push(r); });
+
+    // determine dynamic channel range (still consider all rows for occupancy logic)
+    const assignedChannels=rows.map(r=> parseInt(r.dataset.channel||'0',10)).filter(n=> n>0);
+    const maxChan=assignedChannels.length? Math.max(...assignedChannels):0;
+      displayRows.forEach((g,i)=>{
+      const item=document.createElement('div'); item.className='row';
+      const key=g.dataset.key||''; const icon=ICON_ITEMS.find(x=>x.key===key);
+      const iconCell=document.createElement('div'); if(icon){ const im=document.createElement('img'); im.src=icon.src; im.alt=icon.label; iconCell.appendChild(im); } item.appendChild(iconCell);
+      const nameCell=document.createElement('div'); nameCell.className='nm'; const tEl=findText(g); nameCell.textContent=(tEl && tEl.textContent) || (icon?icon.label:('Item '+(i+1))); item.appendChild(nameCell);
+
+      const type=g.dataset.type||'other';
+  const targets=effectiveTargets(g);
+      // Routing (routeTo or channel) cell
+      const routeCell=document.createElement('div');
+      let chInput=null;
+      // Channel editing is applied to the chain endpoint, not necessarily the current row
+      const resolveEnd=(start)=>{ let s=new Set(); let cur=start; while(cur && !s.has(cur)){ s.add(cur); const nid=cur.dataset.routeTo||''; if(!nid) break; const nxt=rows.find(r=> r.dataset.id===nid); if(!nxt) break; const allowed=effectiveTargets(cur); if(allowed.indexOf(nxt.dataset.type||'other')===-1) break; cur=nxt; } return cur||start; };
+      const endNode=resolveEnd(g);
+      const endTargets=effectiveTargets(endNode);
+      if(endTargets.includes('channel')){
+        const stereo=isStereo(endNode);
+        chInput=document.createElement('input'); chInput.type='number'; chInput.min='1'; chInput.max= stereo ? '63' : '64'; chInput.step='1'; chInput.placeholder='Ch'; chInput.style.width='56px'; chInput.value=endNode.dataset.channel||''; chInput.title='Right-click drag between items to auto-chain';
+        let prevVal = endNode.dataset.channel||'';
+        const applyChannel=(ch)=>{ if(!ch){ endNode.dataset.channel=''; delete endNode.dataset.channel2; saveAll(); refreshStageLegend(); return; }
+          // block if taken
+          if(channelTaken(ch, endNode) || (stereo && channelTaken(ch+1, endNode))){ chInput.value = prevVal; return; }
+          endNode.dataset.channel=String(ch); if(stereo){ endNode.dataset.channel2=String(ch+1); } else { delete endNode.dataset.channel2; }
+          prevVal=String(ch); saveAll(); refreshStageLegend(); };
+        const onChanChange=()=>{ const v=parseInt(chInput.value||'0',10); if(!isFinite(v) || v<1){ applyChannel(null); }
+          else { const val=Math.min(stereo?63:64, v); if(channelTaken(val, endNode) || (stereo && channelTaken(val+1, endNode))){ chInput.value=prevVal; return; } applyChannel(val); } };
+        chInput.addEventListener('focus',()=>{ prevVal = chInput.value; });
+        chInput.addEventListener('change', onChanChange);
+        chInput.addEventListener('blur', onChanChange);
+        chInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ onChanChange(); }
+          if(e.key==='ArrowUp' || e.key==='ArrowDown'){ e.preventDefault(); const dir = e.key==='ArrowUp' ? 1 : -1; const cur=parseInt(chInput.value|| (prevVal||'0'),10) || 0; const start = Math.max(1, cur + dir); const nf = nextFreeChannel(start, dir, stereo); if(nf!=null){ chInput.value=String(nf); applyChannel(nf); } }
+        });
+        chInput.addEventListener('input', ()=>{ const cur=parseInt(chInput.value||'0',10)||0; const pv=parseInt(prevVal||'0',10)||0; const stereoNow=stereo; if(cur===pv+1 || cur===pv-1){ const dir = (cur>pv)?1:-1; const nf = nextFreeChannel(cur, dir, stereoNow); if(nf!=null){ chInput.value=String(nf); applyChannel(nf); } } });
+        routeCell.appendChild(chInput);
+      }
+      // RouteTo select for processors / sources that can feed other processors
+      if(targets.filter(t=> t!=='channel').length){
+        const rtSel=document.createElement('select'); rtSel.className='routeSel'; rtSel.appendChild(new Option('→ none',''));
+        const elig=[]; targets.forEach(tt=>{ if(tt==='channel') return; const groups=byType[tt]; if(groups){ groups.forEach(gr=>{ if(gr!==g) elig.push(gr); }); } });
+        elig.forEach(gr=>{ const name=findText(gr); const label=(name && name.textContent)||gr.dataset.key||('Item '+gr.dataset.id); rtSel.appendChild(new Option(label, gr.dataset.id)); });
+        // sanitize existing route if invalid
+        if(g.dataset.routeTo){ const curNext=rows.find(r=> r.dataset.id===g.dataset.routeTo); const allowed=effectiveTargets(g); if(!curNext || allowed.indexOf(curNext.dataset.type||'other')===-1){ g.dataset.routeTo=''; } }
+        rtSel.value=g.dataset.routeTo||'';
+        rtSel.addEventListener('change',()=>{ const dest=rows.find(r=> r.dataset.id===rtSel.value); const allowed=effectiveTargets(g); if(dest && allowed.indexOf(dest.dataset.type||'other')!==-1){ g.dataset.routeTo=rtSel.value; } else { g.dataset.routeTo=''; } saveAll(); refreshStageLegend(); });
+        routeCell.appendChild(rtSel);
+      }
+      item.appendChild(routeCell);
+
+      // Chain cell
+  const chainCell=document.createElement('div'); chainCell.className='chain'; chainCell.style.textAlign='left'; chainCell.textContent=buildChain(g); item.appendChild(chainCell);
+
+      host.appendChild(item);
+    });
+    // After legend rebuild, refresh visual cables on both editor and stored SVGs
+    const svgFull=document.getElementById('stageSvgFull'); if(svgFull) refreshCables(svgFull);
+    const svgSmall=document.getElementById('stageSvg'); if(svgSmall) refreshCables(svgSmall);
+  }
+  /* Filter system removed: icons now assumed to have proper transparency baked in. */
 
     // Print Tech Rider + Stage
   // Repurpose combined print button to open chooser; user can select Tech and/or Stage
@@ -1410,6 +1724,36 @@
         // seed full editor from stored svg
         const store=document.getElementById('stageSvg');
         const full=document.getElementById('stageSvgFull');
+        // enforce stage outline
+        if(full && !full.classList.contains('bw')) full.classList.add('bw');
+        const bg=full && full.querySelector('rect.stage-bg');
+        if(bg){ bg.setAttribute('fill','#fff'); bg.setAttribute('stroke','#000'); bg.setAttribute('stroke-width','2'); }
+        // initialize resize handles (corner-only interaction) and apply stored size
+        (function initStageResize(){
+          const frame=document.getElementById('stageFrame'); if(!frame||!full) return;
+          // default size if not previously set
+          const prevW=parseInt(full.style.width||'0',10); const prevH=parseInt(full.style.height||'0',10);
+            if(prevW>0 && prevH>0){ frame.style.width=prevW+'px'; frame.style.height=prevH+'px'; }
+            else { frame.style.width='1000px'; frame.style.height='600px'; full.style.width='1000px'; full.style.height='600px'; }
+          const handles=frame.querySelectorAll('.stage-handle');
+          handles.forEach(h=>{
+            h.addEventListener('mousedown',e=>{
+              if(e.button!==0) return; e.preventDefault();
+              const startX=e.clientX, startY=e.clientY; const startW=frame.offsetWidth, startH=frame.offsetHeight; const pos=h.dataset.handle;
+              function move(ev){
+                let dx=ev.clientX-startX, dy=ev.clientY-startY; let newW=startW, newH=startH;
+                if(pos==='tr'){ newW=startW+dx; newH=startH-dy; }
+                if(pos==='tl'){ newW=startW-dx; newH=startH-dy; }
+                if(pos==='br'){ newW=startW+dx; newH=startH+dy; }
+                if(pos==='bl'){ newW=startW-dx; newH=startH+dy; }
+                newW=Math.max(600,newW); newH=Math.max(360,newH);
+                frame.style.width=newW+'px'; frame.style.height=newH+'px'; full.style.width=newW+'px'; full.style.height=newH+'px';
+              }
+              function up(){ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); saveAll(); }
+              document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
+            });
+          });
+        })();
         if(!full){ throw new Error('Stage SVG not found'); }
         // reset children (keep first two nodes: bg rect and title)
         while(full.childNodes.length>2) full.removeChild(full.lastChild);
@@ -1417,10 +1761,27 @@
           Array.from(store.querySelectorAll('g[data-draggable]')).forEach(g=> full.appendChild(g.cloneNode(true)));
           var tnode=store.querySelector('#stageTitle'); var ttl=document.getElementById('stageTitleFull'); if(ttl){ ttl.textContent=(tnode && tnode.textContent) || ttl.textContent; }
         }
-        Array.from(full.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
+  // Ensure arrow markers are available
+    ensureStageMarkers(full);
+  // Filter defs removed (icons expected to be clean PNGs without white fill)
+        // Migration: remove legacy background rects behind emojis/images
+        Array.from(full.querySelectorAll('g[data-draggable]')).forEach(gr=>{
+          // assign ids/types to legacy nodes
+          if(!gr.dataset.id){ gr.dataset.id=String(_nextStageId++); }
+          if(!gr.dataset.type){ const k=gr.dataset.key||''; gr.dataset.type=TYPE_MAP[k]||'other'; }
+          if(!('showLabel' in gr.dataset)) gr.dataset.showLabel = (gr.dataset.key==='label' || gr.dataset.key==='arrow') ? '1':'0';
+          const hasImg = !!gr.querySelector('image');
+          const hadEmoji = !!gr.querySelector('text[data-role="emoji"]');
+          if(hasImg || hadEmoji){ Array.from(gr.querySelectorAll('rect[data-bg]')).forEach(r=> r.remove()); }
+          // Remove any legacy filter attributes
+          Array.from(gr.querySelectorAll('image[filter]')).forEach(im=> im.removeAttribute('filter'));
+        });
+  Array.from(full.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
+  refreshCables(full);
         bindSelection(full);
         const modal=document.getElementById('stageModal'); if(!modal){ throw new Error('Stage modal not found'); }
         modal.classList.add('open');
+        refreshStageLegend();
       }catch(err){
         if(window && window.alert){ alert('Could not open Stage Plot editor. See console for details.'); }
         if(console && console.error) console.error(err);
@@ -1441,17 +1802,23 @@
       let small=document.getElementById('stageSvg');
       if(full){
         if(!small){
-          // create a small stored SVG container if missing
+          // create a small stored SVG container if missing; clone with children to preserve background/title
           const store=document.getElementById('stageStore');
-          if(store){ small=full.cloneNode(false); small.id='stageSvg'; small.classList.add('bw'); store.appendChild(small); }
+          if(store){ small=full.cloneNode(true); small.id='stageSvg'; small.classList.add('bw'); store.appendChild(small); }
         }
         if(small){
           // remove previous draggable groups
           Array.from(small.querySelectorAll('g[data-draggable]')).forEach(n=> n.remove());
           // clone all current groups from full
           Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=> small.appendChild(g.cloneNode(true)));
+          // Filter system removed; no additional defs needed for small copy
           // rebind drags on stored copy for any inline interactions
           Array.from(small.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
+          // ensure label hidden state preserved visually
+          Array.from(small.querySelectorAll('g[data-draggable]')).forEach(gr=>{ const lbl=findText(gr); if(lbl){ lbl.style.display = gr.dataset.showLabel==='1' ? 'block':'none'; } });
+          // ensure arrow marker exists in stored svg
+          ensureStageMarkers(small);
+          refreshCables(small);
           // sync title text
           const fullTitle=document.getElementById('stageTitleFull');
           let smallTitle=document.getElementById('stageTitle');
@@ -1461,7 +1828,14 @@
           }
           if(fullTitle){
             if(smallTitle){ smallTitle.textContent=fullTitle.textContent; }
+            else {
+              // if title missing, create one centered at top
+              const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+              t.setAttribute('id','stageTitle'); t.setAttribute('x','500'); t.setAttribute('y','36'); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','22'); t.setAttribute('font-weight','bold'); t.textContent=fullTitle.textContent; small.appendChild(t);
+            }
           }
+          // enforce background outline on stored copy
+          const bg=small.querySelector('rect.stage-bg'); if(bg){ bg.setAttribute('fill','#fff'); bg.setAttribute('stroke','#000'); bg.setAttribute('stroke-width','2'); }
         }
       }
       saveAll();
@@ -1492,11 +1866,60 @@
       addGlyphFull(key,{x:Math.round(svgP.x), y:Math.round(svgP.y)});
     });
 
+    // Arrow drawing: drag anywhere in SVG (hold Shift to draw over items)
+    (function(){
+      let drawing=null; // {x0,y0, preview}
+      const svg=fullSvg;
+      ensureStageMarkers(svg);
+      function svgPointFromClient(x,y){ const pt=svg.createSVGPoint(); pt.x=x; pt.y=y; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+      function startDraw(x,y){ drawing={x0:x,y0:y, preview:document.createElementNS('http://www.w3.org/2000/svg','line')}; const ln=drawing.preview; ln.setAttribute('x1',String(x)); ln.setAttribute('y1',String(y)); ln.setAttribute('x2',String(x)); ln.setAttribute('y2',String(y)); ln.setAttribute('stroke','#000'); ln.setAttribute('stroke-dasharray','4,3'); ln.setAttribute('stroke-width','2'); ln.setAttribute('pointer-events','none'); svg.appendChild(ln); }
+      function updateDraw(x,y){ if(!drawing) return; drawing.preview.setAttribute('x2',String(x)); drawing.preview.setAttribute('y2',String(y)); }
+      function finishDraw(x1,y1){ if(!drawing){ return; } const {x0,y0, preview}=drawing; svg.removeChild(preview); drawing=null; const dx=x1-x0, dy=y1-y0; const dist=Math.hypot(dx,dy); if(dist<6){ // treat as click -> create label here
+          // Ask first; cancel or empty -> abort (no stray labels)
+          let entered=prompt('Text label:',''); if(entered==null) return; entered=String(entered).trim(); if(!entered) return;
+          // Create label at point
+          const gN=document.createElementNS('http://www.w3.org/2000/svg','g'); gN.dataset.x=String(Math.round(x0)); gN.dataset.y=String(Math.round(y0)); gN.dataset.scale='1'; gN.setAttribute('data-draggable','1'); gN.dataset.key='label'; gN.dataset.type='other'; gN.dataset.showLabel='1';
+          const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x','0'); t.setAttribute('y','0'); t.setAttribute('font-size','16'); t.setAttribute('data-role','label'); t.textContent=entered; gN.appendChild(t);
+          applyTransform(gN); svg.appendChild(gN); enableSvgDrag(gN); selectNode(gN); refreshStageLegend(); saveAll(); const nameInp=document.getElementById('selName'); if(nameInp){ nameInp.focus(); nameInp.select && nameInp.select(); }
+          _suppressBgClick=true;
+          return;
+        }
+        // Create arrow group anchored at origin (x0,y0) pointing to (x1,y1)
+        const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.dataset.x=String(Math.round(x0)); g.dataset.y=String(Math.round(y0)); g.dataset.scale='1'; g.setAttribute('data-draggable','1'); g.dataset.key='arrow'; g.dataset.type='other'; g.dataset.showLabel='1';
+        const ln=document.createElementNS('http://www.w3.org/2000/svg','line'); ln.setAttribute('x1','0'); ln.setAttribute('y1','0'); ln.setAttribute('x2',String(Math.round(dx))); ln.setAttribute('y2',String(Math.round(dy))); ln.setAttribute('stroke','#000'); ln.setAttribute('stroke-width','2'); ln.setAttribute('marker-end','url(#arrowHead)'); g.appendChild(ln);
+        // Ask for arrow label; cancel or empty -> abort entire arrow creation
+        let enteredA=prompt('Arrow label:',''); if(enteredA==null) return; enteredA=String(enteredA).trim(); if(!enteredA) return;
+  const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x', (Math.abs(dx)>Math.abs(dy) ? (dx<0?-8:8) : 0) );
+  const yOff = (dy<0? 14 : -10);
+  t.setAttribute('y', String(yOff));
+  t.setAttribute('font-size','14'); t.setAttribute('text-anchor','start'); t.setAttribute('dominant-baseline','alphabetic'); t.setAttribute('data-role','label');
+  t.textContent=enteredA; g.appendChild(t);
+        applyTransform(g); svg.appendChild(g); enableSvgDrag(g); selectNode(g); refreshStageLegend(); saveAll();
+        _suppressBgClick=true;
+      }
+      // Mouse support (capture to preempt item drag when Shift is held)
+      svg.addEventListener('mousedown',e=>{
+        if(e.button!==0) return;
+        // ignore UI controls outside svg content
+        if(e.target.closest('#stageLegend,.stage-inspector,.stage-actions')) return;
+        const overItem = !!(e.target.closest && e.target.closest('g[data-draggable]'));
+        if(overItem && !e.shiftKey) return; // allow drawing over items only with Shift
+        const p=svgPointFromClient(e.clientX,e.clientY); startDraw(p.x,p.y); e.stopImmediatePropagation(); e.preventDefault();
+      }, {capture:true});
+      svg.addEventListener('mousemove',e=>{ if(!drawing) return; const p=svgPointFromClient(e.clientX,e.clientY); updateDraw(p.x,p.y); }, {capture:true});
+      window.addEventListener('mouseup',e=>{ if(!drawing) return; const p=svgPointFromClient(e.clientX,e.clientY); finishDraw(p.x,p.y); }, {capture:true});
+      // Touch support (capture); drawing over items is always permitted on touch (no modifier keys)
+      svg.addEventListener('touchstart',e=>{ const t=e.touches[0]; if(!t) return; if(e.target.closest('#stageLegend,.stage-inspector,.stage-actions')) return; const p=svgPointFromClient(t.clientX,t.clientY); startDraw(p.x,p.y); e.preventDefault(); e.stopImmediatePropagation(); }, {passive:false, capture:true});
+      window.addEventListener('touchmove',e=>{ if(!drawing) return; const t=e.touches[0]; if(!t) return; const p=svgPointFromClient(t.clientX,t.clientY); updateDraw(p.x,p.y); }, {passive:true});
+      window.addEventListener('touchend',e=>{ if(!drawing) return; const ct=(e.changedTouches && e.changedTouches[0])|| (e.touches && e.touches[0]); if(!ct) return; const p=svgPointFromClient(ct.clientX, ct.clientY); finishDraw(p.x,p.y); }, {passive:true});
+    })();
+
     // Custom tools in full editor
     document.getElementById('addLabelTool').addEventListener('click',()=>{
-      const text=prompt('Label text:','Mic 1'); if(!text) return; const svg=document.getElementById('stageSvgFull');
-      const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.dataset.x='120'; g.dataset.y='120'; g.dataset.scale='1'; g.setAttribute('data-draggable','1');
-      const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x','0'); t.setAttribute('y','0'); t.setAttribute('font-size','16'); t.textContent=text; g.appendChild(t);
+      let text=prompt('Label text:',''); if(text==null) return; text=String(text).trim(); if(!text) return; const svg=document.getElementById('stageSvgFull');
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.dataset.x='120'; g.dataset.y='120'; g.dataset.scale='1'; g.setAttribute('data-draggable','1'); g.dataset.key='label'; g.dataset.type='other'; g.dataset.showLabel='1';
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x','0'); t.setAttribute('y','0'); t.setAttribute('font-size','16'); t.setAttribute('data-role','label'); t.textContent=text; g.appendChild(t);
       applyTransform(g); svg.appendChild(g); enableSvgDrag(g); selectNode(g); saveAll();
     });
     document.getElementById('addRectTool').addEventListener('click',()=>{
@@ -1510,20 +1933,17 @@
     document.getElementById('addDefaultLayout').addEventListener('click',()=>{
       const svg=document.getElementById('stageSvgFull');
       const cx=750, cy=450; // center of 1500x900
-      // Drums center back
-      addGlyphFull('drums',{x:cx, y:cy-120});
+      // Basic kit pieces center back
+      addGlyphFull('kick',{x:cx, y:cy-120});
+      addGlyphFull('hihat',{x:cx-40, y:cy-130});
+      addGlyphFull('cymbal1',{x:cx+40, y:cy-130});
       // Bass left
       addGlyphFull('bass',{x:cx-280, y:cy});
-      // Guitar right
-      addGlyphFull('guitar',{x:cx+280, y:cy});
+      // Guitar right (electric)
+      addGlyphFull('electric',{x:cx+280, y:cy});
       // Vox mics front left/right
-      addGlyphFull('mic',{x:cx-120, y:cy+140});
-      addGlyphFull('mic',{x:cx+120, y:cy+140});
-      // Monitors (blocks) near mics
-      addGlyphFull('block',{x:cx-140, y:cy+100});
-      addGlyphFull('block',{x:cx+140, y:cy+100});
-      // Keys if needed (place left mid)
-      addGlyphFull('keys',{x:cx-360, y:cy+40});
+      addGlyphFull('vocal',{x:cx-120, y:cy+140});
+      addGlyphFull('vocal',{x:cx+120, y:cy+140});
       saveAll();
     });
 
@@ -1693,6 +2113,20 @@
       // Ensure we have a stored stage SVG even if fullscreen editor hasn't been opened
       let src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
       if(!src){ const store=document.getElementById('stageStore'); if(store){ src=store.querySelector('svg'); } }
+      // Build legend for print
+      const legend=document.createElement('table'); legend.className='tech-table';
+      const thead=document.createElement('thead'); thead.innerHTML='<tr><th>Ch</th><th>Item</th></tr>';
+      const tbody=document.createElement('tbody');
+      if(src){
+        const items=Array.from(src.querySelectorAll('g[data-draggable]')).map((g,i)=>{
+          const t=g.querySelector('text[data-role="label"]')||g.querySelector('text');
+          const label=t && t.textContent ? t.textContent : `Item ${i+1}`;
+          const ch=g.dataset.channel || '1';
+          return {label, ch};
+        });
+        items.forEach(it=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${it.ch}</td><td>${it.label}</td>`; tbody.appendChild(tr); });
+      }
+      legend.append(thead,tbody); stageOut.appendChild(legend);
       if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in'; stageOut.appendChild(clone); }
       const el=document.getElementById('sheetTech');
       if(typeof html2canvas==='undefined' || typeof window.jspdf==='undefined'){
@@ -1728,7 +2162,42 @@
       if(hf.sub){ const subTxt=[gig.date||'', gig.address||'', gig.contact||''].filter(Boolean).join(' • '); if(subTxt) hdr.append(el('div','sub', subTxt)); }
       if(hf.notes && gig.notes) hdr.append(el('div','notes', gig.notes));
     }
-  async function printStageOnce(){ prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML=''; const stageOut=$('#stagePrint'); stageOut.innerHTML=''; let src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg'); if(!src){ const store=document.getElementById('stageStore'); if(store){ src=store.querySelector('svg'); } } if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in'; stageOut.appendChild(clone); } document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
+  async function printStageOnce(){
+    prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML=''; const stageOut=$('#stagePrint'); stageOut.innerHTML='';
+    let src=document.getElementById('stageSvgFull') || document.getElementById('stageSvg'); if(!src){ const store=document.getElementById('stageStore'); if(store){ src=store.querySelector('svg'); } }
+    // Build channel-ordered legend above stage (exclude labels/arrows/utility, one row per channel)
+    const legend=document.createElement('table'); legend.className='tech-table'; const thead=document.createElement('thead'); thead.innerHTML='<tr><th>Channel</th><th>Chain</th></tr>'; const tbody=document.createElement('tbody');
+    if(src){
+      const rows=Array.from(src.querySelectorAll('g[data-draggable]'));
+      const isStereo=n=> (n.dataset.key||'')==='stereoPair';
+      const typeOf=n=> n.dataset.type||'other';
+      // helper: find root by walking predecessors until none
+      const findRoot=(end)=>{ let cur=end; const seen=new Set(); while(cur && !seen.has(cur)){ seen.add(cur); const prev=rows.find(r=> r.dataset.routeTo===cur.dataset.id && effectiveTargets(r).includes(typeOf(cur))); if(!prev) break; cur=prev; } return cur||end; };
+      // helper: build forward chain from root to endpoint
+      const buildChain=(from)=>{ const seen=new Set(); const parts=[]; let cur=from; while(cur){ if(seen.has(cur)) break; seen.add(cur); const t=cur.querySelector('text[data-role="label"]')||cur.querySelector('text'); const base=(t && t.textContent)||(cur.dataset.key||'Item'); parts.push(base); const nid=cur.dataset.routeTo||''; if(!nid) break; const next=rows.find(r=> r.dataset.id===nid); if(!next) break; const ok=effectiveTargets(cur).includes(typeOf(next)); if(!ok) break; cur=next; } const last=cur||from; if(last.dataset.channel){ if(isStereo(last)){ const a=parseInt(last.dataset.channel,10); parts.push('Ch '+a+' & '+(a+1)); } else { parts.push('Ch '+last.dataset.channel); } } return parts.join(' - '); };
+      // collect endpoints with channels
+      const endpoints=rows.filter(r=> r.dataset.channel && r.dataset.channel!=='');
+      const entries=[]; const used=new Set();
+      endpoints.forEach(end=>{
+        // ignore annotations/utility
+        const k=end.dataset.key||''; const tp=typeOf(end);
+        if(k==='label' || k==='arrow' || tp==='utility') return;
+        const ch=parseInt(end.dataset.channel||'0',10)||0; if(ch<=0) return;
+        const key=isStereo(end)? `stereo-${ch}` : `mono-${ch}`; if(used.has(key)) return; used.add(key);
+        const root=findRoot(end);
+        const chain=buildChain(root);
+        entries.push({ch, stereo:isStereo(end), chain});
+      });
+      entries.sort((a,b)=> a.ch-b.ch);
+      entries.forEach(row=>{ const tr=document.createElement('tr'); const chCell=document.createElement('td'); chCell.textContent = row.stereo ? `${row.ch} & ${row.ch+1}` : String(row.ch); const chainCell=document.createElement('td'); chainCell.textContent=row.chain; tr.append(chCell, chainCell); tbody.appendChild(tr); });
+    }
+    legend.append(thead,tbody); stageOut.appendChild(legend);
+    if(src){ const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in';
+      // Ensure a visible 3px border for print on top layer
+      try{ const vb=clone.viewBox && clone.viewBox.baseVal; if(vb){ const br=document.createElementNS('http://www.w3.org/2000/svg','rect'); br.setAttribute('x', '1.5'); br.setAttribute('y','1.5'); br.setAttribute('width', String(vb.width-3)); br.setAttribute('height', String(vb.height-3)); br.setAttribute('fill','none'); br.setAttribute('stroke','#000'); br.setAttribute('stroke-width','3'); br.setAttribute('pointer-events','none'); br.setAttribute('data-print-border','1'); clone.appendChild(br); } }catch(_){/* ignore */}
+      stageOut.appendChild(clone); }
+    document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise();
+  }
     async function printTechOnlyOnce(){ prepHdrTech(); const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const techOut=$('#techPrint'); techOut.innerHTML=''; const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); const note=(techNotes && techNotes[s.id]) || s.tech || ''; tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${note}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl); document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
 
     // Save/Load Profile (.BAND)
