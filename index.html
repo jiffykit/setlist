@@ -246,6 +246,18 @@
         <div style="margin-top:12px;display:flex;justify-content:flex-end">
           <button class="btn danger" id="clearDB">Clear Database</button>
         </div>
+        <div class="import-block" id="importBlock" style="margin-top:22px;padding:14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc">
+          <h3 style="margin:0 0 10px;font-size:18px">Import Songs (OCR / Paste)</h3>
+          <textarea id="importText" rows="4" placeholder="Paste lines e.g.\nSong Title - Am (Capo 2)\nAnother Song G Capo 3\nThird Song - F#m" style="width:100%;resize:vertical;font-family:monospace"></textarea>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center">
+            <input type="file" id="importFile" accept=".txt,.pdf,image/*" style="flex:1 1 240px" />
+            <button class="btn" id="importParseBtn" type="button">Parse Text & Preview</button>
+            <button class="btn secondary" id="importCommitBtn" type="button" disabled>Add Parsed Songs</button>
+          </div>
+          <div id="importStatus" style="margin-top:8px;font-size:12px;color:#64748b"></div>
+          <div id="importPreview" style="margin-top:10px;font-size:13px;line-height:1.4"></div>
+          <div style="margin-top:10px;font-size:11px;color:#94a3b8">Image/PDF OCR uses Tesseract.js & PDF.js in-browser; accuracy varies with scan quality. Keys & capo detected heuristically. Review before importing.</div>
+        </div>
       </div>
 
       <!-- Combined Setlist + Generator Tab -->
@@ -2679,6 +2691,59 @@
         r.readAsText(f);
       });
     }
+    // --- Import (OCR / Paste) ---
+    (function setupImport(){
+      const txt=document.getElementById('importText');
+      const file=document.getElementById('importFile');
+      const parseBtn=document.getElementById('importParseBtn');
+      const commitBtn=document.getElementById('importCommitBtn');
+      const statusEl=document.getElementById('importStatus');
+      const previewEl=document.getElementById('importPreview');
+      if(!txt || !file || !parseBtn || !commitBtn) return;
+      let parsed=[];
+      function sanitizeLine(line){ return line.replace(/\s+/g,' ').trim(); }
+      function detectCapo(str){ const m=str.match(/capo\s*(\d{1,2})/i); if(m){ const v=parseInt(m[1],10); if(Number.isInteger(v) && v>=0 && v<=24) return v; } return 0; }
+      function detectKey(str){ // first standalone musical key token
+        const m=str.match(/\b([A-G](?:#|b)?m?)\b/); return m? m[1] : ''; }
+      function parseSongLines(text){
+        const out=[]; const lines=text.split(/\r?\n/);
+        for(let raw of lines){ let line=sanitizeLine(raw); if(!line) continue; const capo=detectCapo(line); if(capo) line=line.replace(/capo\s*\d{1,2}/i,'').trim(); const key=detectKey(line); let title=line; // remove key if separated by dash/pipe/colon or at end
+          if(key){ const sepPattern=new RegExp('[-|:]?\s*'+key+'\s*$','i'); title=title.replace(sepPattern,'').trim(); if(title.toLowerCase().startsWith(key.toLowerCase()+' ')) title=title.slice(key.length).trim(); }
+          // Remove trailing parentheses or brackets containing key or capo info
+          title=title.replace(/\((?:capo|key)[^)]*\)$/i,'').trim();
+          if(title) out.push({title, key, capo, length:3.5, artist:'Original'}); }
+        return out; }
+      function dedupe(list){ const seen=new Set(); return list.filter(s=>{ const k=(s.title.toLowerCase()+'|'+(s.artist||'Original').toLowerCase()); if(seen.has(k)) return false; seen.add(k); return true; }); }
+      function renderPreview(){ if(!parsed.length){ previewEl.innerHTML='<em>No parsed songs.</em>'; commitBtn.disabled=true; return; }
+        // Build editable table
+        const tbl=document.createElement('table'); tbl.style.width='100%'; tbl.style.borderCollapse='collapse';
+        const thead=document.createElement('thead'); thead.innerHTML='<tr style="background:#e2e8f0"><th style="text-align:left;padding:4px 6px">Title</th><th style="text-align:left;padding:4px 6px">Key</th><th style="text-align:left;padding:4px 6px">Capo</th><th style="text-align:left;padding:4px 6px">Len (m)</th><th style="text-align:left;padding:4px 6px">Remove</th></tr>';
+        const tbody=document.createElement('tbody');
+        parsed.forEach((s,i)=>{
+          const tr=document.createElement('tr');
+          const tdTitle=document.createElement('td'); const inpTitle=document.createElement('input'); inpTitle.type='text'; inpTitle.value=s.title; inpTitle.style.width='100%'; inpTitle.addEventListener('input',()=>{ s.title=inpTitle.value.trim(); }); tdTitle.style.padding='4px 6px'; tdTitle.appendChild(inpTitle);
+          const tdKey=document.createElement('td'); const inpKey=document.createElement('input'); inpKey.type='text'; inpKey.value=s.key||''; inpKey.placeholder='Key'; inpKey.style.width='70px'; inpKey.addEventListener('input',()=>{ s.key=inpKey.value.trim(); }); tdKey.style.padding='4px 6px'; tdKey.appendChild(inpKey);
+          const tdCapo=document.createElement('td'); const inpCapo=document.createElement('input'); inpCapo.type='number'; inpCapo.min='0'; inpCapo.max='24'; inpCapo.value=String(Number.isInteger(s.capo)? s.capo:0); inpCapo.style.width='56px'; inpCapo.addEventListener('change',()=>{ let v=parseInt(inpCapo.value,10); if(!Number.isInteger(v)||v<0) v=0; if(v>24) v=24; s.capo=v; inpCapo.value=String(v); }); tdCapo.style.padding='4px 6px'; tdCapo.appendChild(inpCapo);
+          const tdLen=document.createElement('td'); const inpLen=document.createElement('input'); inpLen.type='number'; inpLen.min='0.5'; inpLen.step='0.5'; inpLen.value=String(s.length||3.5); inpLen.style.width='70px'; inpLen.addEventListener('change',()=>{ let v=parseFloat(inpLen.value); if(!isFinite(v)||v<=0) v=3.5; s.length=v; inpLen.value=String(v); }); tdLen.style.padding='4px 6px'; tdLen.appendChild(inpLen);
+          const tdRemove=document.createElement('td'); tdRemove.style.padding='4px 6px'; const btnRem=document.createElement('button'); btnRem.type='button'; btnRem.textContent='×'; btnRem.className='btn danger'; btnRem.style.padding='2px 8px'; btnRem.style.fontSize='14px'; btnRem.addEventListener('click',()=>{ parsed.splice(i,1); renderPreview(); }); tdRemove.appendChild(btnRem);
+          tr.append(tdTitle,tdKey,tdCapo,tdLen,tdRemove); tbody.appendChild(tr);
+        });
+        tbl.append(thead,tbody); previewEl.innerHTML=''; previewEl.appendChild(tbl); commitBtn.disabled=false;
+      }
+      function addParsedToDb(){ const existingKeyOf=s=> (s.title.toLowerCase()+'|'+(s.artist||'Original').toLowerCase()); const existing=new Set(db.map(existingKeyOf)); let added=0; parsed.forEach(s=>{ if(!existing.has(existingKeyOf(s))){ s.id=Date.now()+Math.random(); db.push(s); existing.add(existingKeyOf(s)); added++; } }); renderDB(); renderSongPool(); saveAll(); statusEl.textContent=`Imported ${added} new song${added===1?'':'s'}.`; }
+      parseBtn.addEventListener('click',()=>{ parsed=dedupe(parseSongLines(txt.value||'')); statusEl.textContent=`Parsed ${parsed.length} song line${parsed.length===1?'':'s'}.`; renderPreview(); });
+      commitBtn.addEventListener('click', addParsedToDb);
+      async function ensurePdfJs(){ if(window.pdfjsLib) return; statusEl.textContent='Loading PDF.js…'; await new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); }); if(window.pdfjsLib){ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } }
+      async function ensureTesseract(){ if(window.Tesseract) return; statusEl.textContent='Loading Tesseract…'; await new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js'; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); }); }
+      file.addEventListener('change', async()=>{
+        previewEl.innerHTML=''; parsed=[]; commitBtn.disabled=true; statusEl.textContent=''; const f=file.files && file.files[0]; if(!f) return;
+        const type=f.type||''; const name=(f.name||'').toLowerCase();
+        if(type.startsWith('text') || name.endsWith('.txt')){ const r=new FileReader(); r.onload=e=>{ parsed=dedupe(parseSongLines(String(e.target.result||''))); statusEl.textContent=`Parsed ${parsed.length} from text file.`; renderPreview(); }; r.readAsText(f); return; }
+        if(name.endsWith('.pdf') || type==='application/pdf'){ try{ await ensurePdfJs(); statusEl.textContent='Reading PDF…'; const url=URL.createObjectURL(f); const doc=await window.pdfjsLib.getDocument(url).promise; let full=''; for(let p=1;p<=doc.numPages;p++){ const page=await doc.getPage(p); const txtC=await page.getTextContent(); full += txtC.items.map(i=> i.str).join(' ')+'\n'; } URL.revokeObjectURL(url); parsed=dedupe(parseSongLines(full)); statusEl.textContent=`Parsed ${parsed.length} from PDF.`; renderPreview(); }catch(err){ statusEl.textContent='PDF parsing failed.'; console.error(err); } return; }
+        if(type.startsWith('image/')){ try{ await ensureTesseract(); statusEl.textContent='Running OCR…'; const { Tesseract }=window; const result=await Tesseract.recognize(f,'eng',{ logger:m=>{ if(m.status==='recognizing text'){ statusEl.textContent=`OCR: ${Math.round(m.progress*100)}%`; } } }); const text=result && result.data && result.data.text || ''; parsed=dedupe(parseSongLines(text)); statusEl.textContent=`Parsed ${parsed.length} from image OCR.`; renderPreview(); }catch(err){ statusEl.textContent='Image OCR failed.'; console.error(err); } return; }
+        statusEl.textContent='Unsupported file type.';
+      });
+    })();
   </script>
   <!-- Lightweight libs for client PDF/ZIP export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
