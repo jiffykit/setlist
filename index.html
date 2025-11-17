@@ -412,8 +412,8 @@
         </div>
       </div>
 
-      <div class="card" id="adv" style="display:none;padding-top:6px">
-        <div class="row" style="gap:8px;margin-bottom:4px">
+      <div id="adv" style="display:none;padding-top:6px;margin-top:8px">
+        <div class="row" style="gap:8px;margin-bottom:4px;padding:0 4px">
           <button class="btn" id="stageToggle" onclick="toggleStageAndNotes()">Stage Plot</button>
         </div>
       </div>
@@ -635,9 +635,33 @@
     try{
       // Prefer full editor SVG if open; fallback to stored small one
       var stageEl=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
-      const payload={db,setlist,gig,gearSummary,techNotes,stage:(stageEl? stageEl.outerHTML : '')};
+      let stageHTML='';
+      if(stageEl){
+        const clone=stageEl.cloneNode(true);
+        clone.querySelectorAll('g[data-draggable].selected').forEach(n=> n.classList.remove('selected'));
+        stageHTML=clone.outerHTML;
+        // Keep compact stored svg synchronized when full editor present
+        const full=document.getElementById('stageSvgFull');
+        const small=document.getElementById('stageSvg');
+        if(full && small){
+          Array.from(small.querySelectorAll('g[data-draggable]')).forEach(n=> n.remove());
+          Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=> small.appendChild(g.cloneNode(true)));
+        }
+      }
+      const payload={db,setlist,gig,gearSummary,techNotes,stage:stageHTML};
       localStorage.setItem(STORE_KEY, JSON.stringify(payload));
-    }catch(e){/* ignore */}
+    }catch(e){ console.error('saveAll failed', e); }
+  }
+  // Throttled save for high-frequency drag updates
+  let _savePending=false; let _lastSaveTs=0; const SAVE_MIN_INTERVAL=250; // ms
+  function queueSave(){
+    const now=Date.now();
+    if(!_savePending && (now-_lastSaveTs)>=SAVE_MIN_INTERVAL){
+      _savePending=true;
+      requestAnimationFrame(()=>{
+        _savePending=false; _lastSaveTs=Date.now(); saveAll();
+      });
+    }
   }
   // Persist on navigation away
   window.addEventListener('beforeunload', saveAll);
@@ -686,7 +710,7 @@
       if(gig.notes) document.getElementById('gNotes').value=gig.notes;
       const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value = gearSummary || '';
       renderDB(); renderSet();
-      if(stage){ const container=document.getElementById('stageStore'); container.innerHTML=stage; const svg=container.querySelector('svg'); if(svg){ svg.id='stageSvg'; svg.classList.add('bw'); }
+      if(stage){ const container=document.getElementById('stageStore'); container.innerHTML=stage; const svg=container.querySelector('svg'); if(svg){ svg.id='stageSvg'; svg.classList.add('bw'); refreshCables(svg); }
       }
     }catch(e){/* ignore */}
   }
@@ -723,7 +747,12 @@
           toggleStageAndNotes();
         }
       } else {
-        if(stageModal) stageModal.classList.remove('open');
+        // Leaving Tech/Stage: if stage editor open, perform full sync via closeStageModal (ensures compact svg updated)
+        if(stageModal && stageModal.classList.contains('open')){
+          closeStageModal();
+        } else if(stageModal){
+          saveAll(); stageModal.classList.remove('open');
+        }
         if(notesModal) notesModal.classList.remove('open');
       }
     }));
@@ -1863,7 +1892,7 @@
         const label=nameOf(endNode);
         const ans=prompt('Assign channel for '+label+'? (number)','');
         if(ans==null) return; const v=parseInt(String(ans).trim(),10);
-        if(Number.isFinite(v) && v>=1){ endNode.dataset.channel=String(v); }
+        if(Number.isFinite(v) && v>=1){ endNode.dataset.channel=String(v); saveAll(); refreshStageLegend(); }
       }catch(_){ /* ignore prompt issues */ }
     }
     function autoConnectOnPoint(sourceNode, clientX, clientY){
@@ -1894,7 +1923,7 @@
       // Long-press cable drag state
       let lpTimer=null; let lpActive=false; let lpLine=null; let lpSource=null; let lpTouchId=null;
         node.addEventListener('mousedown',e=>{ if(e.button===2){ return; } bringToFront(node); start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
-      function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } }
+      function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); }
         function up(e){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); if(e && typeof e.clientX==='number'){ autoConnectOnPoint(node, e.clientX, e.clientY); } saveAll(); }
       // rename on double click
       node.addEventListener('dblclick',()=>{
@@ -1915,7 +1944,7 @@
             if(!lpActive && lpTimer){ const dx=Math.abs(t.clientX-start.x), dy=Math.abs(t.clientY-start.y); if(dx>8 || dy>8){ clearTimeout(lpTimer); lpTimer=null; }
             }
             if(lpActive && lpLine){ const svg=node.closest('svg'); if(svg){ const pt=svg.createSVGPoint(); pt.x=t.clientX; pt.y=t.clientY; const p=pt.matrixTransform(svg.getScreenCTM().inverse()); lpLine.setAttribute('x2',p.x); lpLine.setAttribute('y2',p.y); } e.preventDefault(); break; }
-            var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(t.clientX-start.x)/zoom, dy=(t.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } e.preventDefault(); break; } }
+            var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(t.clientX-start.x)/zoom, dy=(t.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); e.preventDefault(); break; } }
       }, {passive:false});
       node.addEventListener('touchend',e=>{
         if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; }
@@ -2012,20 +2041,19 @@
     }
   function ensureSelectionBindings(){ const svg=document.getElementById('stageSvgFull'); if(svg && !svg._boundSel){ bindSelection(svg); svg._boundSel=true; } }
     function selectNode(g){
-      if(selectedNode) selectedNode.classList.remove('selected');
-      selectedNode=g;
+      // Remove any existing selection highlight across both SVGs
+      document.querySelectorAll('#stageSvgFull g[data-draggable].selected, #stageSvg g[data-draggable].selected').forEach(el=> el.classList.remove('selected'));
+      selectedNode=g||null;
       const nameInp=document.getElementById('selName');
       const sizeInp=document.getElementById('selSize');
-      
-        const showLabelChk=document.getElementById('selShowLabel');
+      const showLabelChk=document.getElementById('selShowLabel');
       if(!nameInp||!sizeInp) return;
-      if(!g){ nameInp.value=''; sizeInp.value='1'; return; }
+      if(!g){ nameInp.value=''; sizeInp.value='1'; if(showLabelChk) showLabelChk.checked=false; return; }
       g.classList.add('selected');
       initDatasetFromTransform(g);
       const txt=findText(g); nameInp.value=txt? (txt.textContent||'') : '';
       sizeInp.value=g.dataset.scale||'1';
-        if(showLabelChk){ showLabelChk.checked = g.dataset.showLabel==='1'; }
-      
+      if(showLabelChk){ showLabelChk.checked = g.dataset.showLabel==='1'; }
     }
     function syncInspectorFrom(g){ if(!g) return; const nameInp=document.getElementById('selName'); const sizeInp=document.getElementById('selSize'); if(nameInp){ const txt=findText(g); nameInp.value=txt? (txt.textContent||'') : ''; } if(sizeInp){ sizeInp.value=g.dataset.scale||'1'; } }
   document.getElementById('selName').addEventListener('change',()=>{ if(!selectedNode) return; const t=findText(selectedNode); if(t){ t.textContent=document.getElementById('selName').value; saveAll(); }});
@@ -2068,6 +2096,7 @@
         // convert to SVG coords
         const pt=stage.createSVGPoint(); pt.x=x; pt.y=y; const ctm=stage.getScreenCTM().inverse(); const svgP=pt.matrixTransform(ctm);
         const newNode=addGlyphFull(activeToolTouch.key, {x:Math.round(svgP.x), y:Math.round(svgP.y)});
+        if(newNode) selectNode(newNode);
         if(dropTarget && newNode){
           if(connectEitherDirection(newNode, dropTarget)){
             const end=resolveEndpoint(newNode); saveAll(); refreshStageLegend(); maybePromptChannel(end);
@@ -2361,6 +2390,8 @@
         const modal=document.getElementById('stageModal'); if(!modal){ throw new Error('Stage modal not found'); }
         modal.classList.add('open');
         refreshStageLegend();
+        // Clear any persisted selection so nothing glows by default
+        selectNode(null);
       }catch(err){
         if(window && window.alert){ alert('Could not open Stage Plot editor. See console for details.'); }
         if(console && console.error) console.error(err);
@@ -2408,17 +2439,19 @@
       const showingStage = stageModal.classList.contains('open');
 
       if(showingStage){
-        // switch to Lighting / FX view
+        // currently Stage Plot -> switch to Lighting / FX view
         closeStageModal();
         buildTechTableFull();
         const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value=gearSummary||'';
         notesModal.classList.add('open');
-        btn.textContent = 'Lighting & FX';
+        btn.textContent = 'Stage Plot';
+        saveAll(); // persist after switching away
       } else {
-        // switch to Stage Plot view
+        // currently Lighting / FX (or neither) -> switch to Stage Plot view
         notesModal.classList.remove('open');
         openStageModal();
-        btn.textContent = 'Stage Plot';
+        btn.textContent = 'Lighting / FX';
+        saveAll(); // persist after opening stage
       }
     }
     window.toggleStageAndNotes = toggleStageAndNotes;
@@ -2454,6 +2487,7 @@
       const dropTarget= el && el.closest && el.closest('g[data-draggable]');
       const pt=fullSvg.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY; const ctm=fullSvg.getScreenCTM().inverse(); const svgP=pt.matrixTransform(ctm);
       const newNode=addGlyphFull(key,{x:Math.round(svgP.x), y:Math.round(svgP.y)});
+      if(newNode) selectNode(newNode);
       if(dropTarget && newNode){
         if(connectEitherDirection(newNode, dropTarget)){
           const end=resolveEndpoint(newNode); saveAll(); refreshStageLegend(); maybePromptChannel(end);
@@ -2716,6 +2750,8 @@
     function buildStageExport(into){
       const stageOut = into; stageOut.innerHTML='';
       const src=getStageSource();
+      // Clear any selection highlight before export so no blue glow prints
+      document.querySelectorAll('g[data-draggable].selected').forEach(el=> el.classList.remove('selected'));
       const legend=document.createElement('table'); legend.className='tech-table';
       const thead=document.createElement('thead'); thead.innerHTML='<tr><th>Channel</th><th>Chain</th></tr>';
       const tbody=document.createElement('tbody');
@@ -2806,7 +2842,7 @@
       if(hf.sub){ const subTxt=[gig.date||'', gig.address||'', gig.contact||''].filter(Boolean).join(' • '); if(subTxt) hdr.append(el('div','sub', subTxt)); }
       if(hf.notes && gig.notes) hdr.append(el('div','notes', gig.notes));
     }
-  async function printStageOnce(){
+    async function printStageOnce(){
     prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML=''; const stageOut=$('#stagePrint'); buildStageExport(stageOut);
     document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise();
   }
