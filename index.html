@@ -99,10 +99,14 @@
     }
 
   /* Fullscreen Stage Editor */
-  .stage-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:60}
+  /* Inline stage editor (converted from fullscreen) */
+  .stage-modal{position:static;background:transparent;display:none;z-index:auto;margin-top:12px}
   .stage-modal.open{display:flex}
-  .stage-editor{display:grid;grid-template-columns:280px 1fr;gap:12px;background:#fff;width:100%;height:100%}
-  .stage-pane{padding:12px;overflow:auto;border-right:1px solid #e5e7eb}
+  .stage-editor{display:grid;grid-template-columns:340px 1fr;gap:16px;background:#fff;width:100%;min-height:640px}
+  .stage-pane{padding:10px 12px 16px;overflow:hidden;border-right:1px solid #e5e7eb}
+  .stage-pane .tool{white-space:nowrap}
+  .stage-pane .toolbox-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+  .stage-pane .toolbox-actions button{padding:6px 10px;font-size:12px}
   .stage-canvas{padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:auto}
   /* Preserve full-size stage canvas regardless of legend height */
   #stageSvgFull{width:100% !important;height:100% !important;aspect-ratio:1500/900;flex:0 0 auto}
@@ -115,6 +119,8 @@
   .stage-legend .chain{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tool[draggable="true"]{user-select:none}
   .stage-actions{position:absolute;top:10px;right:10px;display:flex;gap:8px}
+  /* Hide close button in inline mode */
+  #closeStage{display:none}
   /* Tech / Stage: tech rider & stage plot (B&W) */
   .advanced-grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
   .tech-table{width:100%;border-collapse:collapse}
@@ -139,6 +145,7 @@
   g[data-draggable].selected polyline,
   g[data-draggable].selected polygon{stroke:#1d4ed8}
   g[data-draggable].selected text{text-decoration:underline}
+  g[data-draggable].selected{filter:drop-shadow(0 0 6px rgba(37,99,235,0.65));}
   .stage-inspector{margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   /* Stage frame & resize handles */
   #stageFrame{outline:3px solid #000;pointer-events:none}
@@ -159,22 +166,26 @@
   #stageSvgFull{ touch-action:none; }
   .stage-canvas{ -webkit-user-select:none; user-select:none; }
   /* Global sticky actions (top-left) */
-  .global-actions{position:sticky;top:0;z-index:60;display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 6px 0;margin:-6px 0 8px 0;background:linear-gradient(180deg, rgba(249,250,251,0.96), rgba(249,250,251,0));backdrop-filter:saturate(1.2) blur(2px)}
+  .global-actions{position:sticky;top:0;z-index:60;display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 4px 0;margin:0 0 8px 0;background:linear-gradient(180deg, rgba(249,250,251,0.96), rgba(249,250,251,0));backdrop-filter:saturate(1.2) blur(2px)}
   @media print{ .global-actions{display:none} }
   /* Missing songs list */
   .missing{margin:8px 0 6px 0;display:flex;flex-wrap:wrap;gap:6px}
   .missing .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-size:12px;color:#111827}
   .missing .pill .add{background:#1d4ed8;color:#fff;border:none;border-radius:999px;padding:2px 8px;cursor:pointer}
   .missing .pill .add:hover{background:#1e40af}
+  /* Tabs styling */
+  .tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid #e5e7eb}
+  .tab{border:none;padding:6px 12px;font-size:14px;background:#e5e7eb;color:#4b5563;border-top-left-radius:6px;border-top-right-radius:6px;cursor:pointer}
+  .tab.active{background:#1d4ed8;color:#f9fafb}
+  .tab:not(.active):hover{background:#d1d5db}
+  /* Bottom brand bar */
+  .brand-bar{position:fixed;bottom:0;left:0;right:0;height:20px;background:#0f172a;color:#e5e7eb;font-size:11px;display:flex;align-items:center;justify-content:center;z-index:80}
+  .brand-bar a{color:inherit;text-decoration:none}
+  .brand-bar a:hover{text-decoration:underline}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="hero">
-      <h1>Jiffykit: Setlist Creator v1.2</h1>
-      <div>Build, arrange, and print a clean one-page setlist</div>
-    </div>
-
+  <div class="wrap" style="padding-bottom:28px">
     <!-- Global sticky actions: always available top-left -->
     <div class="global-actions">
       <button class="btn" id="saveProfile">Save Profile (.BAND)</button>
@@ -190,7 +201,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="db">Song Database</button>
       <button class="tab" data-tab="set">Setlist</button>
-  <button class="tab" data-tab="adv">Tech / Stage</button>
+      <button class="tab" data-tab="adv">Tech / Stage</button>
     </div>
 
     <div class="grid">
@@ -261,7 +272,7 @@
       </div>
 
       <!-- Combined Setlist + Generator Tab -->
-      <div class="card" id="set" style="display:none">
+      <div class="card" id="set" style="display:none;grid-column:1 / -1;width:100%">
         <h2>Setlist</h2>
         <h3 style="margin-top:0">Generator / Gig Info</h3>
         <div class="row">
@@ -401,11 +412,9 @@
         </div>
       </div>
 
-      <div class="card" id="adv" style="display:none">
-  <h2>Tech / Stage: Tech Rider & Stage Plot</h2>
-        <div class="row" style="gap:8px">
-          <button class="btn" id="openStage" onclick="openStageModal()">Stage Plot (Fullscreen)</button>
-          <button class="btn" id="openNotes">Lighting Notes (Fullscreen)</button>
+      <div class="card" id="adv" style="display:none;padding-top:6px">
+        <div class="row" style="gap:8px;margin-bottom:4px">
+          <button class="btn" id="stageToggle" onclick="toggleStageAndNotes()">Stage Plot</button>
         </div>
       </div>
     </div>
@@ -419,7 +428,7 @@
         <li><strong>Song Database</strong>: Add all your songs here. Mark moods & cover status to influence generation.</li>
         <li><strong>Generator</strong>: Enter gig details (band, venue, date, notes). Pick total length, break count, mood, and whether to include an encore, then click Generate.</li>
         <li><strong>Current Setlist</strong>: Drag songs to reorder with the handle (⋮⋮). Type notes inline and they appear immediately below titles in the preview. Use the “Missing” pills to quickly add songs from your database.</li>
-  <li><strong>Tech / Stage</strong>: Fullscreen Stage Plot lets you drag icon images & labels; Lighting Notes table captures per-song FX cues. Assign mixer channels in the legend, duplicate to speed layout, and Clear to start over.</li>
+  <li><strong>Tech / Stage</strong>: Stage Plot section lets you drag icon images & labels; Lighting Notes table captures per-song FX cues. Assign mixer channels in the legend, duplicate to speed layout, and Clear to start over. Use the toggle button to switch between Stage Plot and Lighting / FX views.</li>
         <li><strong>Printing</strong>: Use the Print… button for Setlist, Stage Plot, and Tech Notes—each prints separately. (Use your browser's Save as PDF in the print dialog.)</li>
         <li><strong>Profiles & Sets</strong>: Save Profile (.BAND) to archive your whole song DB + gig settings. Load Profile to merge. Save .SET to export just the current setlist arrangement.</li>
         <li><strong>Persistence</strong>: Everything auto-saves locally. Closing and reopening the browser restores your last session.</li>
@@ -602,7 +611,7 @@
     // Data
   const db = []; // {id,title,artist,length,key,isCover,isUpbeat,isHappy,isMellow,isEnergetic,isSad,customMoods?:string[]}
   let setlist = []; // array of {type:'song'|'break'|'encore', ...}
-  let gig = { band:'', date:'', venue:'', address:'', contact:'', notes:'', breaks:0, breakLen:15, encore:false, font:'default', logo:'', headerFlags:{band:true,venue:true,sub:true,notes:true}, customMoods:[], customImages:[] };
+  let gig = { band:'', date:'', venue:'', address:'', contact:'', notes:'', breaks:0, breakLen:15, encore:false, font:'default', logo:'', headerFlags:{band:true,venue:true,sub:true,notes:true}, customMoods:[], customImages:[], hiddenIcons:[] };
   let gearSummary = '';
   // Tech notes persist independently of the current set (keyed by song id)
   let techNotes = {};
@@ -705,7 +714,18 @@
       btn.classList.add('active');
       ['db','set','adv'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
       document.getElementById(btn.dataset.tab).style.display='block';
-      if(btn.dataset.tab==='adv'){ buildTechTable(); refreshStageHeader(); try{ buildTools(); }catch(_){} try{ openStageModal(); }catch(err){ console && console.error && console.error(err); }}
+      // Only Tech/Stage tab should show stage or lighting sections
+      const stageModal=document.getElementById('stageModal');
+      const notesModal=document.getElementById('notesModal');
+      if(btn.dataset.tab==='adv'){
+        if(stageModal && !stageModal.classList.contains('open') && notesModal && !notesModal.classList.contains('open')){
+          // Default to Stage Plot view when entering Tech/Stage
+          toggleStageAndNotes();
+        }
+      } else {
+        if(stageModal) stageModal.classList.remove('open');
+        if(notesModal) notesModal.classList.remove('open');
+      }
     }));
 
     // Prefill date today
@@ -1275,6 +1295,27 @@
             const entry=setlist[i]; if(!entry || entry.type!=='song') return; const val=prompt('Notes for '+entry.title, entry.notes||''); if(val!=null){ entry.notes=val.trim(); rebuildPreview(); }
           }); }
         }
+        // Touch drag out to remove (simple remove gesture)
+        row.style.touchAction='none';
+        row.addEventListener('touchstart',ev=>{
+          const t=ev.touches[0]; if(!t) return; window._activeSetTouch={ idx:i, startX:t.clientX, startY:t.clientY, x:t.clientX, y:t.clientY, removed:false, reorderTarget:i }; row.classList.add('drag-touch'); ev.preventDefault();
+        }, {passive:false});
+        row.addEventListener('touchmove',ev=>{
+          const act=window._activeSetTouch; if(!act) return; for(const t of ev.touches){ if(t.identifier!=null){ act.x=t.clientX; act.y=t.clientY; break; } }
+          // Determine potential reorder target if still inside sheet
+          const sheet=document.getElementById('sheetInline'); if(sheet){ const rect=sheet.getBoundingClientRect(); if(act.x>=rect.left && act.x<=rect.right && act.y>=rect.top && act.y<=rect.bottom){
+              const rows=[...sheet.querySelectorAll('.line, .break')];
+              let targetIndex=rows.length-1; for(let k=0;k<rows.length;k++){ const r=rows[k].getBoundingClientRect(); if(act.y < (r.top + r.height/2)){ targetIndex=k; break; } }
+              act.reorderTarget=targetIndex;
+              rows.forEach((rEl,ri)=>{ rEl.classList.toggle('drop-before', ri===targetIndex); rEl.classList.toggle('drop-after', false); });
+            } else {
+              // outside: clear indicators
+              [...sheet.querySelectorAll('.line, .break')].forEach(rEl=> rEl.classList.remove('drop-before','drop-after'));
+            }
+          }
+          ev.preventDefault();
+        }, {passive:false});
+        row.addEventListener('touchend',()=> row.classList.remove('drag-touch'));
       });
     }
     if(previewSongs){
@@ -1317,6 +1358,18 @@
         if(!idRaw) return; if(idRaw==='__break__') return; const id=parseInt(idRaw,10); const song=db.find(s=>s.id===id); if(!song) return; if(setlist.some(x=>x.id===song.id)) return; setlist.splice(insertAt,0,{...song,type:'song',notes:''}); rebuildPreview();
       });
     }
+
+    // Global touchend listener for removing rows by dragging them out of sheet
+    window.addEventListener('touchend',()=>{
+      const act=window._activeSetTouch; if(!act) return; const sheet=document.getElementById('sheetInline'); if(!sheet){ window._activeSetTouch=null; return; }
+      const rect=sheet.getBoundingClientRect(); const outside = act.x < rect.left-30 || act.x > rect.right+30 || act.y < rect.top-30 || act.y > rect.bottom+30; // larger margin for removal gesture
+      if(outside){ const idx=act.idx; if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){ setlist.splice(idx,1); rebuildPreview(); saveAll(); } }
+      else {
+        // inside: perform reorder if target different
+        const from=act.idx; const to=act.reorderTarget; if(Number.isInteger(from) && Number.isInteger(to) && from!==to && from>=0 && to>=0 && from<setlist.length){ const item=setlist.splice(from,1)[0]; const adj = from<to ? to-1 : to; setlist.splice(adj,0,item); rebuildPreview(); saveAll(); }
+      }
+      window._activeSetTouch=null;
+    }, {passive:true});
     // Allow dropping anywhere on the page area (sheet background/whitespace), including when blank
     const sheetInline=document.getElementById('sheetInline');
     if(sheetInline){
@@ -1514,47 +1567,68 @@
     // Image-based toolbox items (replace emojis)
     // Files must exist alongside index.html
     const ICON_ITEMS=[
-      {key:'acoustic', label:'Acoustic', src:'Acoustic.png'},
-      {key:'banjo', label:'Banjo', src:'Banjo.png'},
-      {key:'bass', label:'Bass', src:'Bass.png'},
-      {key:'bassamp', label:'Bass Amp', src:'Bassamp.png'},
-      {key:'bongoes', label:'Bongoes', src:'Bongoes.png'},
-      {key:'clarinet', label:'Clarinet', src:'Clarinet.png'},
-      {key:'combo', label:'Gtr Combo', src:'Combo.png'},
-      {key:'congas', label:'Congas', src:'Congas.png'},
-      {key:'crash', label:'Crash', src:'Crash.png'},
-      {key:'cymbal1', label:'Cymbal', src:'Cymbal_1.png'},
-      {key:'cymbal2', label:'Cymbal', src:'Cymbal_2.png'},
-      {key:'deck', label:'Deck', src:'Deck.png'},
-      {key:'di', label:'DI', src:'DI.png'},
-      {key:'electric', label:'Electric', src:'Electric.png'},
-      {key:'fan', label:'Fan', src:'Fan.png'},
-      {key:'hihat', label:'Hi-hat', src:'Hihat.png'},
-      {key:'hihat2', label:'Hi-hat', src:'Hihat_2.png'},
       {key:'kick', label:'Kick', src:'Kick.png'},
-      {key:'laptop', label:'Laptop', src:'Laptop.png'},
-      {key:'monitor', label:'Monitor', src:'Monitor.png'},
-  {key:'overhead', label:'Instrument Mic', src:'Overhead.png'},
       {key:'snare', label:'Snare', src:'Snare.png'},
-      {key:'power', label:'Power', src:'Power.png'},
-      {key:'sampler', label:'Sampler', src:'Sampler.png'},
-      {key:'stack', label:'Amp Stack', src:'Stack.png'},
+      {key:'hihat', label:'Hat', src:'Hihat.png'},
       {key:'tom', label:'Tom', src:'Tom.png'},
       {key:'floor', label:'Floor Tom', src:'Floor.png'},
-      {key:'stereoPair', label:'Stereo Pair', src:'Stereo%20Pair.png'},
-      {key:'stool', label:'Stool', src:'Stool.png'},
-      {key:'table', label:'Table', src:'Table.png'},
-      {key:'tipjar', label:'Tip Jar', src:'Tipjar.png'},
-      {key:'violin', label:'Violin', src:'Violin.png'},
+      {key:'overhead', label:'Instrument Mic', src:'Overhead.png'},
+      {key:'crash', label:'Crash', src:'Crash.png'},
+      {key:'cymbal1', label:'Crash 2', src:'Cymbal_1.png'},
+      {key:'cymbal2', label:'Crash 3', src:'Cymbal_2.png'},
+      // Gap then guitars
+      {key:'bass', label:'Bass Guitar', src:'Bass.png'},
+      {key:'bassamp', label:'Bass Amp', src:'Bassamp.png'},
+      {key:'electric', label:'Electric Guitar', src:'Electric.png'},
+      {key:'combo', label:'Gtr Combo', src:'Combo.png'},
+      {key:'stack', label:'Gtr Stack', src:'Stack.png'},
+      // Gap then vocal/stereo/DI
       {key:'vocal', label:'Vocal Mic', src:'Vocal%20Mic.png'},
+      {key:'stereoPair', label:'Stereo Pair', src:'Stereo%20Pair.png'},
+      {key:'di', label:'DI', src:'DI.png'},
+      // Gap then sampler/laptop/power
+      {key:'sampler', label:'Sampler', src:'Sampler.png'},
+      {key:'laptop', label:'Laptop', src:'Laptop.png'},
+      {key:'power', label:'Power', src:'Power.png'},
+      // Gap then other instruments
+      {key:'acoustic', label:'Acoustic', src:'Acoustic.png'},
+      {key:'violin', label:'Violin', src:'Violin.png'},
+      {key:'banjo', label:'Banjo', src:'Banjo.png'},
+      {key:'clarinet', label:'Clarinet', src:'Clarinet.png'},
+      {key:'bongoes', label:'Bongoes', src:'Bongoes.png'},
+      {key:'congas', label:'Congas', src:'Congas.png'},
+      {key:'deck', label:'Deck', src:'Deck.png'},
+      {key:'keys', label:'Keys', src:'keys.png'},
+      {key:'sax', label:'Sax', src:'sax.png'},
+      {key:'fxpedal', label:'FX Pedal', src:'FXpedal.png'},
+      {key:'fxboard', label:'FX Board', src:'FXboard.png'},
+      // Gap then props
+      {key:'tipjar', label:'Tip Jar', src:'Tipjar.png'},
+      {key:'table', label:'Table', src:'Table.png'},
+      {key:'stool', label:'Stool', src:'Stool.png'},
+      {key:'fan', label:'Fan', src:'Fan.png'},
+      // Gap then monitors
+      {key:'monitor', label:'Monitor', src:'Monitor.png'},
+    ];
+    // Sequence with explicit gaps using special token '__gap__'
+    const TOOL_ORDER=[
+      'kick','snare','hihat','tom','floor','overhead','crash','cymbal1','cymbal2','__gap__',
+      'bass','bassamp','electric','combo','stack','__gap__',
+      'vocal','stereoPair','di','__gap__',
+      'sampler','laptop','power','__gap__',
+      'acoustic','violin','banjo','clarinet','bongoes','congas','deck','keys','sax','fxpedal','fxboard','__gap__',
+      'tipjar','table','stool','fan','__gap__',
+      'monitor'
     ];
 
     // Type mapping for routing logic
     const TYPE_MAP={
       acoustic:'acoustic', banjo:'acoustic', violin:'acoustic',
       electric:'electric', combo:'amp', stack:'amp', bassamp:'amp', bass:'electric',
-      vocal:'mic', overhead:'mic', stereoPair:'mic', hihat:'drum', hihat2:'drum', kick:'drum', snare:'drum', tom:'drum', floor:'drum', crash:'drum', cymbal1:'drum', cymbal2:'drum', bongoes:'drum', congas:'drum',
+      vocal:'mic', overhead:'mic', stereoPair:'mic', hihat:'drum', hihat2:'drum', kick:'drum', snare:'drum', tom:'drum', floor:'drum',
+      crash:'cymbal', cymbal1:'cymbal', cymbal2:'cymbal', bongoes:'drum', congas:'drum',
       deck:'deck', sampler:'sampler', laptop:'sampler',
+      keys:'keys', sax:'sax', fxpedal:'fx', fxboard:'fx',
       di:'di',
       monitor:'monitor',
       power:'utility', fan:'utility', table:'utility', stool:'utility', tipjar:'utility'
@@ -1562,16 +1636,18 @@
 
     // Allowed routing targets by source type (routeTo). 'channel' is represented by selecting a channel directly, not via routeTo.
     const ROUTE_TARGETS={
-      drum:['mic','channel'], // drums can go to instrument/vocal/stereo mic or direct channel (kick/snare often direct)
-      mic:['channel'], // mic feeds channel only (no DI after mic)
+      drum:['mic','channel'], // full drum pieces can go direct (kick/snare) or via mic
+      cymbal:['mic'], // crash/cymbals are picked up by instrument mics only (no direct channel)
+      mic:['channel'],
       di:['channel'],
-      fx:['di','channel'],
-      amp:['mic','di'], // amps -> mic or DI
-      acoustic:['di','mic'], // must pass through mic or DI first (no direct channel)
+      fx:['di','channel','sampler'],
+      amp:['mic','di'],
+      acoustic:['di','mic'],
       electric:['fx','amp','di','channel'],
       deck:['fx','di','channel'],
-      sampler:['fx','di','channel'],
-      // wind & hand percussion treated under acoustic/drum already; ensure explicit mapping if custom types emerge
+      sampler:['fx','di','channel','sampler'],
+      keys:['sampler','di','mic','channel'],
+      sax:['mic'],
     };
 
     // Effective per-node targets (adds key-specific rules, e.g., bass amp can go direct to channel)
@@ -1596,37 +1672,62 @@
     function buildTools(){
       ['stageTools','stageToolsFull'].forEach(cid=>{
         const tools=document.getElementById(cid);
-        if(tools){
-          tools.innerHTML='';
-          ICON_ITEMS.forEach(t=>{
-            const b=document.createElement('button');
-            b.className='tool';
-            b.innerHTML=`<img src="${t.src}" alt="${t.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${t.label}`;
-            b.setAttribute('draggable','true');
-            b.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain', t.key); });
-            // Touch drag support: begin a simulated drag sequence
-            b.addEventListener('touchstart',ev=>{
-              const touch=ev.touches[0]; if(!touch) return;
-              activeToolTouch={ key:t.key, x:touch.clientX, y:touch.clientY };
-              ev.preventDefault();
-            }, {passive:false});
-            tools.appendChild(b);
-          });
-          // Append custom uploaded images (thumbnails) only to full toolbox
-          if(cid==='stageToolsFull'){
-            (gig.customImages||[]).forEach(imgObj=>{
-              const wrap=document.createElement('div'); wrap.style.position='relative';
-              const b=document.createElement('button'); b.className='tool'; b.style.paddingRight='26px';
-              b.innerHTML=`<img src="${imgObj.data}" alt="${imgObj.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${imgObj.label}`;
-              b.setAttribute('draggable','true'); b.dataset.key=imgObj.key;
-              b.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain', imgObj.key); });
-              b.style.touchAction='none';
-              b.addEventListener('touchstart',ev=>{ const touch=ev.touches[0]; if(!touch) return; activeToolTouch={ key:imgObj.key, x:touch.clientX, y:touch.clientY }; ev.preventDefault(); }, {passive:false});
-              const del=document.createElement('button'); del.textContent='×'; del.title='Remove'; del.style.position='absolute'; del.style.top='2px'; del.style.right='2px'; del.style.width='20px'; del.style.height='20px'; del.style.lineHeight='16px'; del.style.padding='0'; del.style.fontSize='14px'; del.style.background='#dc2626'; del.style.color='#fff'; del.style.border='none'; del.style.borderRadius='4px'; del.style.cursor='pointer';
-              del.addEventListener('click',()=>{ if(!confirm('Delete custom icon?')) return; gig.customImages = (gig.customImages||[]).filter(ci=>ci.key!==imgObj.key); saveAll(); buildTools(); rebuildCustomImages(); });
-              wrap.appendChild(b); wrap.appendChild(del); tools.appendChild(wrap);
-            });
+        if(!tools) return;
+        tools.innerHTML='';
+        const byKey=new Map(ICON_ITEMS.map(i=>[i.key,i]));
+        // Show All button if any hidden
+        const hidden=(gig.hiddenIcons||[]);
+        const actions=document.createElement('div'); actions.className='toolbox-actions';
+        if(hidden.length){
+          const showAllBtn=document.createElement('button'); showAllBtn.className='tool'; showAllBtn.textContent='Show All Icons';
+          showAllBtn.addEventListener('click',()=>{ gig.hiddenIcons=[]; saveAll(); buildTools(); });
+          actions.appendChild(showAllBtn);
+        }
+        if(cid==='stageToolsFull') tools.appendChild(actions);
+        TOOL_ORDER.forEach(k=>{
+          if(k==='__gap__'){ const gap=document.createElement('div'); gap.style.flexBasis='100%'; gap.style.height='8px'; gap.style.borderTop='1px solid #e5e7eb'; gap.style.margin='4px 0'; tools.appendChild(gap); return; }
+          const t=byKey.get(k); if(!t) return;
+          if((gig.hiddenIcons||[]).includes(k)) return; // skip hidden
+          const b=document.createElement('button');
+          b.className='tool';
+          b.innerHTML=`<img src="${t.src}" alt="${t.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${t.label}`;
+          b.setAttribute('draggable','true');
+          b.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', t.key); });
+          b.addEventListener('touchstart',ev=>{ const touch=ev.touches[0]; if(!touch) return; activeToolTouch={ key:t.key, x:touch.clientX, y:touch.clientY }; ev.preventDefault(); }, {passive:false});
+          // Long press (~1s) to hide icon: only when cursor/finger stays put
+          let lpTimer=null; let startPos=null; const cancel=()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } startPos=null; };
+          const arm=(sx,sy)=>{ cancel(); startPos={x:sx,y:sy}; lpTimer=setTimeout(()=>{
+            if(!startPos) return; // was cancelled by movement or release
+            if(!confirm('Hide this tool from the toolbox?')) return;
+            if((gig.hiddenIcons||[]).indexOf(t.key)===-1){ gig.hiddenIcons.push(t.key); saveAll(); buildTools(); }
+          },1000); };
+          b.addEventListener('mousedown',e=>{ if(e.button!==0) return; arm(e.clientX,e.clientY); });
+          b.addEventListener('mousemove',e=>{ if(!lpTimer||!startPos) return; const dx=Math.abs(e.clientX-startPos.x), dy=Math.abs(e.clientY-startPos.y); if(dx>2||dy>2) cancel(); });
+          b.addEventListener('mouseup',cancel);
+          b.addEventListener('mouseleave',cancel);
+          b.addEventListener('touchstart',e=>{ const tTouch=e.touches[0]; if(!tTouch) return; arm(tTouch.clientX,tTouch.clientY); }, {passive:true});
+          b.addEventListener('touchmove',e=>{ if(!lpTimer||!startPos) return; const tTouch=e.touches[0]; if(!tTouch) return; const dx=Math.abs(tTouch.clientX-startPos.x), dy=Math.abs(tTouch.clientY-startPos.y); if(dx>4||dy>4) cancel(); }, {passive:true});
+          b.addEventListener('touchend',cancel);
+          b.addEventListener('touchcancel',cancel);
+          tools.appendChild(b);
+        });
+        // Custom images always at bottom of full toolbox
+        if(cid==='stageToolsFull'){
+          if((gig.customImages||[]).length){
+            const gap=document.createElement('div'); gap.style.flexBasis='100%'; gap.style.height='10px'; gap.style.borderTop='2px dashed #d1d5db'; gap.style.margin='6px 0'; tools.appendChild(gap);
           }
+          (gig.customImages||[]).forEach(imgObj=>{
+            const wrap=document.createElement('div'); wrap.style.position='relative';
+            const b=document.createElement('button'); b.className='tool'; b.style.paddingRight='26px';
+            b.innerHTML=`<img src="${imgObj.data}" alt="${imgObj.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${imgObj.label}`;
+            b.setAttribute('draggable','true'); b.dataset.key=imgObj.key;
+            b.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', imgObj.key); });
+            b.style.touchAction='none';
+            b.addEventListener('touchstart',ev=>{ const touch=ev.touches[0]; if(!touch) return; activeToolTouch={ key:imgObj.key, x:touch.clientX, y:touch.clientY }; ev.preventDefault(); }, {passive:false});
+            const del=document.createElement('button'); del.textContent='×'; del.title='Remove'; del.style.position='absolute'; del.style.top='2px'; del.style.right='2px'; del.style.width='20px'; del.style.height='20px'; del.style.lineHeight='16px'; del.style.padding='0'; del.style.fontSize='14px'; del.style.background='#dc2626'; del.style.color='#fff'; del.style.border='none'; del.style.borderRadius='4px'; del.style.cursor='pointer';
+            del.addEventListener('click',()=>{ if(!confirm('Delete custom icon?')) return; gig.customImages = (gig.customImages||[]).filter(ci=>ci.key!==imgObj.key); saveAll(); buildTools(); rebuildCustomImages(); });
+            wrap.appendChild(b); wrap.appendChild(del); tools.appendChild(wrap);
+          });
         }
       });
     }
@@ -1659,7 +1760,7 @@
       // Compute initial scale so the visible icon is ~100px wide on screen
       const vbw = (svg && svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width) ? svg.viewBox.baseVal.width : 1500;
       const pxPerUnit = svg ? (svg.getBoundingClientRect().width / vbw) : (1000/1500);
-      const targetPx = 100; const baseUnits = 60; // image width set below
+      const targetPx = (key==='tom' ? 50 : 100); const baseUnits = 60; // image width set below; toms default to 50% size
       let initScale = targetPx / (baseUnits * Math.max(0.01, pxPerUnit));
       initScale = Math.max(0.3, Math.min(5, initScale));
       g.dataset.x=String(x); g.dataset.y=String(y); g.dataset.scale=String(initScale);
@@ -1721,6 +1822,7 @@
       // focus name field so user can rename right away
       const nameInp=document.getElementById('selName'); if(nameInp){ nameInp.focus(); if(nameInp.select) nameInp.select(); }
       refreshStageLegend(); saveAll();
+      return g;
     }
 
     function toPath(simple){
@@ -1728,29 +1830,105 @@
       return simple;
     }
 
+    // Helper: connect source->target if allowed, otherwise try reverse
+    function connectEitherDirection(source, target){
+      if(!source || !target || source===target) return false;
+      const sAllowed=effectiveTargets(source); const tAllowed=effectiveTargets(target);
+      if(sAllowed.includes(target.dataset.type||'other')){ source.dataset.routeTo=target.dataset.id; return true; }
+      if(tAllowed.includes(source.dataset.type||'other')){ target.dataset.routeTo=source.dataset.id; return true; }
+      return false;
+    }
+    // Helper: find chain endpoint (following valid routeTo)
+    function resolveEndpoint(start){
+      const svg=start && start.closest && start.closest('svg'); if(!svg) return start;
+      const nodes=Array.from(svg.querySelectorAll('g[data-draggable]'));
+      let cur=start; const seen=new Set();
+      while(cur && !seen.has(cur)){
+        seen.add(cur);
+        const nid=cur.dataset.routeTo||''; if(!nid) break;
+        const nxt=nodes.find(n=> n.dataset.id===nid); if(!nxt) break;
+        const allowed=effectiveTargets(cur);
+        if(allowed.indexOf(nxt.dataset.type||'other')===-1) break;
+        cur=nxt;
+      }
+      return cur||start;
+    }
+    function nameOf(node){ const t=findText(node); return (t && t.textContent) || (node.dataset.key||'Item'); }
+    function maybePromptChannel(endNode){
+      try{
+        if(!endNode) return;
+        const targets=effectiveTargets(endNode);
+        if(!targets.includes('channel')) return;
+        if(endNode.dataset.channel && String(endNode.dataset.channel).trim()!=='') return;
+        const label=nameOf(endNode);
+        const ans=prompt('Assign channel for '+label+'? (number)','');
+        if(ans==null) return; const v=parseInt(String(ans).trim(),10);
+        if(Number.isFinite(v) && v>=1){ endNode.dataset.channel=String(v); }
+      }catch(_){ /* ignore prompt issues */ }
+    }
+    function autoConnectOnPoint(sourceNode, clientX, clientY){
+      if(!sourceNode) return false;
+      const prevPE=sourceNode.style.pointerEvents;
+      sourceNode.style.pointerEvents='none';
+      const el=document.elementFromPoint(clientX, clientY);
+      sourceNode.style.pointerEvents=prevPE;
+      const target= el && el.closest && el.closest('g[data-draggable]');
+      if(!target || target===sourceNode) return false;
+      const did=connectEitherDirection(sourceNode, target);
+      if(did){ const end=resolveEndpoint(sourceNode); saveAll(); refreshStageLegend(); maybePromptChannel(end); const svg=sourceNode.closest('svg'); if(svg) refreshCables(svg); return true; }
+      return false;
+    }
     function enableSvgDrag(node){
+      function isBottomLayer(node){
+        const k=node.dataset.key||'';
+        return k==='kick' || k==='gtramp' || k==='bassamp' || k==='stack' || k==='combo';
+      }
+      function bringToFront(node){
+        if(isBottomLayer(node)) return;
+        const parent=node.parentNode; if(!parent) return;
+        parent.appendChild(node);
+      }
       // initialize dataset from existing transform if missing
       initDatasetFromTransform(node);
       let start=null; let orig=null;
-      node.addEventListener('mousedown',e=>{ if(e.button===2){ return; } start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
-  function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } }
-      function up(){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); saveAll(); }
+      // Long-press cable drag state
+      let lpTimer=null; let lpActive=false; let lpLine=null; let lpSource=null; let lpTouchId=null;
+        node.addEventListener('mousedown',e=>{ if(e.button===2){ return; } bringToFront(node); start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
+      function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } }
+        function up(e){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); if(e && typeof e.clientX==='number'){ autoConnectOnPoint(node, e.clientX, e.clientY); } saveAll(); }
       // rename on double click
       node.addEventListener('dblclick',()=>{
         const txt=findText(node); if(!txt) return; const nv=prompt('Rename item:', txt.textContent||''); if(nv!=null){ txt.textContent=nv; syncInspectorFrom(node); saveAll(); }
       });
-      // Touch drag
+      // Touch drag + long-press cable gesture
       let touchId=null;
       node.addEventListener('touchstart',e=>{
-        if(touchId!=null) return; const t=e.touches[0]; if(!t) return; touchId=t.identifier; start={x:t.clientX,y:t.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; selectNode(node); e.preventDefault();
+        if(touchId!=null) return; const t=e.touches[0]; if(!t) return; touchId=t.identifier; lpTouchId=touchId; start={x:t.clientX,y:t.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; selectNode(node); e.preventDefault();
+        lpTimer=setTimeout(()=>{
+          if(lpTouchId===touchId){ const svg=node.closest('svg'); if(svg){ const pt=svg.createSVGPoint(); pt.x=start.x; pt.y=start.y; const p=pt.matrixTransform(svg.getScreenCTM().inverse()); lpLine=document.createElementNS('http://www.w3.org/2000/svg','line'); lpLine.setAttribute('x1',p.x); lpLine.setAttribute('y1',p.y); lpLine.setAttribute('x2',p.x); lpLine.setAttribute('y2',p.y); lpLine.setAttribute('stroke','#000'); lpLine.setAttribute('stroke-width','2'); lpLine.setAttribute('stroke-dasharray','6,4'); lpLine.setAttribute('data-temp','cable'); svg.appendChild(lpLine); lpActive=true; lpSource=node; }
+        }
+        },300);
       }, {passive:false});
       node.addEventListener('touchmove',e=>{
-        if(touchId==null) return; for(const t of e.touches){ if(t.identifier===touchId){ var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(t.clientX-start.x)/zoom, dy=(t.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } e.preventDefault(); break; } }
+        if(touchId==null) return; for(const t of e.touches){ if(t.identifier===touchId){
+            // cancel long-press if user moves significantly before it triggers
+            if(!lpActive && lpTimer){ const dx=Math.abs(t.clientX-start.x), dy=Math.abs(t.clientY-start.y); if(dx>8 || dy>8){ clearTimeout(lpTimer); lpTimer=null; }
+            }
+            if(lpActive && lpLine){ const svg=node.closest('svg'); if(svg){ const pt=svg.createSVGPoint(); pt.x=t.clientX; pt.y=t.clientY; const p=pt.matrixTransform(svg.getScreenCTM().inverse()); lpLine.setAttribute('x2',p.x); lpLine.setAttribute('y2',p.y); } e.preventDefault(); break; }
+            var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(t.clientX-start.x)/zoom, dy=(t.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } e.preventDefault(); break; } }
       }, {passive:false});
       node.addEventListener('touchend',e=>{
+        if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; }
+        if(lpActive){ // finalize cable connection
+          if(lpLine){ lpLine.remove(); }
+          const touch=e.changedTouches && e.changedTouches[0]; if(touch){ const targetEl=document.elementFromPoint(touch.clientX,touch.clientY); const tgt= targetEl && targetEl.closest && targetEl.closest('g[data-draggable]'); if(tgt && tgt!==lpSource){ const sAllowed=effectiveTargets(lpSource); const tAllowed=effectiveTargets(tgt); if(sAllowed.includes(tgt.dataset.type||'other')){ lpSource.dataset.routeTo=tgt.dataset.id; } else if(tAllowed.includes(lpSource.dataset.type||'other')){ tgt.dataset.routeTo=lpSource.dataset.id; } saveAll(); refreshStageLegend(); } }
+          lpActive=false; lpLine=null; lpSource=null; lpTouchId=null;
+        }
+        // Auto-connect on drop if released over another component
+        const ct=(e.changedTouches && e.changedTouches[0])||null; if(ct){ autoConnectOnPoint(node, ct.clientX, ct.clientY); }
         if(touchId==null) return; let still=false; for(const t of e.touches){ if(t.identifier===touchId){ still=true; break; } } if(!still){ touchId=null; saveAll(); }
       });
-      node.addEventListener('touchcancel',()=>{ if(touchId!=null){ touchId=null; saveAll(); }});
+      node.addEventListener('touchcancel',()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } if(lpLine){ lpLine.remove(); lpLine=null; } lpActive=false; lpSource=null; lpTouchId=null; if(touchId!=null){ touchId=null; saveAll(); }});
     }
 
     // Right-click cable drag connection gesture
@@ -1884,9 +2062,18 @@
     if(!activeToolTouch) return; const t=e.touches[0]; if(!t) return; activeToolTouch.x=t.clientX; activeToolTouch.y=t.clientY; }, {passive:true});
   window.addEventListener('touchend',e=>{
     if(!activeToolTouch) return; const stage=document.getElementById('stageSvgFull'); if(stage){ const rect=stage.getBoundingClientRect(); const x=activeToolTouch.x, y=activeToolTouch.y; if(x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom){ // inside stage
+        // detect target BEFORE adding new node
+        const el=document.elementFromPoint(x, y);
+        const dropTarget= el && el.closest && el.closest('g[data-draggable]');
         // convert to SVG coords
         const pt=stage.createSVGPoint(); pt.x=x; pt.y=y; const ctm=stage.getScreenCTM().inverse(); const svgP=pt.matrixTransform(ctm);
-        addGlyphFull(activeToolTouch.key, {x:Math.round(svgP.x), y:Math.round(svgP.y)});
+        const newNode=addGlyphFull(activeToolTouch.key, {x:Math.round(svgP.x), y:Math.round(svgP.y)});
+        if(dropTarget && newNode){
+          if(connectEitherDirection(newNode, dropTarget)){
+            const end=resolveEndpoint(newNode); saveAll(); refreshStageLegend(); maybePromptChannel(end);
+            refreshCables(stage);
+          }
+        }
       } }
     activeToolTouch=null;
   });
@@ -2106,7 +2293,7 @@
     // Fullscreen toggle for stage
   // No inline fullscreen toggle button anymore
 
-    // Fullscreen stage editor open/close
+    // Fullscreen stage editor open/close (now inline, used for Stage Plot view)
     function openStageModal(){
       // ensure header reflects current gig
       try{
@@ -2179,60 +2366,69 @@
         if(console && console.error) console.error(err);
       }
     }
-    const openStageBtn=document.getElementById('openStage');
-    if(openStageBtn){ openStageBtn.addEventListener('click',openStageModal); }
-    // make function available to inline onclick as a hard fallback
-    window.openStageModal = openStageModal;
-    // final safety: delegate click in case listeners were missed
-    document.addEventListener('click',ev=>{
-      const trg=ev.target && ev.target.closest ? ev.target.closest('#openStage') : null;
-      if(trg){ ev.preventDefault(); openStageModal(); }
-    });
-    document.getElementById('closeStage').addEventListener('click',()=>{
+    // Extract existing close logic into reusable function for toggle
+    function closeStageModal(){
       // Sync full editor back to stored compact SVG so reopening reflects latest layout
       const full=document.getElementById('stageSvgFull');
       let small=document.getElementById('stageSvg');
       if(full){
         if(!small){
-          // create a small stored SVG container if missing; clone with children to preserve background/title
           const store=document.getElementById('stageStore');
           if(store){ small=full.cloneNode(true); small.id='stageSvg'; small.classList.add('bw'); store.appendChild(small); }
         }
         if(small){
-          // remove previous draggable groups
           Array.from(small.querySelectorAll('g[data-draggable]')).forEach(n=> n.remove());
-          // clone all current groups from full
           Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=> small.appendChild(g.cloneNode(true)));
-          // Filter system removed; no additional defs needed for small copy
-          // rebind drags on stored copy for any inline interactions
           Array.from(small.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
-          // ensure label hidden state preserved visually
           Array.from(small.querySelectorAll('g[data-draggable]')).forEach(gr=>{ const lbl=findText(gr); if(lbl){ lbl.style.display = gr.dataset.showLabel==='1' ? 'block':'none'; } });
-          // ensure arrow marker exists in stored svg
-          ensureStageMarkers(small);
-          refreshCables(small);
-          // sync title text
+          ensureStageMarkers(small); refreshCables(small);
           const fullTitle=document.getElementById('stageTitleFull');
           let smallTitle=document.getElementById('stageTitle');
-          if(!smallTitle && small){
-            // attempt to find title node by id inside small
-            smallTitle=small.querySelector('#stageTitle');
-          }
+          if(!smallTitle && small){ smallTitle=small.querySelector('#stageTitle'); }
           if(fullTitle){
             if(smallTitle){ smallTitle.textContent=fullTitle.textContent; }
             else {
-              // if title missing, create one centered at top
               const t=document.createElementNS('http://www.w3.org/2000/svg','text');
               t.setAttribute('id','stageTitle'); t.setAttribute('x','500'); t.setAttribute('y','36'); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','22'); t.setAttribute('font-weight','bold'); t.textContent=fullTitle.textContent; small.appendChild(t);
             }
           }
-          // enforce background outline on stored copy
           const bg=small.querySelector('rect.stage-bg'); if(bg){ bg.setAttribute('fill','#fff'); bg.setAttribute('stroke','#000'); bg.setAttribute('stroke-width','2'); }
         }
       }
       saveAll();
       document.getElementById('stageModal').classList.remove('open');
+    }
+    // Unified toggle: Stage Plot <-> Lighting & FX
+    function toggleStageAndNotes(){
+      const stageModal=document.getElementById('stageModal');
+      const notesModal=document.getElementById('notesModal');
+      const btn=document.getElementById('stageToggle');
+      if(!stageModal || !notesModal || !btn) return;
+
+      const showingStage = stageModal.classList.contains('open');
+
+      if(showingStage){
+        // switch to Lighting / FX view
+        closeStageModal();
+        buildTechTableFull();
+        const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value=gearSummary||'';
+        notesModal.classList.add('open');
+        btn.textContent = 'Lighting & FX';
+      } else {
+        // switch to Stage Plot view
+        notesModal.classList.remove('open');
+        openStageModal();
+        btn.textContent = 'Stage Plot';
+      }
+    }
+    window.toggleStageAndNotes = toggleStageAndNotes;
+    window.openStageModal = openStageModal; // legacy safety
+    // final safety: delegate click in case listeners were missed
+    document.addEventListener('click',ev=>{
+      const trg=ev.target && ev.target.closest ? ev.target.closest('#openStage') : null;
+      if(trg){ ev.preventDefault(); openStageModal(); }
     });
+    document.getElementById('closeStage').addEventListener('click',closeStageModal);
     // Clear full stage editor
     const clearStageBtn=document.getElementById('clearStage');
     if(clearStageBtn){ clearStageBtn.addEventListener('click',()=>{
@@ -2242,8 +2438,7 @@
       saveAll();
     }); }
 
-    // Open/close Lighting Notes fullscreen
-    document.getElementById('openNotes').addEventListener('click',()=>{ buildTechTableFull(); const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value=gearSummary||''; document.getElementById('notesModal').classList.add('open'); });
+    // Lighting notes now controlled via unified toggle; keep close button local only
   const closeNotesBtn=document.getElementById('closeNotes');
   if(closeNotesBtn){ closeNotesBtn.addEventListener('click',()=> document.getElementById('notesModal').classList.remove('open')); }
 
@@ -2254,8 +2449,17 @@
       ev.preventDefault();
       const key=ev.dataTransfer.getData('text/plain');
       if(!key) return;
+      // detect target under cursor BEFORE adding new glyph
+      const el=document.elementFromPoint(ev.clientX, ev.clientY);
+      const dropTarget= el && el.closest && el.closest('g[data-draggable]');
       const pt=fullSvg.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY; const ctm=fullSvg.getScreenCTM().inverse(); const svgP=pt.matrixTransform(ctm);
-      addGlyphFull(key,{x:Math.round(svgP.x), y:Math.round(svgP.y)});
+      const newNode=addGlyphFull(key,{x:Math.round(svgP.x), y:Math.round(svgP.y)});
+      if(dropTarget && newNode){
+        if(connectEitherDirection(newNode, dropTarget)){
+          const end=resolveEndpoint(newNode); saveAll(); refreshStageLegend(); maybePromptChannel(end);
+          refreshCables(fullSvg);
+        }
+      }
     });
 
     // Arrow drawing: drag anywhere in SVG (hold Shift to draw over items)
@@ -2301,8 +2505,8 @@
       }, {capture:true});
       svg.addEventListener('mousemove',e=>{ if(!drawing) return; const p=svgPointFromClient(e.clientX,e.clientY); updateDraw(p.x,p.y); }, {capture:true});
       window.addEventListener('mouseup',e=>{ if(!drawing) return; const p=svgPointFromClient(e.clientX,e.clientY); finishDraw(p.x,p.y); }, {capture:true});
-      // Touch support (capture); drawing over items is always permitted on touch (no modifier keys)
-      svg.addEventListener('touchstart',e=>{ const t=e.touches[0]; if(!t) return; if(e.target.closest('#stageLegend,.stage-inspector,.stage-actions')) return; const p=svgPointFromClient(t.clientX,t.clientY); startDraw(p.x,p.y); e.preventDefault(); e.stopImmediatePropagation(); }, {passive:false, capture:true});
+      // Touch support (capture); only allow drawing from whitespace background
+      svg.addEventListener('touchstart',e=>{ const t=e.touches[0]; if(!t) return; if(e.target.closest('#stageLegend,.stage-inspector,.stage-actions')) return; const overItem = !!(e.target.closest && e.target.closest('g[data-draggable]')); const onBg = !!(e.target.closest && e.target.closest('.stage-bg')); if(overItem || !onBg) return; const p=svgPointFromClient(t.clientX,t.clientY); startDraw(p.x,p.y); e.preventDefault(); e.stopImmediatePropagation(); }, {passive:false, capture:true});
       window.addEventListener('touchmove',e=>{ if(!drawing) return; const t=e.touches[0]; if(!t) return; const p=svgPointFromClient(t.clientX,t.clientY); updateDraw(p.x,p.y); }, {passive:true});
       window.addEventListener('touchend',e=>{ if(!drawing) return; const ct=(e.changedTouches && e.changedTouches[0])|| (e.touches && e.touches[0]); if(!ct) return; const p=svgPointFromClient(ct.clientX, ct.clientY); finishDraw(p.x,p.y); }, {passive:true});
     })();
@@ -2749,5 +2953,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Bottom brand bar -->
+  <div class="brand-bar">
+    <a href="https://paypal.me/jamesmulvale" target="_blank" rel="noopener">FASTFAST SETLIST and STAGE DESIGNER (c) 2025 All Rights Reserved</a>
+  </div>
 </body>
 </html>
