@@ -259,21 +259,28 @@
         <div class="field"><label>Title</label><input id="t" placeholder="Song Title" /></div>
         <div class="row">
           <div class="field"><label>Artist (blank=Original)</label><input id="a" placeholder="Artist or leave blank" /></div>
-          <div class="field"><label>Length (min)</label><input id="l" type="number" min="0.5" step="0.5" value="3.5" placeholder="3.5" /></div>
+          <div class="field" style="max-width:90px"><label>Length (min)</label><input id="l" type="number" min="0.5" step="0.5" value="3.5" placeholder="3.5" style="width:5ch" /></div>
         </div>
         <div class="row">
-          <div class="field" style="flex:2 1 320px"><label>Key / Notes</label><input id="k" placeholder="e.g., Am, G-C-D" /></div>
-          <div class="field" style="max-width:120px"><label>Capo</label><input id="capo" type="number" min="0" max="24" value="0" /></div>
+          <div class="field" style="flex:2 1 240px"><label>Key / Notes</label><input id="k" placeholder="e.g., Am, G-C-D" /></div>
+          <div class="field" style="max-width:100px"><label>Capo</label><select id="capo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option></select></div>
+          <div class="field" style="max-width:130px"><label>Audience 👏</label><select id="rating"><option value="0">0 - Not Rated</option><option value="1">1 👏</option><option value="2">2 👏👏</option><option value="3">3 👏👏👏</option></select></div>
         </div>
-        <div class="checks">
+        <div style="margin:10px 0">
+          <label style="font-size:13px;color:#64748b;margin-bottom:6px;display:block">Moods</label>
+          <div class="checks">
+            <label class="chip"><input type="checkbox" id="u"> Upbeat</label>
+            <label class="chip"><input type="checkbox" id="h"> Happy</label>
+            <label class="chip"><input type="checkbox" id="e"> Energetic</label>
+            <label class="chip"><input type="checkbox" id="m"> Mellow</label>
+            <label class="chip"><input type="checkbox" id="s"> Sad</label>
+            <span id="addCustomMoods" style="display:inline-flex;gap:6px"></span>
+            <button type="button" id="addMoodBtn" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;font-size:18px" title="Add custom mood">+</button>
+          </div>
+        </div>
+        <div style="margin:8px 0">
           <label class="chip"><input type="checkbox" id="c"> Cover</label>
-          <label class="chip"><input type="checkbox" id="u"> Upbeat</label>
-          <label class="chip"><input type="checkbox" id="h"> Happy</label>
-          <label class="chip"><input type="checkbox" id="m"> Mellow</label>
-          <label class="chip"><input type="checkbox" id="e"> Energetic</label>
-          <label class="chip"><input type="checkbox" id="s"> Sad</label>
         </div>
-        <div class="checks" id="addCustomMoods" style="margin-top:6px"></div>
         <div class="field" style="margin-top:10px">
           <label>Lyrics / Chords (optional)</label>
           <textarea id="lyricsInput" placeholder="Paste or type lyrics / chords here" rows="4" style="width:100%;resize:vertical"></textarea>
@@ -283,36 +290,36 @@
           </div>
         </div>
           <!-- Add Song button moved up next to lyrics helpers -->
-          <div id="dbControls" style="margin:12px 0 8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-            <label style="font-size:12px;color:#64748b">Type</label>
-            <select id="dbType">
-              <option value="all" selected>All</option>
-              <option value="originals">Originals</option>
-              <option value="covers">Covers</option>
-            </select>
-            <label style="font-size:12px;color:#64748b">Sort</label>
-            <select id="dbSort">
-              <option value="alpha" selected>Alphabetical</option>
-              <option value="band">Band Name</option>
+          <div style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="dbSearch" placeholder="Search songs..." style="flex:1 1 200px;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px">
+            <label style="font-size:12px;color:#64748b">Sort by:</label>
+            <select id="dbSort" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:4px">
+              <option value="added">Order Added</option>
+              <option value="alpha" selected>Alpha by Song</option>
+              <option value="band">Alpha by Band</option>
               <option value="mood">Mood Order</option>
-              <option value="cover">Cover First</option>
-              <option value="length">Length</option>
+              <option value="rating">Audience Rating</option>
+              <option value="mostUsed">Most Selected</option>
+              <option value="leastUsed">Least Selected</option>
             </select>
-            <label style="font-size:12px;color:#64748b">Mood</label>
-            <select id="dbMood">
-              <option value="all" selected>All</option>
-              <option value="upbeat">Upbeat</option>
-              <option value="happy">Happy</option>
-              <option value="energetic">Energetic</option>
-              <option value="mellow">Mellow</option>
-              <option value="sad">Sad</option>
-            </select>
-            <button class="btn secondary" id="addMoodBtn" type="button">Add Mood</button>
+          </div>
+          <div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px">
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterCovers"> Covers</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterOriginals"> Originals</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterHasLyrics"> Has Lyrics</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterKaraoke"> Karaoke</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterHasAudio"> Has Audio</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterHasURL"> Has URL</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterInSet"> In Current Set</label>
+            <label style="font-size:12px;color:#64748b;margin-left:8px">Mood:</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterUpbeat"> Upbeat</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterHappy"> Happy</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterEnergetic"> Energetic</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterMellow"> Mellow</label>
+            <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="filterSad"> Sad</label>
+            <span id="customMoodFilters"></span>
           </div>
         <!-- Profile buttons moved to global-actions -->
-        <div style="margin:12px 0">
-          <input type="text" id="dbSearch" placeholder="Search songs (title, composer, band)..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px">
-        </div>
         <div class="list" id="dbList" style="width:100%;"></div>
         <div style="margin-top:12px;display:flex;justify-content:flex-end">
           <button class="btn danger" id="clearDB">Clear Database</button>
@@ -860,11 +867,32 @@
     if(!song){ song=findSongByTitle(setItem && setItem.title); }
     if(!song) return; // nothing to play
     const armed=(song.id!=null && armedAudio[song.id]); const url=(song.audioUrl||'').trim();
-    // Armed local file (session) or direct audio link
+    // Armed local file or URL (session)
     if(armed){
       // Always stop any other playback before starting
       stopSongAudio();
-      const a=ensureLiveAudioEl(); a.src=armed; a.play().catch(()=>{}); return;
+      // Check if armed value is a URL string (http/https) or blob URL
+      const armedValue = armedAudio[song.id];
+      const isExternalUrl = typeof armedValue==='string' && (armedValue.startsWith('http://') || armedValue.startsWith('https://'));
+      if(isExternalUrl){
+        // Armed URL - treat as external link
+        const lower=armedValue.toLowerCase();
+        const isStream= lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.ogg') || lower.includes('stream');
+        if(isStream){
+          const a=ensureLiveAudioEl(); a.src=armedValue; a.play().catch(()=>{});
+        } else {
+          // External provider (YouTube/Spotify/etc.)
+          if(_liveAudioWin && !_liveAudioWin.closed){
+            if(_liveLastExternalUrl===armedValue){ return; }
+            try{ _liveAudioWin.location.href=armedValue; _liveLastExternalUrl=armedValue; return; }catch(e){ try{ _liveAudioWin.close(); }catch(_){} }
+          }
+          try{ _liveAudioWin = window.open(armedValue,'liveAudio','width=560,height=420,noopener'); _liveLastExternalUrl=armedValue; }catch(_){ _liveAudioWin=null; }
+        }
+      } else {
+        // Armed local file (blob URL)
+        const a=ensureLiveAudioEl(); a.src=armedValue; a.play().catch(()=>{});
+      }
+      return;
     }
     if(url){
       const lower=url.toLowerCase();
@@ -1053,6 +1081,20 @@
     })();
 
     // Add song
+    // Auto-check Cover checkbox when Artist field is filled
+    (function(){
+      const artistInput=$('#a');
+      const coverCheckbox=$('#c');
+      if(artistInput && coverCheckbox){
+        artistInput.addEventListener('input',()=>{
+          const val = artistInput.value.trim();
+          if(val && val.toLowerCase()!=='original'){
+            coverCheckbox.checked = true;
+          }
+        });
+      }
+    })();
+
     $('#add').addEventListener('click', ()=>{
       const title=$('#t').value.trim();
       const artist=$('#a').value.trim()||'Original';
@@ -1061,16 +1103,18 @@
       const key=$('#k').value.trim();
       const capoRaw=$('#capo').value.trim();
       let capo = parseInt(capoRaw,10); if(!Number.isInteger(capo) || capo<0) capo=0; if(capo>24) capo=24;
+      const ratingRaw=$('#rating')? $('#rating').value : '0';
+      const audienceRating = parseInt(ratingRaw,10)||0;
       if(!title){ alert('Please enter a song title'); return; }
       if(!length||length<=0){ alert('Length invalid, using 3.5'); }
       const lyricsVal = ($('#lyricsInput') && $('#lyricsInput').value) ? $('#lyricsInput').value : '';
-      const s={id:Date.now(),title,artist,length,key,capo,lyrics:lyricsVal,
+      const s={id:Date.now(),title,artist,length,key,capo,lyrics:lyricsVal,audienceRating,usageCount:0,
         isCover:$('#c').checked,isUpbeat:$('#u').checked,isHappy:$('#h').checked,
         isMellow:$('#m').checked,isEnergetic:$('#e').checked,isSad:$('#s').checked, customMoods:[]};
       // Include custom moods from add section
       (gig.customMoods||[]).forEach(k=>{ const el=document.getElementById('cm-'+k); if(el && el.checked){ s.customMoods.push(k); } });
       db.push(s);
-      $('#t').value=''; $('#a').value=''; $('#l').value='3.5'; $('#k').value=''; $('#capo').value='0'; if($('#lyricsInput')) $('#lyricsInput').value='';
+      $('#t').value=''; $('#a').value=''; $('#l').value='3.5'; $('#k').value=''; $('#capo').value='0'; if($('#rating')) $('#rating').value='0'; if($('#lyricsInput')) $('#lyricsInput').value='';
       ['c','u','h','m','e','s'].forEach(id=>$('#'+id).checked=false);
       (gig.customMoods||[]).forEach(k=>{ const el=document.getElementById('cm-'+k); if(el) el.checked=false; });
   renderDB(); saveAll();
@@ -1079,15 +1123,42 @@
     function renderDB(){
       const list=$('#dbList'); list.innerHTML='';
       if(!db.length){ list.textContent='No songs yet.'; return; }
+      
+      // Column headers
+      const hdrRow=document.createElement('div'); hdrRow.style.cssText='display:flex;gap:4px;align-items:center;padding:4px;background:#f3f4f6;font-weight:600;font-size:11px;border-bottom:2px solid #d1d5db';
+      const hdrCover=document.createElement('span'); hdrCover.textContent='C'; hdrCover.style.cssText='width:18px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrCover);
+      const hdrTitle=document.createElement('span'); hdrTitle.textContent='Title'; hdrTitle.style.cssText='width:180px;flex-shrink:0'; hdrRow.appendChild(hdrTitle);
+      const hdrArtist=document.createElement('span'); hdrArtist.textContent='Artist'; hdrArtist.style.cssText='width:180px;flex-shrink:0'; hdrRow.appendChild(hdrArtist);
+      const hdrLen=document.createElement('span'); hdrLen.textContent='Len'; hdrLen.style.cssText='width:42px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrLen);
+      const hdrKey=document.createElement('span'); hdrKey.textContent='Key'; hdrKey.style.cssText='width:35px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrKey);
+      const hdrCapo=document.createElement('span'); hdrCapo.textContent='Cp'; hdrCapo.style.cssText='width:30px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrCapo);
+      const hdrMood=document.createElement('span'); hdrMood.textContent='♫'; hdrMood.style.cssText='width:28px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrMood);
+      const hdrLyricsGroup=document.createElement('div'); hdrLyricsGroup.style.cssText='flex:1 1 auto;min-width:180px;max-width:350px';
+      const hdrLyricsText=document.createElement('span'); hdrLyricsText.textContent='Lyrics / Preview'; hdrLyricsText.style.cssText='font-size:11px';
+      hdrLyricsGroup.appendChild(hdrLyricsText); hdrRow.appendChild(hdrLyricsGroup);
+      const hdrAudioGroup=document.createElement('div'); hdrAudioGroup.style.cssText='flex:1 1 auto;min-width:180px;max-width:350px';
+      const hdrAudioText=document.createElement('span'); hdrAudioText.textContent='Audio / URL'; hdrAudioText.style.cssText='font-size:11px';
+      hdrAudioGroup.appendChild(hdrAudioText); hdrRow.appendChild(hdrAudioGroup);
+      const hdrRating=document.createElement('span'); hdrRating.textContent='Rate'; hdrRating.style.cssText='width:32px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrRating);
+      const hdrActions=document.createElement('span'); hdrActions.textContent=''; hdrActions.style.cssText='margin-left:auto;width:65px;flex-shrink:0'; hdrRow.appendChild(hdrActions);
+      list.appendChild(hdrRow);
       // Filters / sort
-      const tSel=document.getElementById('dbType');
       const sSel=document.getElementById('dbSort');
-      const mSel=document.getElementById('dbMood');
       const searchInput=document.getElementById('dbSearch');
-      const typeVal=(tSel&&tSel.value)||'all';
       const sortVal=(sSel&&sSel.value)||'alpha';
-      const moodVal=(mSel&&mSel.value)||'all';
       const searchTerm=(searchInput&&searchInput.value)||'';
+      const filterCovers=document.getElementById('filterCovers')?.checked;
+      const filterOriginals=document.getElementById('filterOriginals')?.checked;
+      const filterHasLyrics=document.getElementById('filterHasLyrics')?.checked;
+      const filterKaraoke=document.getElementById('filterKaraoke')?.checked;
+      const filterHasAudio=document.getElementById('filterHasAudio')?.checked;
+      const filterHasURL=document.getElementById('filterHasURL')?.checked;
+      const filterInSet=document.getElementById('filterInSet')?.checked;
+      const filterUpbeat=document.getElementById('filterUpbeat')?.checked;
+      const filterHappy=document.getElementById('filterHappy')?.checked;
+      const filterEnergetic=document.getElementById('filterEnergetic')?.checked;
+      const filterMellow=document.getElementById('filterMellow')?.checked;
+      const filterSad=document.getElementById('filterSad')?.checked;
       const used=(arr)=>arr.filter(Boolean);
       const hasMood=(song, key)=>{
         if(DEFAULT_MOODS.includes(key)){
@@ -1101,48 +1172,99 @@
       };
       const rankMap={upbeat:0,happy:1,energetic:2,mellow:3,sad:4,none:99};
       getAllMoods().forEach((m,i)=>{ if(!(m in rankMap)) rankMap[m]=50+i; });
-      let rows=db.filter(s=> typeVal==='all' ? true : (typeVal==='covers'? s.isCover : !s.isCover));
-      if(moodVal!=='all') rows = rows.filter(s=> hasMood(s,moodVal));
+      let rows=db.slice();
+      if(filterCovers) rows = rows.filter(s=> s.isCover);
+      if(filterOriginals) rows = rows.filter(s=> !s.isCover);
+      if(filterHasLyrics) rows = rows.filter(s=> (s.lyrics||'').trim().length>0);
+      if(filterKaraoke) rows = rows.filter(s=> (s.lyrics||'').toLowerCase().includes('karaoke'));
+      if(filterHasAudio) rows = rows.filter(s=> (s.audioFileName||'').length>0 || (armedAudio[s.id]));
+      if(filterHasURL) rows = rows.filter(s=> (s.audioUrl||'').trim().length>0);
+      if(filterInSet) rows = rows.filter(s=> setlist.some(x=>x.id===s.id));
+      if(filterUpbeat) rows = rows.filter(s=> s.isUpbeat);
+      if(filterHappy) rows = rows.filter(s=> s.isHappy);
+      if(filterEnergetic) rows = rows.filter(s=> s.isEnergetic);
+      if(filterMellow) rows = rows.filter(s=> s.isMellow);
+      if(filterSad) rows = rows.filter(s=> s.isSad);
       if(searchTerm){
         try{
           const regex = new RegExp(searchTerm, 'i');
           rows = rows.filter(s=> regex.test(s.title||'') || regex.test(s.artist||'') || regex.test(s.composer||''));
         }catch(e){ rows = rows.filter(s=> (s.title||'').toLowerCase().includes(searchTerm.toLowerCase()) || (s.artist||'').toLowerCase().includes(searchTerm.toLowerCase()) || (s.composer||'').toLowerCase().includes(searchTerm.toLowerCase())); }
       }
+      const byAdded=(a,b)=> a.id - b.id;
       const byAlpha=(a,b)=> a.title.localeCompare(b.title);
       const byBand=(a,b)=> (a.artist||'').localeCompare(b.artist||'') || a.title.localeCompare(b.title);
       const byMood=(a,b)=> (rankMap[songMood(a)] - rankMap[songMood(b)]) || a.title.localeCompare(b.title);
-      const byCover=(a,b)=> (b.isCover - a.isCover) || a.title.localeCompare(b.title);
-      const byLength=(a,b)=> (a.length||0) - (b.length||0) || a.title.localeCompare(b.title);
-      const sorter = sortVal==='band'? byBand : sortVal==='mood'? byMood : sortVal==='cover'? byCover : sortVal==='length'? byLength : byAlpha;
+      const byRating=(a,b)=> (b.audienceRating||0) - (a.audienceRating||0) || a.title.localeCompare(b.title);
+      const byMostUsed=(a,b)=> (b.usageCount||0) - (a.usageCount||0) || a.title.localeCompare(b.title);
+      const byLeastUsed=(a,b)=> (a.usageCount||0) - (b.usageCount||0) || a.title.localeCompare(b.title);
+      const sorter = sortVal==='added'? byAdded : sortVal==='band'? byBand : sortVal==='mood'? byMood : sortVal==='rating'? byRating : sortVal==='mostUsed'? byMostUsed : sortVal==='leastUsed'? byLeastUsed : byAlpha;
       rows.sort(sorter);
       rows.forEach(s=>{
-        const row=document.createElement('div'); row.className='db-row'; row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center'; row.style.padding='6px 8px'; row.style.border='1px solid #e5e7eb'; row.style.borderRadius='6px'; row.style.margin='6px 0'; row.style.width='100%';
-        const title=document.createElement('input'); title.value=s.title||''; title.placeholder='Title'; title.className='db-title'; title.style.flex='5 1 520px';
+        const row=document.createElement('div'); row.className='db-row'; row.style.display='flex'; row.style.gap='4px'; row.style.alignItems='center'; row.style.padding='4px'; row.style.border='1px solid #e5e7eb'; row.style.borderRadius='4px'; row.style.margin='4px 0';
+        
+        // Cover checkbox
+        const coverChk=document.createElement('input'); coverChk.type='checkbox'; coverChk.checked=!!s.isCover; coverChk.title='Cover song'; coverChk.style.cssText='width:18px;height:18px;margin:0;cursor:pointer';
+        coverChk.addEventListener('change',()=>{ 
+          s.isCover=!!coverChk.checked; 
+          if(!s.isCover){ s.artist='Original'; artist.value=''; artist.disabled=true; artist.style.opacity='0.5'; } 
+          else { artist.disabled=false; artist.style.opacity='1'; } 
+          saveAll(); renderSongPool(); 
+        });
+        
+        // Title (20 chars width)
+        const title=document.createElement('input'); title.value=s.title||''; title.placeholder='Title'; title.style.cssText='width:180px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:13px';
         title.addEventListener('change',()=>{ s.title=title.value.trim()||s.title; saveAll(); buildSheet('sheetInline'); renderSongPool(); });
-        // Cover as simple checkbox
-        const coverWrap=document.createElement('label'); coverWrap.style.display='inline-flex'; coverWrap.style.alignItems='center'; coverWrap.style.gap='6px'; coverWrap.style.minWidth='86px'; coverWrap.title='Is this a cover?';
-        const coverChk=document.createElement('input'); coverChk.type='checkbox'; coverChk.checked=!!s.isCover; coverWrap.appendChild(coverChk); coverWrap.appendChild(document.createTextNode('Cover'));
-        const artist=document.createElement('input'); artist.placeholder='Artist'; artist.value= (s.isCover? (s.artist||'') : ''); artist.className='db-artist'; artist.style.flex='3 1 260px'; artist.disabled = !s.isCover; artist.style.opacity = s.isCover? '1':'0.5';
-        const syncCover=()=>{ const isC=!!coverChk.checked; s.isCover=isC; if(!isC){ s.artist='Original'; artist.value=''; artist.disabled=true; artist.style.opacity='0.5'; } else { artist.disabled=false; artist.style.opacity='1'; } saveAll(); renderSongPool(); };
-        coverChk.addEventListener('change', syncCover);
+        
+        // Artist (20 chars width)
+        const artist=document.createElement('input'); artist.placeholder='Artist'; artist.value=(s.isCover? (s.artist||'') : ''); artist.style.cssText='width:180px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:13px;opacity:'+(s.isCover?'1':'0.5'); artist.disabled=!s.isCover;
         artist.addEventListener('change',()=>{ s.artist = coverChk.checked ? (artist.value.trim()||s.artist||'') : 'Original'; saveAll(); });
-        const len=document.createElement('input'); len.type='number'; len.step='0.5'; len.min='0.5'; len.value=String(s.length||3.5); len.title='Length (min)'; len.style.width='70px';
+        
+        // Length (5 chars width)
+        const len=document.createElement('input'); len.type='number'; len.step='0.5'; len.min='0.5'; len.value=String(s.length||3.5); len.title='Length (min)'; len.style.cssText='width:42px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center';
         len.addEventListener('change',()=>{ const v=parseFloat(len.value); if(v>0) s.length=v; saveAll(); buildSheet('sheetInline'); });
-        const key=document.createElement('input'); key.placeholder='Key'; key.value=s.key||''; key.style.width='90px';
+        
+        // Key (3 chars width)
+        const key=document.createElement('input'); key.placeholder='Key'; key.value=s.key||''; key.style.cssText='width:35px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center';
         key.addEventListener('change',()=>{ s.key=key.value.trim(); saveAll(); buildSheet('sheetInline'); });
-        const capo=document.createElement('input'); capo.type='number'; capo.min='0'; capo.max='24'; capo.value=String(Number.isInteger(s.capo)? s.capo : 0); capo.title='Capo fret (0-24)'; capo.style.width='60px';
+        
+        // Capo (2 chars width)
+        const capo=document.createElement('input'); capo.type='number'; capo.min='0'; capo.max='24'; capo.value=String(Number.isInteger(s.capo)? s.capo : 0); capo.title='Capo'; capo.style.cssText='width:30px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center';
         capo.addEventListener('change',()=>{ let v=parseInt(capo.value,10); if(!Number.isInteger(v) || v<0) v=0; if(v>24) v=24; s.capo=v; capo.value=String(v); saveAll(); buildSheet('sheetInline'); });
+        
+        // Mood submenu (hoverable)
+        const moodBtn=document.createElement('button'); moodBtn.textContent='♫'; moodBtn.type='button'; moodBtn.title='Moods'; moodBtn.style.cssText='padding:2px 6px;border:1px solid #d1d5db;border-radius:3px;background:#fff;cursor:pointer;position:relative;font-size:14px;width:28px;height:24px';
+        const moodMenu=document.createElement('div'); moodMenu.style.cssText='display:none;position:absolute;z-index:100;background:#fff;border:1px solid #d1d5db;border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:140px;top:100%;left:0;margin-top:2px;text-align:left';
+        const moodChecks=['upbeat','happy','energetic','mellow','sad'].map(m=>{ const lbl=document.createElement('label'); lbl.style.cssText='display:block;margin:4px 0;white-space:nowrap;text-align:left'; const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=s['is'+m.charAt(0).toUpperCase()+m.slice(1)]; chk.addEventListener('change',()=>{ s['is'+m.charAt(0).toUpperCase()+m.slice(1)]=chk.checked; saveAll(); }); lbl.appendChild(chk); lbl.appendChild(document.createTextNode(' '+m.charAt(0).toUpperCase()+m.slice(1))); return lbl; });
+        moodChecks.forEach(c=>moodMenu.appendChild(c));
+        moodBtn.appendChild(moodMenu);
+        moodBtn.addEventListener('mouseenter',()=>{ moodMenu.style.display='block'; });
+        moodBtn.addEventListener('mouseleave',()=>{ moodMenu.style.display='none'; });
+        moodMenu.addEventListener('mouseenter',()=>{ moodMenu.style.display='block'; });
+        moodMenu.addEventListener('mouseleave',()=>{ moodMenu.style.display='none'; });
         // Lyrics / chords quick edit (collapsed textarea)
-        const lyrBtn=document.createElement('button'); lyrBtn.textContent='Lyrics'; lyrBtn.className='btn secondary'; lyrBtn.type='button'; lyrBtn.style.marginLeft='4px'; lyrBtn.title='Edit lyrics / chords for this song';
+        const lyricsWrap=document.createElement('div'); lyricsWrap.style.cssText='display:flex;flex-direction:row;gap:6px;align-items:center;flex:1 1 auto;min-width:180px;max-width:350px';
+        const lyrBtn=document.createElement('button'); lyrBtn.textContent='Lyrics'; lyrBtn.className='btn secondary'; lyrBtn.type='button'; lyrBtn.style.cssText='padding:2px 6px;font-size:10px;border-radius:3px;flex-shrink:0'; lyrBtn.title='Edit lyrics / chords for this song';
+        const lyricsPreview=document.createElement('div'); lyricsPreview.style.cssText='font-size:10px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto';
+        const findFirstLyricLine=(txt)=>{ const lines=(txt||'').split('\n'); for(let l of lines){ const t=l.trim(); if(!t) continue; if(t.startsWith('[') && t.includes(']')) continue; if(t.startsWith('|')) continue; if(/^[A-G]([#b]?m?|add\d|maj|min|sus|dim|aug|\d)*[\s\/]+/.test(t)) continue; return t; } return ''; };
+        const firstLine=findFirstLyricLine(s.lyrics); lyricsPreview.textContent=firstLine? (firstLine.length>50? firstLine.substring(0,50)+'...' : firstLine) : '';
+        lyricsWrap.append(lyrBtn,lyricsPreview);
         const lyrBox=document.createElement('textarea'); lyrBox.rows=3; lyrBox.style.width='100%'; lyrBox.style.marginTop='4px'; lyrBox.style.display='none'; lyrBox.placeholder='Lyrics / chords'; lyrBox.value=s.lyrics||'';
         lyrBtn.addEventListener('click',()=>{
           const showing = lyrBox.style.display!=='none';
+          if(!showing && s.isCover && (!s.lyrics || s.lyrics.trim().length===0)){
+            const query = encodeURIComponent((s.title||'') + ' ' + (s.artist||'') + ' lyrics chords');
+            window.open('https://www.google.com/search?q='+query, '_blank', 'width=900,height=700');
+          }
           lyrBox.style.display = showing ? 'none' : 'block';
         });
-        lyrBox.addEventListener('change',()=>{ s.lyrics=lyrBox.value; saveAll(); });
-        // Audio attach / link
-        const audioBtn=document.createElement('button'); audioBtn.textContent='Add Audio'; audioBtn.className='btn'; audioBtn.type='button'; audioBtn.style.marginLeft='4px'; audioBtn.title='Attach MP3/WAV or link a URL (YouTube, Spotify, etc.)';
+        lyrBox.addEventListener('change',()=>{ s.lyrics=lyrBox.value; const fl=findFirstLyricLine(s.lyrics); lyricsPreview.textContent=fl? (fl.length>50? fl.substring(0,50)+'...' : fl) : ''; saveAll(); });
+        // Audio attach / link with inline URL preview/edit
+        const audioWrap=document.createElement('div'); audioWrap.style.cssText='display:flex;flex-direction:row;gap:6px;align-items:center;flex:1 1 auto;min-width:180px;max-width:350px';
+        const audioBtn=document.createElement('button'); audioBtn.textContent='Audio'; audioBtn.className='btn'; audioBtn.type='button'; audioBtn.style.cssText='padding:2px 6px;font-size:10px;border-radius:3px;flex-shrink:0'; audioBtn.title='Attach MP3/WAV or link a URL (YouTube, Spotify, etc.)';
+        const audioInline=document.createElement('input'); audioInline.type='url'; audioInline.placeholder='URL or file path...'; audioInline.value=s.audioUrl||s.audioFileName||''; audioInline.style.cssText='flex:1 1 auto;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:10px';
+        audioInline.addEventListener('change',()=>{ s.audioUrl=audioInline.value.trim(); saveAll(); });
+        audioWrap.append(audioBtn,audioInline);
         const audioBox=document.createElement('div'); audioBox.style.display='none'; audioBox.style.width='100%'; audioBox.style.marginTop='4px'; audioBox.style.padding='8px'; audioBox.style.border='1px solid #e5e7eb'; audioBox.style.borderRadius='6px';
         const audioUrlIn=document.createElement('input'); audioUrlIn.type='url'; audioUrlIn.placeholder='https:// link to audio, YouTube, or Spotify'; audioUrlIn.style.width='60%'; audioUrlIn.value = s.audioUrl||'';
         const saveUrlBtn=document.createElement('button'); saveUrlBtn.className='btn'; saveUrlBtn.textContent='Save URL'; saveUrlBtn.type='button'; saveUrlBtn.style.marginLeft='8px';
@@ -1175,32 +1297,16 @@
           updateAudioInfo();
           alert('Audio armed for this session: '+(s.title||'song'));
         });
-        // Mood checkboxes (defaults + custom)
-        const moodsWrap=document.createElement('div'); moodsWrap.style.display='flex'; moodsWrap.style.flexWrap='wrap'; moodsWrap.style.gap='6px';
-        const ensureCM=()=>{ if(!Array.isArray(s.customMoods)) s.customMoods=[]; };
-        getAllMoods().forEach(m=>{
-          const lab=document.createElement('label'); lab.className='chip'; const cb=document.createElement('input'); cb.type='checkbox';
-          const isDefault=DEFAULT_MOODS.includes(m);
-          let checked=false;
-          if(isDefault){ checked = (m==='upbeat'&&s.isUpbeat) || (m==='happy'&&s.isHappy) || (m==='energetic'&&s.isEnergetic) || (m==='mellow'&&s.isMellow) || (m==='sad'&&s.isSad); }
-          else { ensureCM(); checked=(s.customMoods||[]).includes(m); }
-          cb.checked=checked;
-          cb.addEventListener('change',()=>{
-            if(isDefault){
-              if(m==='upbeat') s.isUpbeat=cb.checked; else if(m==='happy') s.isHappy=cb.checked; else if(m==='energetic') s.isEnergetic=cb.checked; else if(m==='mellow') s.isMellow=cb.checked; else if(m==='sad') s.isSad=cb.checked;
-            }else{
-              ensureCM();
-              const ix=(s.customMoods||[]).indexOf(m);
-              if(cb.checked){ if(ix===-1) s.customMoods.push(m); }
-              else { if(ix>-1) s.customMoods.splice(ix,1); }
-            }
-            saveAll(); renderSongPool();
-          });
-          lab.appendChild(cb); lab.appendChild(document.createTextNode(' '+moodLabel(m)));
-          moodsWrap.appendChild(lab);
-        });
-        const del=document.createElement('button'); del.className='btn danger'; del.textContent='Delete'; del.style.marginLeft='auto'; del.addEventListener('click',()=>{ const i=db.findIndex(x=>x.id===s.id); if(i>-1){ db.splice(i,1); renderDB(); renderSongPool(); saveAll(); } });
-        row.append(title,coverWrap,artist,len,key,capo,moodsWrap,lyrBtn,audioBtn,del); list.appendChild(row);
+        
+        // Audience rating (0-3: thumbs down, sideways, up, double up) - click to cycle, default 2
+        if(s.audienceRating===undefined || s.audienceRating===null) s.audienceRating=2;
+        const rating = s.audienceRating;
+        const ratingIcons = ['👎','👈','👍','👍 👍'];
+        const ratingBtn=document.createElement('button'); ratingBtn.type='button'; ratingBtn.textContent=ratingIcons[rating]; ratingBtn.style.cssText='padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;background:#fff;cursor:pointer;font-size:14px;min-width:32px;height:24px'; ratingBtn.title='Rating: '+rating+' (click to cycle)';
+        ratingBtn.addEventListener('click',()=>{ s.audienceRating=((s.audienceRating||0)+1)%4; saveAll(); renderDB(); });
+        
+        const del=document.createElement('button'); del.className='btn danger'; del.textContent='Del'; del.style.cssText='margin-left:auto;padding:2px 8px;font-size:11px;border-radius:3px;min-width:50px'; del.addEventListener('click',()=>{ const i=db.findIndex(x=>x.id===s.id); if(i>-1){ db.splice(i,1); renderDB(); renderSongPool(); saveAll(); } });
+        row.append(coverChk,title,artist,len,key,capo,moodBtn,lyricsWrap,audioWrap,ratingBtn,del); list.appendChild(row);
         list.appendChild(lyrBox);
         list.appendChild(audioBox);
       });
@@ -1482,7 +1588,7 @@
         const meta=document.createElement('div'); meta.style.fontSize='12px'; meta.style.color='#6b7280';
         const keyBits=[]; if(it.artist) keyBits.push(it.artist); if(it.key) keyBits.push(it.key); if(Number.isInteger(it.capo) && it.capo>0) keyBits.push('Capo '+it.capo);
         meta.textContent=keyBits.join(' • ');
-        // audio badge + per-song arm (Arm only when a File Ref exists, not URL-only)
+        // audio badge + per-song arm (show Arm button for any URL or file reference)
         try{
           const baseSong = findSongById(it.id) || findSongByTitle(it.title);
           const hasFileRef = baseSong && ((baseSong.audioFileName||'').trim());
@@ -1491,8 +1597,31 @@
           if(baseSong && (isArmed || hasUrl || hasFileRef)){
             const badge=document.createElement('span'); badge.textContent='🔊'; badge.title=isArmed? 'Audio armed' : (hasUrl? 'Audio URL linked' : 'Audio file referenced'); badge.style.marginLeft='6px'; ttl.appendChild(badge);
           }
-          if(baseSong && hasFileRef && !isArmed && songArmInput){
-            const armBtn=document.createElement('button'); armBtn.type='button'; armBtn.textContent='Arm'; armBtn.title='Select local audio file for this song'; armBtn.style.fontSize='11px'; armBtn.style.padding='4px 8px'; armBtn.style.border='1px solid #d1d5db'; armBtn.style.background='#fff'; armBtn.style.borderRadius='4px'; armBtn.style.cursor='pointer'; armBtn.addEventListener('click',e=>{ e.stopPropagation(); _pendingArmSongId=baseSong.id; songArmInput.click(); }); row.appendChild(armBtn);
+          // Show Arm button: if URL exists, just arm it; if file ref exists, prompt for file
+          if(baseSong && (hasFileRef || hasUrl) && !isArmed){
+            const armBtn=document.createElement('button'); armBtn.type='button'; armBtn.textContent='Arm'; 
+            if(hasUrl && !hasFileRef){
+              // URL only - just arm it without file prompt
+              armBtn.title='Arm this URL for playback';
+              armBtn.addEventListener('click',e=>{ 
+                e.stopPropagation(); 
+                if(baseSong.id!=null){
+                  try{ if(armedAudio[baseSong.id]) URL.revokeObjectURL(armedAudio[baseSong.id]); }catch(_){ }
+                  armedAudio[baseSong.id]=baseSong.audioUrl;
+                  armBtn.textContent='Armed';
+                  armBtn.disabled=true;
+                  armBtn.style.opacity='0.5';
+                  saveAll();
+                  renderLive();
+                }
+              });
+            } else {
+              // Has file reference - prompt for file selection
+              armBtn.title='Select local audio file for this song';
+              armBtn.addEventListener('click',e=>{ e.stopPropagation(); _pendingArmSongId=baseSong.id; songArmInput.click(); });
+            }
+            armBtn.style.fontSize='11px'; armBtn.style.padding='4px 8px'; armBtn.style.border='1px solid #d1d5db'; armBtn.style.background='#fff'; armBtn.style.borderRadius='4px'; armBtn.style.cursor='pointer';
+            row.appendChild(armBtn);
           }
         }catch(_){ }
         main.append(ttl,meta);
@@ -1505,6 +1634,13 @@
           if(bodyEl){
             bodyEl.textContent=it.lyrics || '';
             bodyEl.style.paddingTop='50vh';
+            // Add rating UI at bottom
+            const ratingDiv=document.createElement('div'); ratingDiv.style.cssText='margin-top:40px;padding:20px;text-align:center;border-top:2px solid #d1d5db';
+            const ratingLabel=document.createElement('div'); ratingLabel.textContent='Rate this performance:'; ratingLabel.style.cssText='font-weight:600;margin-bottom:12px;font-size:18px';
+            const ratingBtns=document.createElement('div'); ratingBtns.style.cssText='display:flex;justify-content:center;gap:10px';
+            const ratingIcons = ['\ud83d\udc4e','\ud83d\udc48','\ud83d\udc4d','\ud83d\udc4d\u200a\ud83d\udc4d'];
+            [0,1,2,3].forEach(r=>{ const btn=document.createElement('button'); btn.type='button'; btn.textContent=ratingIcons[r]; btn.style.cssText='padding:8px 16px;border:2px solid '+(it.audienceRating===r? '#3b82f6':'#d1d5db')+';border-radius:8px;background:'+(it.audienceRating===r? '#dbeafe':'#fff')+';cursor:pointer;font-size:24px'; btn.title='Rating: '+r; btn.addEventListener('click',()=>{ const baseSong=findSongById(it.id)||findSongByTitle(it.title); if(baseSong){ baseSong.audienceRating=r; saveAll(); renderLive(); } }); ratingBtns.appendChild(btn); });
+            ratingDiv.append(ratingLabel,ratingBtns); bodyEl.appendChild(ratingDiv);
           }
           const lyrMain=document.getElementById('liveLyrics'); if(lyrMain){ lyrMain.scrollTop=0; }
           const zoom=document.getElementById('liveInlineZoom'); if(zoom){ zoom.value=String(liveZoomPx); }
@@ -1551,6 +1687,7 @@
         const targetSongs = setlist.filter(x=>x.type==='song');
         targetSongs.forEach(it=>{
           const base = (findSongById(it.id) || findSongByTitle(it.title)); if(!base) return;
+          // Try to match by filename first
           const want=(base.audioFileName||'').toLowerCase().trim();
           let file=null;
           if(want){ file = map.get(want) || null; }
@@ -1560,10 +1697,19 @@
             if(t){ for(const [nm,f] of map){ if(nm.replace(/[^a-z0-9]+/g,' ').includes(t)){ file=f; break; } }
             }
           }
-          if(file && base.id!=null){
-            try{ if(armedAudio[base.id]) URL.revokeObjectURL(armedAudio[base.id]); }catch(_){ }
-            armedAudio[base.id]=URL.createObjectURL(file);
-            armed++;
+          // If file found OR has URL, arm it
+          if(base.id!=null){
+            if(file){
+              // Arm with local file
+              try{ if(armedAudio[base.id]) URL.revokeObjectURL(armedAudio[base.id]); }catch(_){ }
+              armedAudio[base.id]=URL.createObjectURL(file);
+              armed++;
+            } else if((base.audioUrl||'').trim()){
+              // Arm with URL (mark as armed by setting a flag)
+              try{ if(armedAudio[base.id]) URL.revokeObjectURL(armedAudio[base.id]); }catch(_){ }
+              armedAudio[base.id]=base.audioUrl; // store URL directly
+              armed++;
+            }
           }
         });
         return armed;
@@ -1571,7 +1717,7 @@
       armBtn.addEventListener('click',()=> armDir.click());
       armDir.addEventListener('change',()=>{
         const n=matchAndArm(armDir.files||[]);
-        alert(n? ('Armed '+n+' audio file'+(n===1?'':'s')+' for this set.') : 'No matching files found. Set a File Ref next to songs in Database.');
+        alert(n? ('Armed '+n+' audio track'+(n===1?'':'s')+' (files and URLs) for this set.') : 'No matching files found. Add audio files or URLs to songs in Database.');
       });
     })();
 
@@ -1614,6 +1760,13 @@
       titleEl.textContent=item.title || '';
       bodyEl.textContent=item.lyrics || '';
       bodyEl.style.paddingTop='50vh';
+      // Add rating UI at bottom
+      const ratingDiv=document.createElement('div'); ratingDiv.style.cssText='margin-top:40px;padding:20px;text-align:center;border-top:2px solid #d1d5db';
+      const ratingLabel=document.createElement('div'); ratingLabel.textContent='Rate this performance:'; ratingLabel.style.cssText='font-weight:600;margin-bottom:12px;font-size:24px';
+      const ratingBtns=document.createElement('div'); ratingBtns.style.cssText='display:flex;justify-content:center;gap:12px';
+      const ratingIcons = ['\ud83d\udc4e','\ud83d\udc48','\ud83d\udc4d','\ud83d\udc4d\u200a\ud83d\udc4d'];
+      [0,1,2,3].forEach(r=>{ const btn=document.createElement('button'); btn.type='button'; btn.textContent=ratingIcons[r]; btn.style.cssText='padding:10px 20px;border:2px solid '+(item.audienceRating===r? '#3b82f6':'#d1d5db')+';border-radius:8px;background:'+(item.audienceRating===r? '#dbeafe':'#fff')+';cursor:pointer;font-size:32px'; btn.title='Rating: '+r; btn.addEventListener('click',()=>{ const baseSong=findSongById(item.id)||findSongByTitle(item.title); if(baseSong){ baseSong.audienceRating=r; saveAll(); openLiveLyricsOverlay(item); } }); ratingBtns.appendChild(btn); });
+      ratingDiv.append(ratingLabel,ratingBtns); bodyEl.appendChild(ratingDiv);
       const main=document.getElementById('liveLyricsOverlayMain');
       if(main){ main.scrollTop=0; }
       const zoomSlider=document.getElementById('liveLyricsZoom');
@@ -1739,19 +1892,16 @@
         playBtn.addEventListener('click',()=>{
           const titleText=document.getElementById('liveLyricsOverlayTitle')?.textContent || '';
           const song=setlist.find(x=> x.type==='song' && x.title===titleText);
-          try{ if(song) playSongAudioFor(song); }catch(_){ }
+          // Only play audio if armed - URLs must be armed to play (for live performance mode)
+          const armed=(song && song.id!=null && armedAudio[song.id]);
+          if(armed){
+            try{ if(song) playSongAudioFor(song); }catch(_){ }
+          }
           scheduleOverlayScroll(song);
-          // Only hide Play for external URLs (YouTube/Spotify), not for armed audio or streams
-          if(song){
-            const armed=(song.id!=null && armedAudio[song.id]);
-            const url=(song.audioUrl||'').trim();
-            const lower=url.toLowerCase();
-            const isStream= armed || lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.ogg') || lower.includes('stream');
-            if(!isStream && url){ playBtn.style.display='none'; }
-            else if(isStream){
-              playBtn.style.display='none';
-              if(stopBtn) stopBtn.style.display='';
-            }
+          // Only hide Play for armed audio/streams
+          if(song && armed){
+            playBtn.style.display='none';
+            if(stopBtn) stopBtn.style.display='';
           }
         });
       }
@@ -1823,19 +1973,16 @@
         playBtn.addEventListener('click',()=>{
           const titleText=document.getElementById('liveLyricsTitle')?.textContent || '';
           const song=setlist.find(x=> x.type==='song' && x.title===titleText);
-          try{ if(song) playSongAudioFor(song); }catch(_){ }
+          // Only play audio if armed - URLs must be armed to play (for live performance mode)
+          const armed=(song && song.id!=null && armedAudio[song.id]);
+          if(armed){
+            try{ if(song) playSongAudioFor(song); }catch(_){ }
+          }
           scheduleInlineScroll(song);
-          // Only hide Play for external URLs (YouTube/Spotify), not for armed audio or streams
-          if(song){
-            const armed=(song.id!=null && armedAudio[song.id]);
-            const url=(song.audioUrl||'').trim();
-            const lower=url.toLowerCase();
-            const isStream= armed || lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.ogg') || lower.includes('stream');
-            if(!isStream && url){ playBtn.style.display='none'; }
-            else if(isStream){
-              playBtn.style.display='none';
-              if(stopBtn) stopBtn.style.display='';
-            }
+          // Only hide Play for armed audio/streams
+          if(song && armed){
+            playBtn.style.display='none';
+            if(stopBtn) stopBtn.style.display='';
           }
         });
       }
@@ -2294,15 +2441,16 @@
 
     // Hook DB controls
     (function(){
-      const tSel=document.getElementById('dbType');
       const sSel=document.getElementById('dbSort');
-      const mSel=document.getElementById('dbMood');
       const searchInput=document.getElementById('dbSearch');
       const addBtn=document.getElementById('addMoodBtn');
-      if(tSel) tSel.addEventListener('change', renderDB);
       if(sSel) sSel.addEventListener('change', renderDB);
-      if(mSel) mSel.addEventListener('change', renderDB);
       if(searchInput) searchInput.addEventListener('input', renderDB);
+      // Hook all filter checkboxes
+      ['filterCovers','filterOriginals','filterHasLyrics','filterKaraoke','filterHasAudio','filterHasURL','filterInSet','filterUpbeat','filterHappy','filterEnergetic','filterMellow','filterSad'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.addEventListener('change', renderDB);
+      });
       if(addBtn) addBtn.addEventListener('click', ()=>{
         const name = prompt('New mood name (max 16 chars).'); if(name==null) return; const n=name.trim(); if(!n){ return; }
         const key=n.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,'-');
@@ -2310,18 +2458,36 @@
         if(DEFAULT_MOODS.includes(key) || (gig.customMoods||[]).includes(key)){ alert('Mood already exists.'); return; }
         gig.customMoods = gig.customMoods || []; gig.customMoods.push(key);
         saveAll();
-        // Rebuild DB mood filter select with custom
-        if(mSel){
-          const cur=mSel.value; mSel.innerHTML='<option value="all">All</option>' + getAllMoods().map(k=>`<option value="${k}">${moodLabel(k)}</option>`).join('');
-          if([...mSel.options].some(o=>o.value===cur)) mSel.value=cur;
-        }
         renderAddMoodsUI();
+        // Add custom mood filter checkbox
+        const filterContainer=document.getElementById('customMoodFilters');
+        if(filterContainer){
+          const lbl=document.createElement('label');
+          lbl.style.cssText='display:inline-flex;align-items:center;gap:4px';
+          const chk=document.createElement('input');
+          chk.type='checkbox';
+          chk.id='filter-'+key;
+          chk.addEventListener('change', renderDB);
+          lbl.appendChild(chk);
+          lbl.appendChild(document.createTextNode(moodLabel(key)));
+          filterContainer.appendChild(lbl);
+        }
         renderDB(); renderSongPool();
       });
-      // hydrate mood filter options with any custom moods
-      if(mSel){
-        const cur=mSel.value; mSel.innerHTML='<option value="all">All</option>' + getAllMoods().map(k=>`<option value="${k}">${moodLabel(k)}</option>`).join('');
-        if([...mSel.options].some(o=>o.value===cur)) mSel.value=cur;
+      // Hydrate custom mood filter checkboxes
+      const filterContainer=document.getElementById('customMoodFilters');
+      if(filterContainer && gig.customMoods){
+        gig.customMoods.forEach(key=>{
+          const lbl=document.createElement('label');
+          lbl.style.cssText='display:inline-flex;align-items:center;gap:4px';
+          const chk=document.createElement('input');
+          chk.type='checkbox';
+          chk.id='filter-'+key;
+          chk.addEventListener('change', renderDB);
+          lbl.appendChild(chk);
+          lbl.appendChild(document.createTextNode(moodLabel(key)));
+          filterContainer.appendChild(lbl);
+        });
       }
     })();
       // Simplified touch drag for preview-only interface (song/break/event chips)
@@ -2475,18 +2641,20 @@
 
     // Allowed routing targets by source type (routeTo). 'channel' is represented by selecting a channel directly, not via routeTo.
     const ROUTE_TARGETS={
-      drum:['mic','channel'], // full drum pieces can go direct (kick/snare) or via mic
-      cymbal:['mic'], // crash/cymbals are picked up by instrument mics only (no direct channel)
-      mic:['channel'],
-      di:['channel'],
-      fx:['di','channel','sampler'],
-      amp:['mic','di'],
-      acoustic:['di','mic'],
-      electric:['fx','amp','di','channel'],
-      deck:['fx','di','channel'],
-      sampler:['fx','di','channel','sampler'],
-      keys:['sampler','di','mic','channel'],
-      sax:['mic'],
+      drum:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','monitor'], // can connect to everything except utility
+      cymbal:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','monitor'],
+      mic:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // can connect to everything except utility
+      di:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // can connect to everything except utility
+      fx:['di','channel','sampler','fx','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // FX intermediates can connect between any items
+      amp:['mic','di','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'], // can connect to everything except utility
+      acoustic:['di','mic','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
+      electric:['fx','amp','di','channel','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
+      deck:['fx','di','channel','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
+      sampler:['fx','di','channel','sampler','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
+      keys:['sampler','di','mic','channel','fx','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
+      sax:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
+      monitor:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
+      other:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // custom can connect to anything
     };
 
     // Effective per-node targets (adds key-specific rules, e.g., bass amp can go direct to channel)
@@ -2735,17 +2903,33 @@
         node.addEventListener('mousedown',e=>{ if(e.button===2){ return; } bringToFront(node); start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
       function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); }
         function up(e){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); if(e && typeof e.clientX==='number'){ autoConnectOnPoint(node, e.clientX, e.clientY); } saveAll(); snapshotStage(); }
-      // rename on double click
+      // rename on double click (desktop only - avoid on mobile to prevent keyboard popup after drag)
       node.addEventListener('dblclick',()=>{
+        const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+        if(isMobile) return; // skip on mobile/tablet
         const txt=findText(node); if(!txt) return; const nv=prompt('Rename item:', txt.textContent||''); if(nv!=null){ txt.textContent=nv; syncInspectorFrom(node); saveAll(); }
       });
-      // Touch drag + long-press cable gesture
+      // Touch drag + long-press cable gesture OR disconnect gesture
       let touchId=null;
       node.addEventListener('touchstart',e=>{
         if(touchId!=null) return; const t=e.touches[0]; if(!t) return; touchId=t.identifier; lpTouchId=touchId; start={x:t.clientX,y:t.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; selectNode(node); e.preventDefault();
         lpTimer=setTimeout(()=>{
-          if(lpTouchId===touchId){ const svg=node.closest('svg'); if(svg){ const pt=svg.createSVGPoint(); pt.x=start.x; pt.y=start.y; const p=pt.matrixTransform(svg.getScreenCTM().inverse()); lpLine=document.createElementNS('http://www.w3.org/2000/svg','line'); lpLine.setAttribute('x1',p.x); lpLine.setAttribute('y1',p.y); lpLine.setAttribute('x2',p.x); lpLine.setAttribute('y2',p.y); lpLine.setAttribute('stroke','#000'); lpLine.setAttribute('stroke-width','2'); lpLine.setAttribute('stroke-dasharray','6,4'); lpLine.setAttribute('data-temp','cable'); svg.appendChild(lpLine); lpActive=true; lpSource=node; }
-        }
+          if(lpTouchId===touchId){ 
+            // Check if item has any connections - if so, disconnect; otherwise start cable drag
+            const hasConnection = node.dataset.routeTo || Array.from(node.closest('svg').querySelectorAll('g[data-draggable]')).some(g => g.dataset.routeTo === node.dataset.id);
+            if(hasConnection){
+              // Disconnect: clear this node's routeTo and any incoming connections
+              if(node.dataset.routeTo){ delete node.dataset.routeTo; node.removeAttribute('data-route-to'); }
+              const svg=node.closest('svg'); if(svg){
+                Array.from(svg.querySelectorAll('g[data-draggable]')).forEach(g=>{ if(g.dataset.routeTo===node.dataset.id){ delete g.dataset.routeTo; g.removeAttribute('data-route-to'); } });
+              }
+              saveAll(); refreshStageLegend(); if(svg) refreshCables(svg);
+              lpActive=false; lpTimer=null;
+            } else {
+              // No connection, start cable drag
+              const svg=node.closest('svg'); if(svg){ const pt=svg.createSVGPoint(); pt.x=start.x; pt.y=start.y; const p=pt.matrixTransform(svg.getScreenCTM().inverse()); lpLine=document.createElementNS('http://www.w3.org/2000/svg','line'); lpLine.setAttribute('x1',p.x); lpLine.setAttribute('y1',p.y); lpLine.setAttribute('x2',p.x); lpLine.setAttribute('y2',p.y); lpLine.setAttribute('stroke','#000'); lpLine.setAttribute('stroke-width','2'); lpLine.setAttribute('stroke-dasharray','6,4'); lpLine.setAttribute('data-temp','cable'); svg.appendChild(lpLine); lpActive=true; lpSource=node; }
+            }
+          }
         },300);
       }, {passive:false});
       node.addEventListener('touchmove',e=>{
@@ -2760,7 +2944,13 @@
         if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; }
         if(lpActive){ // finalize cable connection
           if(lpLine){ lpLine.remove(); }
-          const touch=e.changedTouches && e.changedTouches[0]; if(touch){ const targetEl=document.elementFromPoint(touch.clientX,touch.clientY); const tgt= targetEl && targetEl.closest && targetEl.closest('g[data-draggable]'); if(tgt && tgt!==lpSource){ const sAllowed=effectiveTargets(lpSource); const tAllowed=effectiveTargets(tgt); if(sAllowed.includes(tgt.dataset.type||'other')){ lpSource.dataset.routeTo=tgt.dataset.id; } else if(tAllowed.includes(lpSource.dataset.type||'other')){ tgt.dataset.routeTo=lpSource.dataset.id; } saveAll(); refreshStageLegend(); } }
+          const touch=e.changedTouches && e.changedTouches[0]; if(touch){ const targetEl=document.elementFromPoint(touch.clientX,touch.clientY); const tgt= targetEl && targetEl.closest && targetEl.closest('g[data-draggable]'); if(tgt && tgt!==lpSource){ const sAllowed=effectiveTargets(lpSource); const tAllowed=effectiveTargets(tgt); if(sAllowed.includes(tgt.dataset.type||'other')){ lpSource.dataset.routeTo=tgt.dataset.id; } else if(tAllowed.includes(lpSource.dataset.type||'other')){ tgt.dataset.routeTo=lpSource.dataset.id; } 
+            // Easter egg: Fan connected to vocal mic
+            if((lpSource.dataset.key==='fan' && tgt.dataset.key==='vocal') || (tgt.dataset.key==='fan' && lpSource.dataset.key==='vocal')){
+              const fanNode = lpSource.dataset.key==='fan' ? lpSource : tgt;
+              const txt=findText(fanNode); if(txt){ txt.textContent="I'm the bad guy"; }
+            }
+            saveAll(); refreshStageLegend(); } }
           lpActive=false; lpLine=null; lpSource=null; lpTouchId=null;
         }
         // Auto-connect on drop if released over another component
@@ -2776,21 +2966,37 @@
       let cableDrag=null; // {source, x1,y1, line}
       function clientToSvg(x,y){ const pt=svg.createSVGPoint(); pt.x=x; pt.y=y; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
       svg.addEventListener('contextmenu',e=>{ if(e.target.closest('svg#stageSvgFull')){ e.preventDefault(); }});
+      let disconnectTimer=null;
       svg.addEventListener('mousedown',e=>{
         if(e.button!==2) return; // only right-click
         const g=e.target.closest && e.target.closest('g[data-draggable]');
         if(!g) return; e.preventDefault();
+        // Start disconnect timer - if held for 500ms without movement, disconnect
+        const startX=e.clientX, startY=e.clientY;
+        disconnectTimer=setTimeout(()=>{
+          // Disconnect this item from all connections
+          if(g.dataset.routeTo){ delete g.dataset.routeTo; g.removeAttribute('data-route-to'); }
+          Array.from(svg.querySelectorAll('g[data-draggable]')).forEach(node=>{ if(node.dataset.routeTo===g.dataset.id){ delete node.dataset.routeTo; node.removeAttribute('data-route-to'); } });
+          saveAll(); refreshStageLegend(); refreshCables(svg);
+          disconnectTimer=null;
+        },500);
         const p=clientToSvg(e.clientX,e.clientY);
         const line=document.createElementNS('http://www.w3.org/2000/svg','line');
         line.setAttribute('x1', p.x); line.setAttribute('y1', p.y); line.setAttribute('x2', p.x); line.setAttribute('y2', p.y);
         line.setAttribute('stroke','#000'); line.setAttribute('stroke-width','2'); line.setAttribute('stroke-dasharray','6,4'); line.setAttribute('data-temp','cable');
         svg.appendChild(line);
-        cableDrag={source:g, x1:p.x, y1:p.y, line:line};
+        cableDrag={source:g, x1:p.x, y1:p.y, line:line, startX:startX, startY:startY};
         document.addEventListener('mousemove',onMove);
         document.addEventListener('mouseup',onUp);
       });
-      function onMove(e){ if(!cableDrag) return; const p=clientToSvg(e.clientX,e.clientY); cableDrag.line.setAttribute('x2',p.x); cableDrag.line.setAttribute('y2',p.y); }
-      function onUp(e){ if(!cableDrag) return; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp);
+      function onMove(e){ if(!cableDrag) return; 
+        // Cancel disconnect timer if mouse moved significantly
+        if(disconnectTimer && cableDrag.startX!=null){
+          const dx=Math.abs(e.clientX-cableDrag.startX), dy=Math.abs(e.clientY-cableDrag.startY);
+          if(dx>8 || dy>8){ clearTimeout(disconnectTimer); disconnectTimer=null; }
+        }
+        const p=clientToSvg(e.clientX,e.clientY); cableDrag.line.setAttribute('x2',p.x); cableDrag.line.setAttribute('y2',p.y); }
+      function onUp(e){ if(disconnectTimer){ clearTimeout(disconnectTimer); disconnectTimer=null; } if(!cableDrag) return; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp);
         const line=cableDrag.line; const source=cableDrag.source; line.remove();
         // determine drop target
         const el=document.elementFromPoint(e.clientX,e.clientY);
@@ -2799,6 +3005,11 @@
           const sAllowed=effectiveTargets(source); const tAllowed=effectiveTargets(target);
           if(sAllowed.includes(target.dataset.type||'other')){ source.dataset.routeTo=target.dataset.id; }
           else if(tAllowed.includes(source.dataset.type||'other')){ target.dataset.routeTo=source.dataset.id; }
+          // Easter egg: Fan connected to vocal mic
+          if((source.dataset.key==='fan' && target.dataset.key==='vocal') || (target.dataset.key==='fan' && source.dataset.key==='vocal')){
+            const fanNode = source.dataset.key==='fan' ? source : target;
+            const txt=findText(fanNode); if(txt){ txt.textContent="I'm the bad guy"; }
+          }
           saveAll(); refreshStageLegend();
         }
         cableDrag=null;
@@ -3029,15 +3240,23 @@
 
       // Build incoming map to identify roots (start of chains)
       const incoming=new Set(); rows.forEach(r=>{ const to=r.dataset.routeTo; if(to) incoming.add(to); });
-      // Filter: hide annotations & utility props; compact view = only root items OR items that expose a channel directly (need channel editing)
+      // Filter: hide annotations; compact view = only root items OR items that expose a channel directly
       const displayRows = rows.filter(r=>{
         const k=r.dataset.key||''; const tp=r.dataset.type||'other';
         if(k==='label' || k==='arrow') return false;
-        if(tp==='utility') return false;
         const targets=ROUTE_TARGETS[tp]||[];
         const exposesChannel=targets.includes('channel');
         const isRoot=!incoming.has(r.dataset.id);
         return isRoot || exposesChannel; // keep if chain start or endpoint with channel
+      });
+      // Identify unconnected items (no routeTo, no channel, not routed to by anyone, not utility annotations)
+      const unconnectedRows = rows.filter(r=>{
+        const k=r.dataset.key||''; const tp=r.dataset.type||'other';
+        if(k==='label' || k==='arrow') return false;
+        const hasChannel = r.dataset.channel;
+        const hasRouteTo = r.dataset.routeTo;
+        const isRoutedTo = incoming.has(r.dataset.id);
+        return !hasChannel && !hasRouteTo && !isRoutedTo;
       });
     // Precompute candidates map for routing dropdown population
     const byType={}; displayRows.forEach(r=>{ const t=r.dataset.type||'other'; (byType[t]||(byType[t]=[])).push(r); });
@@ -3098,6 +3317,20 @@
 
       host.appendChild(item);
     });
+    // Add unconnected items section if any exist
+    if(unconnectedRows.length>0){
+      const divider=document.createElement('div'); divider.style.cssText='border-top:2px solid #d1d5db;margin:12px 0 8px 0;padding-top:8px;font-weight:600;color:#64748b;font-size:12px';
+      divider.textContent='Unconnected Items (acoustic/props):';
+      host.appendChild(divider);
+      unconnectedRows.forEach((g,i)=>{
+        const item=document.createElement('div'); item.className='row'; item.style.opacity='0.7';
+        const key=g.dataset.key||''; const icon=ICON_ITEMS.find(x=>x.key===key);
+        const iconCell=document.createElement('div'); if(icon){ const im=document.createElement('img'); im.src=icon.src; im.alt=icon.label; iconCell.appendChild(im); } item.appendChild(iconCell);
+        const nameCell=document.createElement('div'); nameCell.className='nm'; const tEl=findText(g); nameCell.textContent=(tEl && tEl.textContent) || (icon?icon.label:('Item '+(i+1))); item.appendChild(nameCell);
+        const noteCell=document.createElement('div'); noteCell.style.cssText='font-size:11px;color:#64748b;font-style:italic'; noteCell.textContent='(no signal path)'; item.appendChild(noteCell);
+        host.appendChild(item);
+      });
+    }
     // After legend rebuild, refresh visual cables on both editor and stored SVGs
     const svgFull=document.getElementById('stageSvgFull'); if(svgFull) refreshCables(svgFull);
     const svgSmall=document.getElementById('stageSvg'); if(svgSmall) refreshCables(svgSmall);
@@ -3909,7 +4142,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- Bottom brand bar -->
   <div class="brand-bar">
-    <a href="https://paypal.me/jamesmulvale" target="_blank" rel="noopener">FASTFAST SETLIST and STAGE DESIGNER (c) 2025 All Rights Reserved</a>
+    FASTFAST SETLIST and STAGE DESIGNER (c) 2025 All Rights Reserved
   </div>
 </body>
 </html>
