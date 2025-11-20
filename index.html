@@ -97,16 +97,19 @@
   .line.drop-after, .break.drop-after{box-shadow:inset 0 -3px 0 0 #60a5fa}
 
     @media print{
-      body,*{background:transparent!important}
+      body,*{background:transparent!important;overflow:visible!important}
       .wrap{display:none}
       .modal{position:static;display:none;background:none;padding:0}
       .modal.open{display:block}
-      .sheet{box-shadow:none;height:auto}
+      .sheet{box-shadow:none;height:auto;overflow:visible!important}
       .tools{display:none}
       /* Never print the Print Options dialog */
       #printChooser{display:none!important}
       .break.pagebreak{page-break-after:always}
       #songPoolFlyout{display:none!important}
+      /* Hide scrollbars in print */
+      *::-webkit-scrollbar{display:none!important}
+      *{scrollbar-width:none!important}
     }
 
   /* Fullscreen Stage Editor */
@@ -2184,56 +2187,85 @@
         lines.push(row); sinceBreak++;
       });
 
-      // Append, then check overflow; shrink title font until fits
-      songs.append(...lines);
-      fitToPage();
-
-      // Add/update total time footer (includes songs + breaks)
+      // Add/update total time footer BEFORE appending and fitting (includes songs + breaks)
       const totalMin = setlist.reduce((acc,it)=> acc + ((it.type==='song'||it.type==='break') ? (parseFloat(it.length)||0) : 0), 0);
       let totalEl = sheet.querySelector('.total-time');
       if(!totalEl){ totalEl=document.createElement('div'); totalEl.className='total-time'; sheet.appendChild(totalEl); }
       totalEl.textContent = `Total: ${totalMin.toFixed(0)}m`;
       totalEl.style.textAlign='right'; totalEl.style.marginTop='8px'; totalEl.style.fontWeight='600'; totalEl.style.fontSize='12pt';
 
+      // Append songs, then check overflow; shrink title font until fits
+      songs.append(...lines);
+      fitToPage();
+
       function fitToPage(){
-        // fit within the target sheet element
-        // Get available height inside sheet excluding padding already applied; rely on scrollHeight
-  let tSize=16; // start slightly larger than base
-        for(let i=0;i<12;i++){
+        // Remove any transform scaling - fit naturally
+        songs.style.transform = 'none';
+        songs.style.width = '100%';
+        
+        // Aggressive font shrinking to fit on one page
+        let tSize=11; // start smaller
+        for(let i=0;i<20;i++){
           songs.style.setProperty('--t', tSize);
           Array.from(songs.querySelectorAll('.title')).forEach(d=> d.style.fontSize = tSize+'pt');
-          const minor = Math.max(8, tSize-4);
+          const minor = Math.max(5, tSize-4);
           Array.from(songs.querySelectorAll('.key,.time,.no')).forEach(d=> d.style.fontSize = minor+'pt');
           if(sheet.scrollHeight<=sheet.clientHeight) return; // fits
-          tSize -= 1; if(tSize<10) break; // lower bound
+          tSize -= 0.3; if(tSize<6) break; // lower bound
         }
   // If still overflowing, reduce subnotes
-  let sSize=9;
-        for(let i=0;i<6 && sheet.scrollHeight>sheet.clientHeight;i++){
+  let sSize=7;
+        for(let i=0;i<8 && sheet.scrollHeight>sheet.clientHeight;i++){
           Array.from(songs.querySelectorAll('.subnotes')).forEach(d=> d.style.fontSize = sSize+'pt');
-          sSize -= 1; if(sSize<7) break;
+          sSize -= 0.3; if(sSize<5) break;
         }
         // Reduce vertical gaps/padding progressively
-        const gapSteps=['3px','2px','1px','0px'];
+        const gapSteps=['2px','1px','0px'];
         for(const g of gapSteps){
           if(sheet.scrollHeight<=sheet.clientHeight) break;
           songs.style.gap=g;
           Array.from(songs.querySelectorAll('.line')).forEach(d=> d.style.padding = (g==='0px'?'0px 0':'1px 0'));
         }
-        // Shrink break banners as last resort
+        // Shrink break banners
         if(sheet.scrollHeight>sheet.clientHeight){
-          let bSize=14;
-          for(let i=0;i<4 && sheet.scrollHeight>sheet.clientHeight;i++){
-            bSize-=1; if(bSize<10) break;
-            Array.from(songs.querySelectorAll('.break')).forEach(d=>{ d.style.fontSize=bSize+'pt'; d.style.padding='4px 6px'; });
+          let bSize=10;
+          for(let i=0;i<6 && sheet.scrollHeight>sheet.clientHeight;i++){
+            bSize-=0.5; if(bSize<6) break;
+            Array.from(songs.querySelectorAll('.break')).forEach(d=>{ d.style.fontSize=bSize+'pt'; d.style.padding='2px 4px'; });
           }
         }
         // If still overflowing, elide subnotes text more aggressively
         if(sheet.scrollHeight>sheet.clientHeight){
           Array.from(songs.querySelectorAll('.subnotes')).forEach(d=>{
-            if(d.textContent.length>40) d.textContent=d.textContent.slice(0,37)+'…';
+            if(d.textContent.length>25) d.textContent=d.textContent.slice(0,22)+'…';
           });
         }
+        // Shrink total time footer
+        if(sheet.scrollHeight>sheet.clientHeight && totalEl){
+          totalEl.style.fontSize='7pt';
+          totalEl.style.marginTop='0px';
+          totalEl.style.paddingTop='1px';
+        }
+        // Last resort: shrink everything more for setlists <=35 songs
+        if(sheet.scrollHeight>sheet.clientHeight && setlist.filter(x=>x.type==='song').length<=35){
+          Array.from(songs.querySelectorAll('.title')).forEach(d=>{
+            const currentSize=parseFloat(d.style.fontSize)||10;
+            if(currentSize>5.5) d.style.fontSize = Math.max(5.5, currentSize-1.2)+'pt';
+          });
+          Array.from(songs.querySelectorAll('.key,.time,.no')).forEach(d=>{
+            const currentSize=parseFloat(d.style.fontSize)||8;
+            if(currentSize>4.5) d.style.fontSize = Math.max(4.5, currentSize-0.8)+'pt';
+          });
+          Array.from(songs.querySelectorAll('.break')).forEach(d=>{
+            d.style.fontSize='6pt';
+            d.style.padding='1px 2px';
+          });
+        }
+      }
+      
+      // Attach drag/touch interactions for inline preview
+      if(isInline && setlist.length > 0){
+        attachPreviewInteractions();
       }
     }
     // Embedded song pool chips (Originals vs Covers) for direct drag into preview
@@ -2360,7 +2392,7 @@
     }
     // New drop handling directly on preview songs area
     const previewSongs=document.getElementById('songsInline');
-    function rebuildPreview(){ buildSheet('sheetInline'); attachPreviewInteractions(); saveAll(); try{ pushAppHistory('rebuildPreview'); }catch(_){ } }
+    function rebuildPreview(){ buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); saveAll(); try{ pushAppHistory('rebuildPreview'); }catch(_){ } }
     function attachPreviewInteractions(){
       const songs=document.getElementById('songsInline');
       if(!songs) return;
@@ -4085,13 +4117,12 @@
     async function createStagePdfBlob(){
       prepHdrTech(); const techOut=$('#techPrint'); techOut.innerHTML='';
       const stageOut=$('#stagePrint'); stageOut.innerHTML=''; buildStageExport(stageOut); // unified rendering identical to print
-      // Move legend table to techOut and ensure a page break before it
+      // Keep legend with stage plot on same page for PDF
       const legend = stageOut.querySelector('table.tech-table');
-      if(legend){ techOut.appendChild(legend); }
-      // Keep stage on its own page; put legend on next page for PDF as well
-      techOut.style.breakBefore = 'page'; techOut.style.pageBreakBefore = 'always';
-      // Avoid the stage SVG being split across pages
-      stageOut.style.breakInside = 'avoid-page'; stageOut.style.pageBreakInside = 'avoid';
+      // Don't move legend, leave it in stageOut for single-page layout
+      // Remove page breaks to fit everything on one page
+      techOut.style.breakBefore = 'auto'; techOut.style.pageBreakBefore = 'auto';
+      stageOut.style.breakInside = 'avoid'; stageOut.style.pageBreakInside = 'avoid';
       await inlineStageImages(stageOut.querySelector('svg'));
       const el=document.getElementById('sheetTech');
       // On iOS/Android, html2canvas/jspdf are unreliable: prefer native print dialog
@@ -4120,7 +4151,24 @@
     }
 
     function printPromise(){ return new Promise(res=> setTimeout(res, 150)); }
-    async function printSetOnce(){ buildSheet(); document.getElementById('modal').classList.add('open'); await printPromise(); window.print(); document.getElementById('modal').classList.remove('open'); await printPromise(); }
+    async function printSetOnce(){ 
+      buildSheet(); 
+      const modal=document.getElementById('modal'); 
+      modal.classList.add('open'); 
+      await printPromise(); 
+      // Force layout recalculation on mobile devices
+      const sheet=document.getElementById('sheet');
+      if(sheet){ 
+        sheet.style.display='none'; 
+        sheet.offsetHeight; // trigger reflow
+        sheet.style.display='block'; 
+      }
+      await printPromise(); 
+      window.print(); 
+      await printPromise();
+      modal.classList.remove('open'); 
+      await printPromise(); 
+    }
     function prepHdrTech(){
       const hdr=$('#hdrTech'); hdr.innerHTML='';
       const hf=(function(){ const f=(gig.headerFlags||{band:true,venue:true,sub:true,notes:true}); if(!f.band&&!f.venue&&!f.sub&&!f.notes) return {band:true,venue:true,sub:true,notes:true}; return f; })();
@@ -4130,24 +4178,101 @@
       if(hf.notes && gig.notes) hdr.append(el('div','notes', gig.notes));
     }
     async function printStageOnce(){
+      // Close any open stage/notes modals first to prevent them from being captured
+      const stageModal=document.getElementById('stageModal');
+      const notesModal=document.getElementById('notesModal');
+      if(stageModal) stageModal.classList.remove('open');
+      if(notesModal) notesModal.classList.remove('open');
+      
       prepHdrTech();
-      const techOut=$('#techPrint'); techOut.innerHTML='';
-      const stageOut=$('#stagePrint'); stageOut.innerHTML='';
+      const techOut=$('#techPrint'); techOut.innerHTML=''; techOut.style.display='none';
+      const stageOut=$('#stagePrint'); stageOut.innerHTML=''; stageOut.style.display='block';
       buildStageExport(stageOut);
-      // Move legend to its own page (techOut) and ensure page separation
+      // Force images to load before printing
+      await inlineStageImages(stageOut.querySelector('svg'));
+      // Keep legend with stage plot on same page
       const legend = stageOut.querySelector('table.tech-table');
-      if(legend){ techOut.appendChild(legend); }
-      techOut.style.breakBefore = 'page'; techOut.style.pageBreakBefore = 'always';
-      stageOut.style.breakInside = 'avoid-page'; stageOut.style.pageBreakInside = 'avoid';
-      document.getElementById('modalTech').classList.add('open');
-      await printPromise(); window.print();
-      document.getElementById('modalTech').classList.remove('open');
+      // Don't move legend, keep it in stageOut to stay on same page
+      // Remove page breaks to fit everything on one page
+      techOut.style.breakBefore = 'auto'; techOut.style.pageBreakBefore = 'auto';
+      stageOut.style.breakInside = 'avoid'; stageOut.style.pageBreakInside = 'avoid';
+      const modal=document.getElementById('modalTech');
+      modal.classList.add('open');
       await printPromise();
+      // Force layout recalculation for mobile reliability
+      const sheet=document.getElementById('sheetTech');
+      if(sheet){
+        sheet.style.display='none';
+        sheet.offsetHeight; // trigger reflow
+        sheet.style.display='block';
+      }
+      await printPromise();
+      window.print();
+      await printPromise();
+      modal.classList.remove('open');
+      await printPromise();
+      
+      // Restore Tech/Stage tab view if user is on that tab
+      const activeTab = document.querySelector('.tab.active');
+      if(activeTab && activeTab.dataset.tab === 'adv'){
+        // Re-render the current view by toggling stage/notes modals
+        const stageModal = document.getElementById('stageModal');
+        const notesModal = document.getElementById('notesModal');
+        if(stageModal && stageModal.classList.contains('open')){
+          // Stage was visible - reopen it
+          try{ openStageModal(); }catch(_){}
+        } else if(notesModal && notesModal.classList.contains('open')){
+          // Tech table was visible - rebuild it
+          try{ buildTechTableFull(); }catch(_){}
+        } else {
+          // Neither was open, default to stage plot
+          try{ toggleStageAndNotes(); }catch(_){}
+        }
+      }
     }
-    async function printTechOnlyOnce(){ prepHdrTech(); const stageOut=$('#stagePrint'); stageOut.innerHTML=''; const techOut=$('#techPrint'); techOut.innerHTML='';
+    async function printTechOnlyOnce(){ 
+      // Close any open stage/notes modals first to prevent them from being captured
+      const stageModal=document.getElementById('stageModal');
+      const notesModal=document.getElementById('notesModal');
+      if(stageModal) stageModal.classList.remove('open');
+      if(notesModal) notesModal.classList.remove('open');
+      
+      prepHdrTech(); 
+      const stageOut=$('#stagePrint'); stageOut.innerHTML=''; stageOut.style.display='none'; 
+      const techOut=$('#techPrint'); techOut.innerHTML=''; techOut.style.display='block';
       // Ensure no forced page break when printing tech-only
       techOut.style.breakBefore = 'auto'; techOut.style.pageBreakBefore = 'auto';
-      const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); const note=(techNotes && techNotes[s.id]) || s.tech || ''; tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${note}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl); document.getElementById('modalTech').classList.add('open'); await printPromise(); window.print(); document.getElementById('modalTech').classList.remove('open'); await printPromise(); }
+      const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); const note=(techNotes && techNotes[s.id]) || s.tech || ''; tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${note}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl); 
+      const modal=document.getElementById('modalTech'); 
+      modal.classList.add('open'); 
+      await printPromise(); 
+      // Force layout recalculation for mobile reliability
+      const sheet=document.getElementById('sheetTech');
+      if(sheet){
+        sheet.style.display='none';
+        sheet.offsetHeight; // trigger reflow
+        sheet.style.display='block';
+      }
+      await printPromise();
+      window.print(); 
+      await printPromise();
+      modal.classList.remove('open'); 
+      await printPromise();
+      
+      // Restore Tech/Stage tab view if user is on that tab
+      const activeTab = document.querySelector('.tab.active');
+      if(activeTab && activeTab.dataset.tab === 'adv'){
+        const stageModal = document.getElementById('stageModal');
+        const notesModal = document.getElementById('notesModal');
+        if(stageModal && stageModal.classList.contains('open')){
+          try{ openStageModal(); }catch(_){}
+        } else if(notesModal && notesModal.classList.contains('open')){
+          try{ buildTechTableFull(); }catch(_){}
+        } else {
+          try{ toggleStageAndNotes(); }catch(_){}
+        }
+      }
+    }
 
     // Save/Load Profile (.BAND)
     const saveProfileBtn=document.getElementById('saveProfile');
