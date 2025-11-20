@@ -92,6 +92,9 @@
   /* Drop indicator on set rows */
   #setList .song.drop-before{box-shadow:inset 0 3px 0 0 #60a5fa}
   #setList .song.drop-after{box-shadow:inset 0 -3px 0 0 #60a5fa}
+  /* Drop indicator on preview sheet rows */
+  .line.drop-before, .break.drop-before{box-shadow:inset 0 3px 0 0 #60a5fa}
+  .line.drop-after, .break.drop-after{box-shadow:inset 0 -3px 0 0 #60a5fa}
 
     @media print{
       body,*{background:transparent!important}
@@ -185,6 +188,11 @@
   /* Global sticky actions (top-left) */
   .global-actions{position:sticky;top:0;z-index:60;display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 4px 0;margin:0 0 8px 0;background:linear-gradient(180deg, rgba(249,250,251,0.96), rgba(249,250,251,0));backdrop-filter:saturate(1.2) blur(2px)}
   @media print{ .global-actions{display:none} }
+  /* Database: horizontal scroll on narrow screens */
+  @media (max-width: 768px){
+    #dbList{overflow-x:auto;overflow-y:visible}
+    .db-row{min-width:900px}
+  }
   /* Missing songs list */
   .missing{margin:8px 0 6px 0;display:flex;flex-wrap:wrap;gap:6px}
   .missing .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-size:12px;color:#111827}
@@ -434,6 +442,7 @@
           <div id="poolCol" style="flex:0 0 260px;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
             <h3 style="margin:0">Song Pool</h3>
             <div id="poolControls" style="display:flex;flex-direction:column;gap:6px;width:100%">
+              <input type="text" id="poolSearch" placeholder="Search songs..." style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
                 <label style="font-size:12px;color:#64748b">Type</label>
                 <select id="poolType" style="flex:1 1 auto;min-width:120px">
@@ -1073,7 +1082,7 @@
       const d=$('#gDate'); if(d && !d.value){ const t=new Date(); const iso=new Date(t.getTime()-t.getTimezoneOffset()*60000).toISOString().slice(0,10); d.value=iso; }
       loadAll();
       // Build initial inline preview
-      try{ buildSheet('sheetInline'); }catch(_){ }
+      try{ buildSheet('sheetInline'); attachPreviewInteractions(); }catch(_){ }
       try{ renderAddMoodsUI(); }catch(_){ }
       try{ renderLive(); }catch(_){ }
       // Apply saved live theme
@@ -1188,8 +1197,8 @@
       if(searchTerm){
         try{
           const regex = new RegExp(searchTerm, 'i');
-          rows = rows.filter(s=> regex.test(s.title||'') || regex.test(s.artist||'') || regex.test(s.composer||''));
-        }catch(e){ rows = rows.filter(s=> (s.title||'').toLowerCase().includes(searchTerm.toLowerCase()) || (s.artist||'').toLowerCase().includes(searchTerm.toLowerCase()) || (s.composer||'').toLowerCase().includes(searchTerm.toLowerCase())); }
+          rows = rows.filter(s=> regex.test(s.title||'') || regex.test(s.artist||'') || regex.test(s.composer||'') || regex.test(s.lyrics||''));
+        }catch(e){ rows = rows.filter(s=> (s.title||'').toLowerCase().includes(searchTerm.toLowerCase()) || (s.artist||'').toLowerCase().includes(searchTerm.toLowerCase()) || (s.composer||'').toLowerCase().includes(searchTerm.toLowerCase()) || (s.lyrics||'').toLowerCase().includes(searchTerm.toLowerCase())); }
       }
       const byAdded=(a,b)=> a.id - b.id;
       const byAlpha=(a,b)=> a.title.localeCompare(b.title);
@@ -1433,10 +1442,10 @@
     function renderSet(){
       const box=document.getElementById('setList');
       if(!box){ // preview-only layout (legacy set builder removed)
-        buildSheet('sheetInline'); buildTechTable(); renderSongPool(); renderEncore(); return;
+        buildSheet('sheetInline'); attachPreviewInteractions(); buildTechTable(); renderSongPool(); renderEncore(); return;
       }
       box.innerHTML='';
-      if(!setlist.length){ box.textContent='No setlist yet.'; buildSheet('sheetInline'); buildTechTable(); renderSongPool(); renderEncore(); return; }
+      if(!setlist.length){ box.textContent='No setlist yet.'; buildSheet('sheetInline'); attachPreviewInteractions(); buildTechTable(); renderSongPool(); renderEncore(); return; }
       let songNum=0;
       setlist.forEach((it,i)=>{
         const row=el('div','song');
@@ -1485,8 +1494,27 @@
       let dragIndex=null;
       const rows=[...document.querySelectorAll('#setList .song')];
       rows.forEach(r=>{
+        // Desktop drag
         r.addEventListener('dragstart',e=>{ if(r.getAttribute('draggable')==='true'){ dragIndex=parseInt(r.dataset.index,10); r.classList.add('dragging'); try{ e.dataTransfer.setData('text/x-set-index', String(dragIndex)); }catch(_){ } }});
         r.addEventListener('dragend',()=> r.classList.remove('dragging'));
+        // Touch drag for mobile
+        r.addEventListener('touchstart', ev => {
+          const t = ev.touches[0];
+          if (!t) return;
+          window._activeSetTouch = { idx: parseInt(r.dataset.index, 10), startX: t.clientX, startY: t.clientY, x: t.clientX, y: t.clientY, removed: false, reorderTarget: parseInt(r.dataset.index, 10) };
+          r.classList.add('drag-touch');
+        }, { passive: false });
+        r.addEventListener('touchend', () => {
+          r.classList.remove('drag-touch');
+          const act = window._activeSetTouch;
+          if (act && act.reorderTarget !== act.idx) {
+            const item = setlist.splice(act.idx, 1)[0];
+            setlist.splice(act.reorderTarget, 0, item);
+            renderSet();
+            saveAll();
+          }
+          window._activeSetTouch = null;
+        });
         r.addEventListener('dragover',e=>{ e.preventDefault();
           // if dragging from pool, show above/below indicator
           const idRaw=e.dataTransfer.getData('text/plain');
@@ -1656,6 +1684,19 @@
           if(isNarrow){ openLiveLyricsOverlay(it); }
         });
         // Desktop: double‑click to open fullscreen lyrics
+        // Mobile: handle double-tap gesture
+        let lastTap = 0;
+        row.addEventListener('touchend', (e) => {
+          const now = Date.now();
+          const DOUBLE_TAP_DELAY = 300;
+          if (now - lastTap < DOUBLE_TAP_DELAY) {
+            e.preventDefault();
+            openLiveLyricsOverlay(it);
+            lastTap = 0;
+          } else {
+            lastTap = now;
+          }
+        });
         row.addEventListener('dblclick',()=>{ openLiveLyricsOverlay(it); });
         listEl.appendChild(row);
       });
@@ -2163,6 +2204,7 @@
       const typeSel=document.getElementById('poolType');
       const sortSel=document.getElementById('poolSort');
       const moodSel=document.getElementById('poolMood');
+      const searchInput=document.getElementById('poolSearch');
       if(!pO || !pC) return;
       // Allow dropping items from set back into the pool to remove them
       [pO,pC,pB].forEach(el=>{ if(!el) return; el.addEventListener('dragover',e=> e.preventDefault()); el.addEventListener('drop',e=>{ e.preventDefault(); const idxRaw=e.dataTransfer.getData('text/x-set-index'); if(idxRaw){ const idx=parseInt(idxRaw,10); if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){ setlist.splice(idx,1); rebuildPreview(); } } }); });
@@ -2172,10 +2214,21 @@
       const typeVal=(typeSel && typeSel.value) || 'all';
       const sortVal=(sortSel && sortSel.value) || 'alpha';
       const moodVal=(moodSel && moodSel.value) || 'all';
+      const searchTerm=(searchInput && searchInput.value) || '';
 
       const songMood=(s)=> s.isUpbeat? 'upbeat' : s.isHappy? 'happy' : s.isEnergetic? 'energetic' : s.isMellow? 'mellow' : s.isSad? 'sad' : ((s.customMoods||[])[0] || 'none');
       const moodRank={upbeat:0,happy:1,energetic:2,mellow:3,sad:4,none:5}; getAllMoods().forEach((m,i)=>{ if(!(m in moodRank)) moodRank[m]=6+i; });
       const moodMatch=(s)=> moodVal==='all' || songMood(s)===moodVal;
+      const searchMatch=(s)=>{
+        if(!searchTerm) return true;
+        try{
+          const regex = new RegExp(searchTerm, 'i');
+          return regex.test(s.title||'') || regex.test(s.artist||'') || regex.test(s.composer||'') || regex.test(s.lyrics||'');
+        }catch(e){
+          const term=searchTerm.toLowerCase();
+          return (s.title||'').toLowerCase().includes(term) || (s.artist||'').toLowerCase().includes(term) || (s.composer||'').toLowerCase().includes(term) || (s.lyrics||'').toLowerCase().includes(term);
+        }
+      };
       const byAlpha=(a,b)=> a.title.localeCompare(b.title);
       const byBand=(a,b)=> (a.artist||'').localeCompare(b.artist||'') || a.title.localeCompare(b.title);
       const byMood=(a,b)=> (moodRank[songMood(a)] - moodRank[songMood(b)]) || a.title.localeCompare(b.title);
@@ -2185,8 +2238,8 @@
         return arr.sort(byAlpha);
       };
 
-      let originals=db.filter(s=>!s.isCover && !usedIds.has(s.id) && moodMatch(s));
-      let covers=db.filter(s=>s.isCover && !usedIds.has(s.id) && moodMatch(s));
+      let originals=db.filter(s=>!s.isCover && !usedIds.has(s.id) && moodMatch(s) && searchMatch(s));
+      let covers=db.filter(s=>s.isCover && !usedIds.has(s.id) && moodMatch(s) && searchMatch(s));
       originals=applySort(originals,false);
       covers=applySort(covers,true);
 
@@ -2267,9 +2320,10 @@
     const previewSongs=document.getElementById('songsInline');
     function rebuildPreview(){ buildSheet('sheetInline'); attachPreviewInteractions(); saveAll(); try{ pushAppHistory('rebuildPreview'); }catch(_){ } }
     function attachPreviewInteractions(){
-      if(!previewSongs) return;
+      const songs=document.getElementById('songsInline');
+      if(!songs) return;
       // Mark lines and breaks draggable
-      previewSongs.querySelectorAll('.line, .break').forEach((row,i)=>{
+      songs.querySelectorAll('.line, .break').forEach((row,i)=>{
         row.setAttribute('draggable','true');
         row.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/x-set-index', String(i)); });
         // Double-click to edit notes (only songs)
@@ -2302,11 +2356,14 @@
         row.addEventListener('touchend',()=> row.classList.remove('drag-touch'));
       });
     }
-    if(previewSongs){
-      previewSongs.addEventListener('dragover',e=> e.preventDefault());
-      previewSongs.addEventListener('drop',e=>{
+    // Setup drop handlers on preview songs area (using fresh query each time since element recreated)
+    (function setupPreviewDropHandlers(){
+      const songs=document.getElementById('songsInline');
+      if(!songs) return;
+      songs.addEventListener('dragover',e=> e.preventDefault());
+      songs.addEventListener('drop',e=>{
         e.preventDefault(); e.stopPropagation(); const br=e.dataTransfer.getData('text/x-break');
-        const allRows=[...previewSongs.querySelectorAll('.line, .break')];
+        const allRows=[...songs.querySelectorAll('.line, .break')];
         const getInsertIndex=(clientY)=>{ for(let i=0;i<allRows.length;i++){ const r=allRows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return allRows.length; };
         const insertAt=getInsertIndex(e.clientY);
         if(br){ const lenInput=document.getElementById('gBreakLen'); const len=parseFloat(lenInput && lenInput.value)||gig.breakLen||15; setlist.splice(insertAt,0,{type:'break',title:'Break',length:len}); rebuildPreview(); return; }
@@ -2341,7 +2398,7 @@
         }
         if(!idRaw) return; if(idRaw==='__break__') return; const id=parseInt(idRaw,10); const song=db.find(s=>s.id===id); if(!song) return; if(setlist.some(x=>x.id===song.id)) return; setlist.splice(insertAt,0,{...song,type:'song',notes:''}); rebuildPreview();
       });
-    }
+    })();
 
     // Global touchend listener for removing rows by dragging them out of sheet
     window.addEventListener('touchend',()=>{
@@ -2434,9 +2491,11 @@
     const poolType=document.getElementById('poolType');
     const poolSort=document.getElementById('poolSort');
     const poolMood=document.getElementById('poolMood');
+    const poolSearch=document.getElementById('poolSearch');
     if(poolType) poolType.addEventListener('change', renderSongPool);
     if(poolSort) poolSort.addEventListener('change', renderSongPool);
     if(poolMood) poolMood.addEventListener('change', renderSongPool);
+    if(poolSearch) poolSearch.addEventListener('input', renderSongPool);
     renderSongPool();
 
     // Hook DB controls
@@ -2492,9 +2551,34 @@
     })();
       // Simplified touch drag for preview-only interface (song/break/event chips)
       let activePoolTouch=null;
-      window.addEventListener('touchmove',ev=>{ if(!activePoolTouch) return; const t=ev.touches[0]; if(!t) return; activePoolTouch.x=t.clientX; activePoolTouch.y=t.clientY; ev.preventDefault(); }, {passive:false});
+      window.addEventListener('touchmove',ev=>{ 
+        if(!activePoolTouch) return; 
+        const t=ev.touches[0]; 
+        if(!t) return; 
+        activePoolTouch.x=t.clientX; 
+        activePoolTouch.y=t.clientY; 
+        // Show visual drop indicator
+        const preview=document.getElementById('songsInline');
+        if(preview){
+          const rect=preview.getBoundingClientRect();
+          const rows=[...preview.querySelectorAll('.line, .break')];
+          if(activePoolTouch.x>=rect.left && activePoolTouch.x<=rect.right && activePoolTouch.y>=rect.top && activePoolTouch.y<=rect.bottom){
+            const getInsertIndex=(clientY)=>{ for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return rows.length; };
+            const targetIdx=getInsertIndex(activePoolTouch.y);
+            rows.forEach((r,i)=>{ r.classList.toggle('drop-before', i===targetIdx); r.classList.remove('drop-after'); });
+          } else {
+            rows.forEach(r=>{ r.classList.remove('drop-before','drop-after'); });
+          }
+        }
+        ev.preventDefault(); 
+      }, {passive:false});
       window.addEventListener('touchend',ev=>{
         if(!activePoolTouch) return; const x=activePoolTouch.x, y=activePoolTouch.y; const preview=document.getElementById('songsInline');
+        // Clear drop indicators
+        if(preview){ 
+          const allRows=[...preview.querySelectorAll('.line, .break')];
+          allRows.forEach(r=>{ r.classList.remove('drop-before','drop-after'); });
+        }
         if(preview){ const rect=preview.getBoundingClientRect(); if(x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom){
           const rows=[...preview.querySelectorAll('.line, .break')];
           const getInsertIndex=(clientY)=>{ for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return rows.length; };
@@ -3863,7 +3947,40 @@
           tr.append(chCell, chainCell); tbody.appendChild(tr);
         }
       }
-      legend.append(thead,tbody); stageOut.appendChild(legend);
+      legend.append(thead,tbody);
+      // Add unconnected items section to print legend
+      if(src){
+        const rows=Array.from(src.querySelectorAll('g[data-draggable]'));
+        const typeOf=n=> n.dataset.type||'other';
+        const UTILITY_TYPES=['label','arrow'];
+        const unconnectedRows = rows.filter(g=>{
+          const t=typeOf(g);
+          if(UTILITY_TYPES.includes(t)) return false;
+          const hasRouteTo = (g.dataset.routeTo||'').trim().length>0;
+          const hasChannel = (g.dataset.channel||'').trim().length>0 && parseInt(g.dataset.channel||'0',10)>0;
+          const routedTo = rows.some(r=> (r.dataset.routeTo===g.dataset.id) && effectiveTargets(r).includes(t));
+          return !hasRouteTo && !hasChannel && !routedTo;
+        });
+        if(unconnectedRows.length>0){
+          const dividerRow=document.createElement('tr');
+          const dividerCell=document.createElement('td'); dividerCell.colSpan=2;
+          dividerCell.style.cssText='border-top:2px solid #000;padding-top:8px;padding-bottom:4px;font-weight:600;font-size:11pt';
+          dividerCell.textContent='Unconnected Items (acoustic/props): ';
+          const itemNames = unconnectedRows.map(g=>{
+            const tEl=g.querySelector('text[data-role="label"]')||g.querySelector('text');
+            const key=g.dataset.key||'';
+            const icon=ICON_ITEMS.find(x=>x.key===key);
+            return (tEl && tEl.textContent) || (icon?icon.label:'Item');
+          });
+          const boldSpan=document.createElement('span');
+          boldSpan.style.fontWeight='bold';
+          boldSpan.textContent=itemNames.join(', ');
+          dividerCell.appendChild(boldSpan);
+          dividerRow.appendChild(dividerCell);
+          tbody.appendChild(dividerRow);
+        }
+      }
+      stageOut.appendChild(legend);
       if(src){
         const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); clone.style.width='100%'; clone.style.height='auto'; clone.style.maxHeight='9in';
         try{ const vb=clone.viewBox && clone.viewBox.baseVal; if(vb){ const br=document.createElementNS('http://www.w3.org/2000/svg','rect'); br.setAttribute('x','1.5'); br.setAttribute('y','1.5'); br.setAttribute('width', String(vb.width-3)); br.setAttribute('height', String(vb.height-3)); br.setAttribute('fill','none'); br.setAttribute('stroke','#000'); br.setAttribute('stroke-width','3'); br.setAttribute('pointer-events','none'); br.setAttribute('data-print-border','1'); clone.appendChild(br); } }catch(_){ }
