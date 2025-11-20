@@ -184,15 +184,10 @@
   @media print{ .print-fab{display:none} }
   /* Print-specific tweaks for tech/stage so content stays on page */
   @media print{
-    #sheetTech{width:8.5in;max-width:100%;padding:0.5in}
+    #sheetTech{width:8.5in;max-width:8.5in;padding:0.5in}
     #sheetTech .tech-table th,#sheetTech .tech-table td{font-size:9pt;padding:3px 4px}
-    #stagePrint svg{max-height:8in;max-width:100%;width:100%}
-  }
-  @media print and (max-width: 768px){
-    #sheetTech{width:100%;padding:0.25in}
-    #stagePrint svg{max-height:5in;max-width:90vw}
-    #stagePrint .tech-table{font-size:8pt}
-    #stagePrint .tech-table th, #stagePrint .tech-table td{padding:2px 3px;font-size:8pt}
+    #stagePrint svg{max-height:6.5in;max-width:7.5in;width:100%;height:auto}
+    #stagePrint{overflow:hidden}
   }
   /* Touch optimizations */
   #stageSvgFull{ touch-action:none; }
@@ -4100,13 +4095,36 @@
       }
       stageOut.appendChild(legend);
       if(src){
-        const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.setAttribute('preserveAspectRatio','xMidYMid meet'); 
-        clone.style.width='100%'; clone.style.height='auto'; 
-        // Responsive max height for mobile
-        const isMobile = window.matchMedia('(max-width: 768px)').matches;
-        clone.style.maxHeight = isMobile ? '5in' : '9in';
-        clone.style.maxWidth = '100%';
-        try{ const vb=clone.viewBox && clone.viewBox.baseVal; if(vb){ const br=document.createElementNS('http://www.w3.org/2000/svg','rect'); br.setAttribute('x','1.5'); br.setAttribute('y','1.5'); br.setAttribute('width', String(vb.width-3)); br.setAttribute('height', String(vb.height-3)); br.setAttribute('fill','none'); br.setAttribute('stroke','#000'); br.setAttribute('stroke-width','3'); br.setAttribute('pointer-events','none'); br.setAttribute('data-print-border','1'); clone.appendChild(br); } }catch(_){ }
+        const clone=src.cloneNode(true); 
+        clone.removeAttribute('id'); 
+        clone.setAttribute('preserveAspectRatio','xMidYMid meet');
+        // Ensure viewBox is set properly for consistent scaling
+        if(!clone.hasAttribute('viewBox')){
+          const vb=src.viewBox && src.viewBox.baseVal;
+          if(vb) clone.setAttribute('viewBox', `0 0 ${vb.width} ${vb.height}`);
+          else clone.setAttribute('viewBox', '0 0 1500 900');
+        }
+        clone.style.width='100%'; 
+        clone.style.height='auto'; 
+        clone.style.maxHeight='6.5in';
+        clone.style.maxWidth='100%';
+        clone.style.display='block';
+        try{ 
+          const vb=clone.viewBox && clone.viewBox.baseVal; 
+          if(vb){ 
+            const br=document.createElementNS('http://www.w3.org/2000/svg','rect'); 
+            br.setAttribute('x','1.5'); 
+            br.setAttribute('y','1.5'); 
+            br.setAttribute('width', String(vb.width-3)); 
+            br.setAttribute('height', String(vb.height-3)); 
+            br.setAttribute('fill','none'); 
+            br.setAttribute('stroke','#000'); 
+            br.setAttribute('stroke-width','3'); 
+            br.setAttribute('pointer-events','none'); 
+            br.setAttribute('data-print-border','1'); 
+            clone.appendChild(br); 
+          } 
+        }catch(_){ }
         stageOut.appendChild(clone);
       }
       return stageOut;
