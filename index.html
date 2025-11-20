@@ -267,7 +267,7 @@
         <div class="field"><label>Title</label><input id="t" placeholder="Song Title" /></div>
         <div class="row">
           <div class="field"><label>Artist (blank=Original)</label><input id="a" placeholder="Artist or leave blank" /></div>
-          <div class="field" style="max-width:90px"><label>Length (min)</label><input id="l" type="number" min="0.5" step="0.5" value="3.5" placeholder="3.5" style="width:5ch" /></div>
+          <div class="field" style="max-width:120px"><label>Length (min)</label><input id="l" type="number" min="0.5" step="0.5" value="3.5" placeholder="3.5" style="width:9ch" /></div>
         </div>
         <div class="row">
           <div class="field" style="flex:2 1 240px"><label>Key / Notes</label><input id="k" placeholder="e.g., Am, G-C-D" /></div>
@@ -329,7 +329,8 @@
           </div>
         <!-- Profile buttons moved to global-actions -->
         <div class="list" id="dbList" style="width:100%;"></div>
-        <div style="margin-top:12px;display:flex;justify-content:flex-end">
+        <div style="margin-top:12px;display:flex;justify-content:flex-end;align-items:center;gap:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clearDBLock" style="width:18px;height:18px"><span style="font-size:14px">🔓 Unlock Clear</span></label>
           <button class="btn danger" id="clearDB">Clear Database</button>
         </div>
         <div class="import-block" id="importBlock" style="margin-top:22px;padding:14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc">
@@ -947,8 +948,10 @@
   window.addEventListener('beforeunload', ()=>{ try{ for(const k in armedAudio){ try{ URL.revokeObjectURL(armedAudio[k]); }catch(_){} } }catch(_){} saveAll(); });
     // Clear database
     const clearDBBtn=document.getElementById('clearDB');
+    const clearDBLock=document.getElementById('clearDBLock');
     if(clearDBBtn){ clearDBBtn.addEventListener('click',()=>{
       if(!db.length) return;
+      if(clearDBLock && !clearDBLock.checked){ alert('Please check the unlock checkbox first to enable clearing the database.'); return; }
       // Offer to save a .BAND backup first
       try{
         if(confirm('Download a .BAND backup before clearing the database? Click OK to Save, or Cancel to skip.')){
@@ -1138,7 +1141,7 @@
       const hdrCover=document.createElement('span'); hdrCover.textContent='C'; hdrCover.style.cssText='width:18px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrCover);
       const hdrTitle=document.createElement('span'); hdrTitle.textContent='Title'; hdrTitle.style.cssText='width:180px;flex-shrink:0'; hdrRow.appendChild(hdrTitle);
       const hdrArtist=document.createElement('span'); hdrArtist.textContent='Artist'; hdrArtist.style.cssText='width:180px;flex-shrink:0'; hdrRow.appendChild(hdrArtist);
-      const hdrLen=document.createElement('span'); hdrLen.textContent='Len'; hdrLen.style.cssText='width:42px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrLen);
+      const hdrLen=document.createElement('span'); hdrLen.textContent='Len'; hdrLen.style.cssText='width:58px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrLen);
       const hdrKey=document.createElement('span'); hdrKey.textContent='Key'; hdrKey.style.cssText='width:35px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrKey);
       const hdrCapo=document.createElement('span'); hdrCapo.textContent='Cp'; hdrCapo.style.cssText='width:30px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrCapo);
       const hdrMood=document.createElement('span'); hdrMood.textContent='♫'; hdrMood.style.cssText='width:28px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrMood);
@@ -1149,7 +1152,7 @@
       const hdrAudioText=document.createElement('span'); hdrAudioText.textContent='Audio / URL'; hdrAudioText.style.cssText='font-size:11px';
       hdrAudioGroup.appendChild(hdrAudioText); hdrRow.appendChild(hdrAudioGroup);
       const hdrRating=document.createElement('span'); hdrRating.textContent='Rate'; hdrRating.style.cssText='width:32px;flex-shrink:0;text-align:center'; hdrRow.appendChild(hdrRating);
-      const hdrActions=document.createElement('span'); hdrActions.textContent=''; hdrActions.style.cssText='margin-left:auto;width:65px;flex-shrink:0'; hdrRow.appendChild(hdrActions);
+      const hdrActions=document.createElement('span'); hdrActions.textContent=''; hdrActions.style.cssText='margin-left:auto;width:120px;flex-shrink:0'; hdrRow.appendChild(hdrActions);
       list.appendChild(hdrRow);
       // Filters / sort
       const sSel=document.getElementById('dbSort');
@@ -1230,7 +1233,7 @@
         artist.addEventListener('change',()=>{ s.artist = coverChk.checked ? (artist.value.trim()||s.artist||'') : 'Original'; saveAll(); });
         
         // Length (5 chars width)
-        const len=document.createElement('input'); len.type='number'; len.step='0.5'; len.min='0.5'; len.value=String(s.length||3.5); len.title='Length (min)'; len.style.cssText='width:42px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center';
+        const len=document.createElement('input'); len.type='number'; len.step='0.5'; len.min='0.5'; len.value=String(s.length||3.5); len.title='Length (min)'; len.style.cssText='width:58px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center;color:#0f172a';
         len.addEventListener('change',()=>{ const v=parseFloat(len.value); if(v>0) s.length=v; saveAll(); buildSheet('sheetInline'); });
         
         // Key (3 chars width)
@@ -1246,6 +1249,8 @@
         const moodMenu=document.createElement('div'); moodMenu.style.cssText='display:none;position:absolute;z-index:100;background:#fff;border:1px solid #d1d5db;border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:140px;top:100%;left:0;margin-top:2px;text-align:left';
         const moodChecks=['upbeat','happy','energetic','mellow','sad'].map(m=>{ const lbl=document.createElement('label'); lbl.style.cssText='display:block;margin:4px 0;white-space:nowrap;text-align:left'; const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=s['is'+m.charAt(0).toUpperCase()+m.slice(1)]; chk.addEventListener('change',()=>{ s['is'+m.charAt(0).toUpperCase()+m.slice(1)]=chk.checked; saveAll(); }); lbl.appendChild(chk); lbl.appendChild(document.createTextNode(' '+m.charAt(0).toUpperCase()+m.slice(1))); return lbl; });
         moodChecks.forEach(c=>moodMenu.appendChild(c));
+        // Add custom moods
+        (gig.customMoods||[]).forEach(m=>{ const lbl=document.createElement('label'); lbl.style.cssText='display:block;margin:4px 0;white-space:nowrap;text-align:left'; const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=(s.customMoods||[]).includes(m); chk.addEventListener('change',()=>{ if(!s.customMoods) s.customMoods=[]; const idx=s.customMoods.indexOf(m); if(chk.checked && idx===-1){ s.customMoods.push(m); } else if(!chk.checked && idx>-1){ s.customMoods.splice(idx,1); } saveAll(); }); lbl.appendChild(chk); lbl.appendChild(document.createTextNode(' '+m.charAt(0).toUpperCase()+m.slice(1))); moodMenu.appendChild(lbl); });
         moodBtn.appendChild(moodMenu);
         moodBtn.addEventListener('mouseenter',()=>{ moodMenu.style.display='block'; });
         moodBtn.addEventListener('mouseleave',()=>{ moodMenu.style.display='none'; });
@@ -1285,7 +1290,14 @@
         const rowCtl=document.createElement('div'); rowCtl.style.display='flex'; rowCtl.style.alignItems='center'; rowCtl.style.gap='8px';
         rowCtl.append(audioUrlIn, saveUrlBtn, fileIn, fileRefIn, saveRefBtn, clearBtn, infoSpan);
         audioBox.append(rowCtl);
-        audioBtn.addEventListener('click',()=>{ audioBox.style.display = audioBox.style.display==='none' ? 'block' : 'none'; });
+        audioBtn.addEventListener('click',()=>{ 
+          const showing = audioBox.style.display!=='none';
+          if(!showing && s.isCover && (!s.audioUrl || s.audioUrl.trim().length===0)){
+            const query = encodeURIComponent((s.title||'') + ' by ' + (s.artist||'') + ' Karaoke Backing Track');
+            window.open('https://www.google.com/search?q='+query, '_blank', 'width=900,height=700');
+          }
+          audioBox.style.display = showing ? 'none' : 'block'; 
+        });
         function updateAudioInfo(){
           const armed = (s.id!=null && armedAudio[s.id]);
           if(armed){ infoSpan.textContent = 'Armed file (session)'; return; }
@@ -1314,8 +1326,21 @@
         const ratingBtn=document.createElement('button'); ratingBtn.type='button'; ratingBtn.textContent=ratingIcons[rating]; ratingBtn.style.cssText='padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;background:#fff;cursor:pointer;font-size:14px;min-width:32px;height:24px'; ratingBtn.title='Rating: '+rating+' (click to cycle)';
         ratingBtn.addEventListener('click',()=>{ s.audienceRating=((s.audienceRating||0)+1)%4; saveAll(); renderDB(); });
         
-        const del=document.createElement('button'); del.className='btn danger'; del.textContent='Del'; del.style.cssText='margin-left:auto;padding:2px 8px;font-size:11px;border-radius:3px;min-width:50px'; del.addEventListener('click',()=>{ const i=db.findIndex(x=>x.id===s.id); if(i>-1){ db.splice(i,1); renderDB(); renderSongPool(); saveAll(); } });
-        row.append(coverChk,title,artist,len,key,capo,moodBtn,lyricsWrap,audioWrap,ratingBtn,del); list.appendChild(row);
+        const toSetBtn=document.createElement('button'); toSetBtn.className='btn'; toSetBtn.textContent='To Set'; toSetBtn.style.cssText='margin-left:auto;padding:2px 8px;font-size:11px;border-radius:3px;min-width:56px'; toSetBtn.title='Add this song to the end of the current setlist';
+        toSetBtn.addEventListener('click',()=>{ 
+          if(setlist.some(x=>x.type==='song' && x.id===s.id)){ 
+            alert('Song already in setlist.'); 
+            return; 
+          } 
+          setlist.push({...s,type:'song',notes:''}); 
+          saveAll(); 
+          renderSet(); 
+          buildSheet('sheetInline'); 
+          renderSongPool(); 
+          alert('Added "'+s.title+'" to setlist.'); 
+        });
+        const del=document.createElement('button'); del.className='btn danger'; del.textContent='Del'; del.style.cssText='padding:2px 8px;font-size:11px;border-radius:3px;min-width:50px'; del.addEventListener('click',()=>{ const i=db.findIndex(x=>x.id===s.id); if(i>-1){ db.splice(i,1); renderDB(); renderSongPool(); saveAll(); } });
+        row.append(coverChk,title,artist,len,key,capo,moodBtn,lyricsWrap,audioWrap,ratingBtn,toSetBtn,del); list.appendChild(row);
         list.appendChild(lyrBox);
         list.appendChild(audioBox);
       });
@@ -1526,11 +1551,17 @@
           const to=parseInt(r.dataset.index,10);
           const fromSetIdxRaw=e.dataTransfer.getData('text/x-set-index');
           const incomingSongIdRaw=e.dataTransfer.getData('text/plain');
+          const rect=r.getBoundingClientRect(); 
+          const before=e.clientY < rect.top + rect.height/2;
           // Reorder existing
-          if(fromSetIdxRaw && Number.isInteger(dragIndex) && dragIndex!==to){
-            const item=setlist.splice(dragIndex,1)[0];
-            setlist.splice(to,0,item);
-            renderSet(); saveAll();
+          if(fromSetIdxRaw && Number.isInteger(dragIndex)){
+            const targetPos = before ? to : to+1;
+            if(dragIndex!==targetPos && dragIndex+1!==targetPos){
+              const item=setlist.splice(dragIndex,1)[0];
+              const adj= (dragIndex<targetPos) ? targetPos-1 : targetPos;
+              setlist.splice(adj,0,item);
+              renderSet(); saveAll();
+            }
             return;
           }
           // Insert new from pool at position (before/after based on cursor)
@@ -2272,8 +2303,8 @@
         chip.textContent = showArtist ? `${s.artist} - ${s.title}` : s.title;
         chip.title=`${s.artist} • ${s.length}m${s.key? ' • '+s.key:''}`;
         chip.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', String(s.id)); });
-        chip.addEventListener('touchstart',ev=>{ const t=ev.touches[0]; if(!t) return; activePoolTouch={kind:'song', id:s.id, startX:t.clientX, startY:t.clientY, x:t.clientX, y:t.clientY}; chip.classList.add('drag-touch'); ev.preventDefault(); }, {passive:false});
-        chip.addEventListener('touchend',()=> chip.classList.remove('drag-touch'));
+        chip.addEventListener('touchstart',ev=>{ const t=ev.touches[0]; if(!t) return; activePoolTouch={kind:'song', id:s.id, startX:t.clientX, startY:t.clientY, x:t.clientX, y:t.clientY}; chip.classList.add('drag-touch'); ev.preventDefault(); ev.stopPropagation(); }, {passive:false});
+        chip.addEventListener('touchend',ev=>{ chip.classList.remove('drag-touch'); });
         return chip;
       };
       if(showOriginals){
@@ -2287,8 +2318,8 @@
         const makeEventChip=(label, kind, hint='')=>{
           const chip=document.createElement('div'); chip.className='pill'; chip.style.cursor='grab'; chip.setAttribute('draggable','true'); chip.textContent= hint? `${label} (${hint})` : label;
           chip.addEventListener('dragstart',e=>{ if(kind==='break'){ e.dataTransfer.setData('text/x-break', String(len)); } else { e.dataTransfer.setData('text/x-event', JSON.stringify({kind})); } });
-          chip.addEventListener('touchstart',ev=>{ const t=ev.touches[0]; if(!t) return; const payload=(kind==='break')? {kind:'break', length:len} : {kind:'event', event:{kind}}; activePoolTouch={...payload, startX:t.clientX, startY:t.clientY, x:t.clientX, y:t.clientY}; chip.classList.add('drag-touch'); ev.preventDefault(); }, {passive:false});
-          chip.addEventListener('touchend',()=> chip.classList.remove('drag-touch'));
+          chip.addEventListener('touchstart',ev=>{ const t=ev.touches[0]; if(!t) return; const payload=(kind==='break')? {kind:'break', length:len} : {kind:'event', event:{kind}}; activePoolTouch={...payload, startX:t.clientX, startY:t.clientY, x:t.clientX, y:t.clientY}; chip.classList.add('drag-touch'); ev.preventDefault(); ev.stopPropagation(); }, {passive:false});
+          chip.addEventListener('touchend',ev=>{ chip.classList.remove('drag-touch'); });
           return chip;
         };
         pB.appendChild(makeEventChip(`Break (${len}m)`, 'break'));
@@ -2343,9 +2374,9 @@
           // Determine potential reorder target if still inside sheet
           const sheet=document.getElementById('sheetInline'); if(sheet){ const rect=sheet.getBoundingClientRect(); if(act.x>=rect.left && act.x<=rect.right && act.y>=rect.top && act.y<=rect.bottom){
               const rows=[...sheet.querySelectorAll('.line, .break')];
-              let targetIndex=rows.length-1; for(let k=0;k<rows.length;k++){ const r=rows[k].getBoundingClientRect(); if(act.y < (r.top + r.height/2)){ targetIndex=k; break; } }
+              let targetIndex=rows.length; for(let k=0;k<rows.length;k++){ const r=rows[k].getBoundingClientRect(); if(act.y < (r.top + r.height/2)){ targetIndex=k; break; } else if(k===rows.length-1 && act.y >= (r.top + r.height/2)){ targetIndex=rows.length; break; } }
               act.reorderTarget=targetIndex;
-              rows.forEach((rEl,ri)=>{ rEl.classList.toggle('drop-before', ri===targetIndex); rEl.classList.toggle('drop-after', false); });
+              const showBefore=targetIndex<rows.length; rows.forEach((rEl,ri)=>{ rEl.classList.toggle('drop-before', showBefore && ri===targetIndex); rEl.classList.toggle('drop-after', !showBefore && ri===rows.length-1); });
             } else {
               // outside: clear indicators
               [...sheet.querySelectorAll('.line, .break')].forEach(rEl=> rEl.classList.remove('drop-before','drop-after'));
@@ -2364,7 +2395,7 @@
       songs.addEventListener('drop',e=>{
         e.preventDefault(); e.stopPropagation(); const br=e.dataTransfer.getData('text/x-break');
         const allRows=[...songs.querySelectorAll('.line, .break')];
-        const getInsertIndex=(clientY)=>{ for(let i=0;i<allRows.length;i++){ const r=allRows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return allRows.length; };
+        const getInsertIndex=(clientY)=>{ if(allRows.length===0) return 0; for(let i=0;i<allRows.length;i++){ const r=allRows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return allRows.length; };
         const insertAt=getInsertIndex(e.clientY);
         if(br){ const lenInput=document.getElementById('gBreakLen'); const len=parseFloat(lenInput && lenInput.value)||gig.breakLen||15; setlist.splice(insertAt,0,{type:'break',title:'Break',length:len}); rebuildPreview(); return; }
         const evJson=e.dataTransfer.getData('text/x-event');
@@ -2407,7 +2438,7 @@
       if(outside){ const idx=act.idx; if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){ setlist.splice(idx,1); rebuildPreview(); saveAll(); } }
       else {
         // inside: perform reorder if target different
-        const from=act.idx; const to=act.reorderTarget; if(Number.isInteger(from) && Number.isInteger(to) && from!==to && from>=0 && to>=0 && from<setlist.length){ const item=setlist.splice(from,1)[0]; const adj = from<to ? to-1 : to; setlist.splice(adj,0,item); rebuildPreview(); saveAll(); }
+        const from=act.idx; const to=act.reorderTarget; if(Number.isInteger(from) && Number.isInteger(to) && from!==to && from>=0 && to>=0 && from<setlist.length && to<=setlist.length){ const item=setlist.splice(from,1)[0]; const adj = (from<to) ? to-1 : to; setlist.splice(adj,0,item); rebuildPreview(); saveAll(); }
       }
       window._activeSetTouch=null;
     }, {passive:true});
@@ -2418,9 +2449,9 @@
       sheetInline.addEventListener('drop',e=>{
         e.preventDefault();
         // If drop hit songs container, the other handler already handled; but duplicate logic is harmless
-        const rowsCont=previewSongs;
+        const rowsCont=document.getElementById('songsInline');
         const allRows= rowsCont ? [...rowsCont.querySelectorAll('.line, .break')] : [];
-        const getInsertIndex=(clientY)=>{ if(!allRows.length) return 0; for(let i=0;i<allRows.length;i++){ const r=allRows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return allRows.length; };
+        const getInsertIndex=(clientY)=>{ if(allRows.length===0) return 0; for(let i=0;i<allRows.length;i++){ const r=allRows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return allRows.length; };
         const insertAt=getInsertIndex(e.clientY);
         const br=e.dataTransfer.getData('text/x-break');
         if(br){ const lenInput=document.getElementById('gBreakLen'); const len=parseFloat(lenInput && lenInput.value)||gig.breakLen||15; setlist.splice(insertAt,0,{type:'break',title:'Break',length:len}); rebuildPreview(); return; }
@@ -2449,7 +2480,7 @@
           }catch(_){ /* ignore malformed */ }
         }
         const fromIdxRaw=e.dataTransfer.getData('text/x-set-index');
-        if(fromIdxRaw){ const fromIdx=parseInt(fromIdxRaw,10); if(Number.isInteger(fromIdx) && fromIdx>=0 && fromIdx<setlist.length){ const item=setlist.splice(fromIdx,1)[0]; const adj= fromIdx<insertAt? insertAt-1 : insertAt; setlist.splice(adj,0,item); rebuildPreview(); } return; }
+        if(fromIdxRaw){ const fromIdx=parseInt(fromIdxRaw,10); if(Number.isInteger(fromIdx) && fromIdx>=0 && fromIdx<setlist.length){ const item=setlist.splice(fromIdx,1)[0]; const adj= (fromIdx<insertAt) ? insertAt-1 : insertAt; setlist.splice(adj,0,item); rebuildPreview(); } return; }
         const idRaw=e.dataTransfer.getData('text/plain'); if(!idRaw || idRaw==='__break__') return; const id=parseInt(idRaw,10); const song=db.find(s=>s.id===id); if(!song) return; if(setlist.some(x=>x.id===song.id)) return; setlist.splice(insertAt,0,{...song,type:'song',notes:''}); rebuildPreview();
       });
     }
@@ -2559,29 +2590,44 @@
         activePoolTouch.y=t.clientY; 
         // Show visual drop indicator
         const preview=document.getElementById('songsInline');
+        const sheetInline=document.getElementById('sheetInline');
         if(preview){
-          const rect=preview.getBoundingClientRect();
           const rows=[...preview.querySelectorAll('.line, .break')];
-          if(activePoolTouch.x>=rect.left && activePoolTouch.x<=rect.right && activePoolTouch.y>=rect.top && activePoolTouch.y<=rect.bottom){
+          // Check both preview content area and full sheet for better drop zone detection
+          const previewRect=preview.getBoundingClientRect();
+          const sheetRect=sheetInline ? sheetInline.getBoundingClientRect() : previewRect;
+          const inDropZone = (activePoolTouch.x>=sheetRect.left && activePoolTouch.x<=sheetRect.right && activePoolTouch.y>=sheetRect.top && activePoolTouch.y<=sheetRect.bottom);
+          if(inDropZone && rows.length>0){
             const getInsertIndex=(clientY)=>{ for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return rows.length; };
             const targetIdx=getInsertIndex(activePoolTouch.y);
             rows.forEach((r,i)=>{ r.classList.toggle('drop-before', i===targetIdx); r.classList.remove('drop-after'); });
+          } else if(inDropZone && rows.length===0){
+            // Empty setlist - highlight sheet itself
+            if(sheetInline) sheetInline.style.boxShadow='inset 0 0 0 3px #60a5fa';
           } else {
             rows.forEach(r=>{ r.classList.remove('drop-before','drop-after'); });
+            if(sheetInline) sheetInline.style.boxShadow='';
           }
         }
         ev.preventDefault(); 
       }, {passive:false});
       window.addEventListener('touchend',ev=>{
-        if(!activePoolTouch) return; const x=activePoolTouch.x, y=activePoolTouch.y; const preview=document.getElementById('songsInline');
+        if(!activePoolTouch) return; 
+        const x=activePoolTouch.x, y=activePoolTouch.y; 
+        const preview=document.getElementById('songsInline');
+        const sheetInline=document.getElementById('sheetInline');
         // Clear drop indicators
         if(preview){ 
           const allRows=[...preview.querySelectorAll('.line, .break')];
           allRows.forEach(r=>{ r.classList.remove('drop-before','drop-after'); });
         }
-        if(preview){ const rect=preview.getBoundingClientRect(); if(x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom){
-          const rows=[...preview.querySelectorAll('.line, .break')];
-          const getInsertIndex=(clientY)=>{ for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return rows.length; };
+        // Clear any visual feedback
+        if(sheetInline) sheetInline.style.boxShadow='';
+        // Check if dropped on preview area or entire sheet (expand boundaries for easier mobile drops)
+        const dropTarget = sheetInline || preview;
+        if(dropTarget){ const rect=dropTarget.getBoundingClientRect(); const margin=50; if(x>=rect.left-margin && x<=rect.right+margin && y>=rect.top-margin && y<=rect.bottom+margin){
+          const rows=preview ? [...preview.querySelectorAll('.line, .break')] : [];
+          const getInsertIndex=(clientY)=>{ if(rows.length===0) return 0; for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(clientY < (r.top + r.height/2)) return i; } return rows.length; };
           const insertAt=getInsertIndex(y);
           if(activePoolTouch.kind==='song'){ const song=db.find(s=>s.id===activePoolTouch.id); if(song && !setlist.some(sl=>sl.id===song.id)){ setlist.splice(insertAt,0,{...song,type:'song',notes:''}); rebuildPreview(); } }
           else if(activePoolTouch.kind==='break'){ const lenInput=document.getElementById('gBreakLen'); const len=parseFloat(lenInput && lenInput.value)||gig.breakLen||15; setlist.splice(insertAt,0,{type:'break',title:'Break',length:len}); rebuildPreview(); }
