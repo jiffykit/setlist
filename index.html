@@ -3,7 +3,7 @@
 <head>
   <style>
     :root{
-      --bg:#f5f7fb; --card:#ffffff; --muted:#4b5563; --accent:#2563eb; --accent2:#0ea5e9; --danger:#dc2626;
+      --bg:#f5f7fb; --card:#ffffff; --muted:#4b5563; --accent:#1f2937; --accent2:#374151; --danger:#374151;
       --paperText:#111; --paperRule:#444;
     }
     *{box-sizing:border-box}
@@ -25,9 +25,9 @@
     input,select,textarea{width:100%;padding:12px 12px;border-radius:10px;border:1px solid #d1d5db;background:#ffffff;color:#111;font-size:15px}
     input[type="checkbox"]{width:auto}
     .checks{display:flex;flex-wrap:wrap;gap:12px}
-    .btn{padding:11px 16px;border-radius:10px;border:1px solid #c7d2fe;color:white;background:linear-gradient(135deg,#2563eb,#0ea5e9);cursor:pointer;font-weight:800}
-    .btn.secondary{background:linear-gradient(135deg,#f59e0b,#ef4444);border-color:#fcd34d}
-    .btn.danger{background:linear-gradient(135deg,#ef4444,#b91c1c);border-color:#fecaca}
+    .btn{padding:11px 16px;border-radius:10px;border:1px solid #374151;color:#f9fafb;background:#1f2937;cursor:pointer;font-weight:800}
+    .btn.secondary{background:#6b7280;border-color:#4b5563}
+    .btn.danger{background:#374151;border-color:#1f2937;color:#f9fafb}
     .list{display:grid;gap:10px;margin-top:12px}
   .song{display:flex;gap:12px;align-items:center;justify-content:space-between;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px}
     .song.dragging{opacity:.6}
@@ -77,8 +77,8 @@
   /* Base pill chip styling (used in Song Pool) */
   .pill{display:inline-flex;align-items:center;gap:6px;border:2px solid #d1d5db;border-radius:999px;padding:4px 10px;background:#fff;font-size:12px;color:#111827}
   .pool-sec .pill{cursor:grab}
-  .pill.drag-touch{opacity:.55;outline:2px dashed #2563eb}
-  .touch-target-highlight{box-shadow:inset 0 3px 0 #2563eb,inset 0 -3px 0 #2563eb}
+  .pill.drag-touch{opacity:.55;outline:2px dashed #374151}
+  .touch-target-highlight{box-shadow:inset 0 3px 0 #374151,inset 0 -3px 0 #374151}
   /* Live layout: no wrap on wide screens; wrap on narrow */
   #liveFlex{flex-wrap:nowrap;flex-direction:row}
   #liveLeftCol{flex:0 0 340px;min-width:340px}
@@ -163,10 +163,11 @@
   g[data-draggable].selected ellipse,
   g[data-draggable].selected line,
   g[data-draggable].selected polyline,
-  g[data-draggable].selected polygon{stroke:#1d4ed8}
+  g[data-draggable].selected polygon{stroke:#374151}
   g[data-draggable].selected text{text-decoration:underline}
   g[data-draggable].selected{filter:drop-shadow(0 0 6px rgba(37,99,235,0.65));}
-  .stage-inspector{margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .stage-inspector{display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:relative;padding:8px;background:#fff;border:1px solid #e5e7eb;border-radius:6px}
+  .stage-inspector .connection-chain{order:-1;flex-basis:100%;margin-bottom:4px}
   /* Stage frame & resize handles */
   #stageFrame{outline:3px solid #000;pointer-events:none}
   #stageFrame .stage-handle{position:absolute;width:16px;height:16px;background:#000;border:2px solid #fff;border-radius:4px;z-index:85;pointer-events:auto;box-shadow:0 0 0 1px #000}
@@ -174,7 +175,7 @@
   #stageFrame .stage-handle.tr{top:-10px;right:-10px;cursor:nesw-resize}
   #stageFrame .stage-handle.bl{bottom:-10px;left:-10px;cursor:nesw-resize}
   #stageFrame .stage-handle.br{bottom:-10px;right:-10px;cursor:nwse-resize}
-  #stageFrame .stage-handle:active{background:#1d4ed8}
+  #stageFrame .stage-handle:active{background:#374151}
   #stageSvgFull{pointer-events:auto}
   .stage-inspector .muted{color:#6b7280;font-size:13px}
   .gear-wrap{margin-top:8px}
@@ -193,7 +194,7 @@
   #stageSvgFull{ touch-action:none; }
   .stage-canvas{ -webkit-user-select:none; user-select:none; }
   /* Global sticky actions (top-left) */
-  .global-actions{position:sticky;top:0;z-index:60;display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 4px 0;margin:0 0 8px 0;background:linear-gradient(180deg, rgba(249,250,251,0.96), rgba(249,250,251,0));backdrop-filter:saturate(1.2) blur(2px)}
+  .global-actions{position:sticky;top:0;z-index:60;display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 4px 0;margin:0 0 8px 0;background:rgba(249,250,251,0.96);backdrop-filter:blur(2px)}
   @media print{ .global-actions{display:none} }
   /* Database: horizontal scroll on narrow screens */
   @media (max-width: 768px){
@@ -203,15 +204,15 @@
   /* Missing songs list */
   .missing{margin:8px 0 6px 0;display:flex;flex-wrap:wrap;gap:6px}
   .missing .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;background:#fff;font-size:12px;color:#111827}
-  .missing .pill .add{background:#1d4ed8;color:#fff;border:none;border-radius:999px;padding:2px 8px;cursor:pointer}
-  .missing .pill .add:hover{background:#1e40af}
+  .missing .pill .add{background:#065f46;color:#fff;border:none;border-radius:999px;padding:2px 8px;cursor:pointer}
+  .missing .pill .add:hover{background:#064e3b}
   /* Tabs styling */
-  .tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid #e5e7eb}
-  .tab{border:none;padding:6px 12px;font-size:14px;background:#e5e7eb;color:#4b5563;border-top-left-radius:6px;border-top-right-radius:6px;cursor:pointer}
-  .tab.active{background:#1d4ed8;color:#f9fafb}
-  .tab:not(.active):hover{background:#d1d5db}
+  .tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid #374151}
+  .tab{border:none;padding:6px 12px;font-size:14px;background:#6b7280;color:#f9fafb;border-top-left-radius:6px;border-top-right-radius:6px;cursor:pointer}
+  .tab.active{background:#1f2937;color:#f9fafb}
+  .tab:not(.active):hover{background:#4b5563}
   /* Bottom brand bar */
-  .brand-bar{position:fixed;bottom:0;left:0;right:0;height:20px;background:#0f172a;color:#e5e7eb;font-size:11px;display:flex;align-items:center;justify-content:center;z-index:80}
+  .brand-bar{position:fixed;bottom:0;left:0;right:0;height:20px;background:#1f2937;color:#e5e7eb;font-size:11px;display:flex;align-items:center;justify-content:center;z-index:80}
   .brand-bar a{color:inherit;text-decoration:none}
   .brand-bar a:hover{text-decoration:underline}
   /* Hide global actions row when Live tab active */
@@ -224,8 +225,8 @@
   .live-lyrics-main{flex:1 1 auto;overflow:auto;padding:16px;display:flex;align-items:flex-start;justify-content:center}
   .live-lyrics-body{white-space:pre-wrap;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:20px;line-height:1.5;text-align:center;max-width:1100px;margin:0 auto}
   .live-lyrics-play{padding:8px 14px;border-radius:999px;border:none;background:#22c55e;color:#022c22;font-weight:700;cursor:pointer;margin-right:8px}
-  .live-lyrics-stop{padding:8px 14px;border-radius:999px;border:none;background:#f97316;color:#022c22;font-weight:700;cursor:pointer;margin-right:8px}
-  .live-lyrics-exit{padding:8px 14px;border-radius:999px;border:none;background:#ef4444;color:#fee2e2;font-weight:700;cursor:pointer}
+  .live-lyrics-stop{padding:8px 14px;border-radius:999px;border:none;background:#374151;color:#f9fafb;font-weight:700;cursor:pointer;margin-right:8px}
+  .live-lyrics-exit{padding:8px 14px;border-radius:999px;border:none;background:#374151;color:#f9fafb;font-weight:700;cursor:pointer}
   @media (max-width:768px){
     .live-lyrics-body{font-size:18px}
   }
@@ -302,9 +303,12 @@
           </div>
         <!-- Profile buttons moved to global-actions -->
         <div class="list" id="dbList" style="width:100%;"></div>
-        <div style="margin-top:12px;display:flex;justify-content:flex-end;align-items:center;gap:12px">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clearDBLock" style="width:18px;height:18px"><span style="font-size:14px">🔓 Unlock Clear</span></label>
-          <button class="btn danger" id="clearDB">Clear Database</button>
+        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <button class="btn" id="addCustomColumn" style="background:#065f46;color:#f9fafb;border:1px solid #064e3b">+ Add Custom Column</button>
+          <div style="display:flex;gap:12px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clearDBLock" style="width:18px;height:18px"><span style="font-size:14px">🔓 Unlock Clear</span></label>
+            <button class="btn danger" id="clearDB" style="background:#374151;color:#f9fafb">Clear Database</button>
+          </div>
         </div>
         <div class="import-block" id="importBlock" style="margin-top:22px;padding:14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc">
           <h3 style="margin:0 0 10px;font-size:18px">Import Songs (OCR / Paste)</h3>
@@ -362,9 +366,9 @@
             <h4 id="poolBreaksHdr" style="margin:12px 0 4px;font-size:13px;color:#64748b">Break</h4>
             <div id="poolBreaks" style="display:flex;flex-direction:column;gap:6px"></div>
           </div>
-          <div id="previewCol" style="flex:1 1 auto;min-width:640px;max-width:1100px">
+          <div id="previewCol" style="flex:1 1 auto;min-width:640px;max-width:1100px;position:sticky;top:12px;align-self:flex-start;max-height:calc(100vh - 24px);display:flex;flex-direction:column">
             <h3 style="margin:0 0 8px">Preview</h3>
-            <div class="sheet" id="sheetInline">
+            <div class="sheet" id="sheetInline" style="overflow:auto;flex:1 1 auto;height:auto;max-height:calc(100vh - 100px)">
               <div class="hdr" id="hdrInline"></div>
               <div class="songs" id="songsInline"></div>
             </div>
@@ -577,6 +581,23 @@
         </div>
       </div>
       <div class="stage-canvas">
+        <div style="position:absolute;top:8px;right:8px;z-index:50;display:flex;gap:6px;align-items:center;pointer-events:none">
+          <button class="btn" id="stagePresetBtn" style="padding:4px 10px;font-size:12px;background:#065f46;color:#f9fafb;border:1px solid #064e3b;pointer-events:auto">PRESET</button>
+        </div>
+        <div class="stage-inspector" id="stageInspector" style="margin-bottom:8px">
+          <span class="muted" id="selLabel">Selected:</span>
+          <input id="selName" placeholder="Label (double‑click item to rename)" style="min-width:220px" />
+          <label class="muted" for="selSize">Size</label>
+          <input id="selSize" type="range" min="0.3" max="5" step="0.05" value="1" style="width:160px" />
+          
+          <label class="muted" for="selShowLabel" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="selShowLabel" /> Show Label</label>
+          <span id="labelSizeControls" style="display:none;align-items:center;gap:6px">
+            <label class="muted" for="selLabelSize">Label Size</label>
+            <input id="selLabelSize" type="range" min="8" max="32" step="1" value="16" style="width:120px" />
+          </span>
+          <button class="btn danger" id="delSel">Delete</button>
+          <button class="btn" id="dupSel" type="button">Duplicate</button>
+        </div>
         <div id="stageFrame" style="position:relative;display:inline-block;">
           <svg id="stageSvgFull" class="bw" viewBox="0 0 1500 900" xmlns="http://www.w3.org/2000/svg" style="display:block;">
             <rect class="stage-bg" x="1" y="1" width="1498" height="898"/>
@@ -586,16 +607,6 @@
           <div class="stage-handle tr" data-handle="tr"></div>
           <div class="stage-handle bl" data-handle="bl"></div>
           <div class="stage-handle br" data-handle="br"></div>
-        </div>
-        <div class="stage-inspector" id="stageInspector">
-          <span class="muted">Selected:</span>
-          <input id="selName" placeholder="Label (double‑click item to rename)" style="min-width:220px" />
-          <label class="muted" for="selSize">Size</label>
-          <input id="selSize" type="range" min="0.3" max="5" step="0.05" value="1" style="width:160px" />
-          
-          <label class="muted" for="selShowLabel" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="selShowLabel" /> Show Label</label>
-          <button class="btn danger" id="delSel">Delete</button>
-          <button class="btn" id="dupSel" type="button">Duplicate</button>
         </div>
         <div id="stageLegend" class="stage-legend"></div>
         <div class="stage-actions">
@@ -623,6 +634,20 @@
   </div>
 
   <!-- Lighting Notes Fullscreen Modal -->
+  <!-- Stage Preset Modal -->
+  <div class="modal" id="presetModal" style="display:none">
+    <div style="background:#fff;border-radius:8px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
+      <h3 style="margin:0 0 16px 0;font-size:20px">Stage Plot Presets</h3>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn" id="addPresetBtn" style="background:#065f46;color:#f9fafb;border:1px solid #064e3b;flex:1">💾 Save Current</button>
+      </div>
+      <div id="presetList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn secondary" id="closePreset">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="stage-modal" id="notesModal">
     <div class="stage-editor" style="grid-template-columns:1fr">
       <div class="stage-pane" style="border-right:none">
@@ -715,6 +740,7 @@
         <span id="liveSpeedDisplay" style="font-size:14px;color:#e5e7eb;font-weight:bold;min-width:12px;text-align:center">5</span>
         <button id="liveSpeedUp" type="button" style="padding:4px 8px;border-radius:4px;border:1px solid #444;background:#1f2937;color:#e5e7eb;cursor:pointer;font-size:14px;font-weight:bold">+</button>
       </div>
+      <button id="metronomeBtnOverlay" type="button" title="Metronome: Tap (4+) to set tempo. Pause then click cycles mode. Hold to set BPM." style="padding:6px 12px;border-radius:4px;border:2px solid #444;background:#1f2937;color:#fbbf24;cursor:pointer;font-size:18px;font-weight:bold;margin-right:12px">♩</button>
       <button id="liveLyricsExit" class="live-lyrics-exit" type="button">Back to Setlist</button>
     </div>
     <div id="liveLyricsOverlayMain" class="live-lyrics-main">
@@ -919,6 +945,35 @@
   }
   // Persist on navigation away
   window.addEventListener('beforeunload', ()=>{ try{ for(const k in armedAudio){ try{ URL.revokeObjectURL(armedAudio[k]); }catch(_){} } }catch(_){} saveAll(); });
+    
+    // Add custom column button
+    const addCustomColumnBtn=document.getElementById('addCustomColumn');
+    if(addCustomColumnBtn){ addCustomColumnBtn.addEventListener('click', ()=>{
+      const name = prompt('Custom column name (e.g., Genre, Language, Tempo):');
+      if(!name || name.trim().length === 0) return;
+      const key = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      if(!gig.customColumns) gig.customColumns = [];
+      if(gig.customColumns.find(c => c.key === key)){
+        alert('Column already exists.');
+        return;
+      }
+      // Ask if they want to push this field to setlist
+      const pushToSet = confirm('Push this field data to setlist display?\n\nClick OK to show this column in the printed setlist alongside song titles.\nClick Cancel to keep it database-only.');
+      gig.customColumns.push({key, name: name.trim(), pushToSetlist: pushToSet});
+      // Add to column order
+      if(!gig.dbColumns.order) gig.dbColumns.order = ['add','cover','title','artist','len','key','capo','bpm','mood','lyrics','audio','rating','actions'];
+      // Insert before actions
+      const actionsIdx = gig.dbColumns.order.indexOf('actions');
+      if(actionsIdx > -1){
+        gig.dbColumns.order.splice(actionsIdx, 0, key);
+      } else {
+        gig.dbColumns.order.push(key);
+      }
+      saveAll();
+      renderDB();
+      buildSheet('sheetInline');
+    }); }
+    
     // Clear database
     const clearDBBtn=document.getElementById('clearDB');
     const clearDBLock=document.getElementById('clearDBLock');
@@ -1106,7 +1161,7 @@
     if(!gig.dbColumns){
       gig.dbColumns={
         order:['add','cover','title','artist','len','key','capo','bpm','mood','lyrics','audio','rating','actions'],
-        widths:{add:24,cover:18,title:120,artist:120,len:58,key:35,capo:30,bpm:40,mood:28,lyrics:180,audio:180,rating:32,actions:120}
+        widths:{add:24,cover:18,title:150,artist:150,len:50,key:50,capo:35,bpm:50,mood:28,lyrics:250,audio:250,rating:60,actions:120}
       };
     }
 
@@ -1118,7 +1173,9 @@
       const hdrRow=document.createElement('div'); hdrRow.style.cssText='display:flex;gap:4px;align-items:center;padding:4px;background:#f3f4f6;font-weight:600;font-size:11px;border-bottom:2px solid #d1d5db;position:relative';
       
       const colOrder = gig.dbColumns.order || ['add','cover','title','artist','len','key','capo','bpm','mood','lyrics','audio','rating','actions'];
-      const colWidths = gig.dbColumns.widths || {add:24,cover:18,title:120,artist:120,len:58,key:35,capo:30,bpm:40,mood:28,lyrics:180,audio:180,rating:32,actions:120};
+      const colWidths = gig.dbColumns.widths || {add:24,cover:18,title:150,artist:150,len:50,key:50,capo:35,bpm:50,mood:28,lyrics:250,audio:250,rating:60,actions:120};
+      const hiddenCols = gig.dbColumns.hidden || [];
+      if(!gig.customColumns) gig.customColumns = [];
       
       const colDefs = {
         add: {text:'', isButton:true, sortKey:null},
@@ -1135,10 +1192,15 @@
         rating: {text:'Rate', sortKey:'rating'},
         actions: {text:'', sortKey:null}
       };
+      // Add custom columns to definitions
+      gig.customColumns.forEach(cc=>{
+        colDefs[cc.key] = {text:cc.name, sortKey:null, isCustom:true};
+        if(!colWidths[cc.key]) colWidths[cc.key] = 100;
+      });
       
       colOrder.forEach((colKey,colIndex)=>{
         const def = colDefs[colKey];
-        if(!def) return;
+        if(!def || hiddenCols.includes(colKey)) return;
         const width = colWidths[colKey] || 100;
         
         const hdr = document.createElement('div');
@@ -1151,53 +1213,129 @@
           addBtn.textContent='+'; 
           addBtn.type='button'; 
           addBtn.title='Add new song'; 
-          addBtn.style.cssText='width:24px;height:24px;border:2px solid #3b82f6;border-radius:4px;background:#fff;color:#3b82f6;font-size:18px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0';
+          addBtn.style.cssText='width:24px;height:24px;border:2px solid #374151;border-radius:4px;background:#fff;color:#374151;font-size:18px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0';
           addBtn.addEventListener('click', addNewSongRow);
           hdr.appendChild(addBtn);
         } else {
           hdr.textContent = def.text;
         }
         
-        // Double-click to sort
-        if(def.sortKey){
-          hdr.addEventListener('dblclick',()=>{
+        // Triple-click to restore default width
+        let clickCount = 0;
+        let clickTimer = null;
+        hdr.addEventListener('click', (e)=>{
+          if(e.target.style.cursor==='col-resize' || e.target.classList.contains('resizer')) return;
+          clickCount++;
+          if(clickTimer) clearTimeout(clickTimer);
+          if(clickCount === 3){
+            // Triple click - restore default width
+            const defaultWidths = {add:24,cover:18,title:150,artist:150,len:50,key:50,capo:35,bpm:50,mood:28,lyrics:250,audio:250,rating:60,actions:120};
+            if(defaultWidths[colKey]){
+              colWidths[colKey] = defaultWidths[colKey];
+              saveAll();
+              renderDB();
+            }
+            clickCount = 0;
+          } else if(clickCount === 2 && def.sortKey){
+            // Double-click to sort
             const sortSel = document.getElementById('dbSort');
             if(sortSel){ sortSel.value = def.sortKey; renderDB(); }
-          });
-          hdr.title = 'Double-click to sort by ' + def.text;
-        }
+            clickCount = 0;
+          } else {
+            clickTimer = setTimeout(()=>{ clickCount = 0; }, 500);
+          }
+        });
+        hdr.title = (def.sortKey ? 'Double-click to sort by ' + def.text + ', ' : '') + 'Triple-click to restore default width';
         
         // Column reorder by dragging header (long-hold for touch)
         if(!def.isButton){
           let dragTimer = null;
           let isDraggingCol = false;
-          const startColDrag = ()=>{
+          let startY = 0;
+          let startX = 0;
+          let currentY = 0;
+          let hasDraggedUp = false;
+          const startColDrag = (clientY, clientX)=>{
             if(dragTimer) return;
+            startY = clientY;
+            startX = clientX;
+            currentY = clientY;
+            hasDraggedUp = false;
             dragTimer = setTimeout(()=>{
               isDraggingCol = true;
               hdr.style.opacity = '0.5';
               hdr.style.cursor = 'move';
             }, 400);
           };
+          const trackMove = (clientY, clientX)=>{
+            if(!isDraggingCol && !dragTimer) return;
+            currentY = clientY;
+            const deltaY = startY - currentY; // positive = dragging up
+            const deltaX = Math.abs(startX - clientX);
+            // If dragged up 50px or more, mark for hide
+            if(deltaY >= 50 && deltaX < 30){
+              hasDraggedUp = true;
+              hdr.style.opacity = '0.3';
+              hdr.style.transform = 'translateY(-10px)';
+            }
+          };
           const endColDrag = ()=>{
             if(dragTimer){ clearTimeout(dragTimer); dragTimer=null; }
+            hdr.style.transform = '';
             if(isDraggingCol){
               hdr.style.opacity = '';
               hdr.style.cursor = '';
               isDraggingCol = false;
             }
+            // Hide column if dragged up 50px
+            if(hasDraggedUp){
+              if(!gig.dbColumns.hidden) gig.dbColumns.hidden = [];
+              if(!gig.dbColumns.hidden.includes(colKey)){
+                gig.dbColumns.hidden.push(colKey);
+                saveAll();
+                renderDB();
+              }
+            }
+            startY = 0;
+            startX = 0;
+            currentY = 0;
+            hasDraggedUp = false;
           };
+          
+          // Mouse drag tracking
           hdr.addEventListener('mousedown',(e)=>{
             if(e.target.style.cursor==='col-resize') return; // Don't interfere with resize
-            startColDrag();
+            startColDrag(e.clientY, e.clientX);
+            const onMouseMove = (e2)=>{
+              trackMove(e2.clientY, e2.clientX);
+            };
+            const onMouseUp = ()=>{
+              document.removeEventListener('mousemove', onMouseMove);
+              document.removeEventListener('mouseup', onMouseUp);
+              endColDrag();
+            };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
           });
-          hdr.addEventListener('touchstart',(e)=>{
-            startColDrag();
-          });
-          hdr.addEventListener('mouseup',endColDrag);
-          hdr.addEventListener('touchend',endColDrag);
           
-          // Drag events
+          // Touch drag tracking
+          hdr.addEventListener('touchstart',(e)=>{
+            const touch = e.touches[0];
+            if(touch) startColDrag(touch.clientY, touch.clientX);
+            const onTouchMove = (e2)=>{
+              const t = e2.touches[0];
+              if(t) trackMove(t.clientY, t.clientX);
+            };
+            const onTouchEnd = ()=>{
+              document.removeEventListener('touchmove', onTouchMove);
+              document.removeEventListener('touchend', onTouchEnd);
+              endColDrag();
+            };
+            document.addEventListener('touchmove', onTouchMove);
+            document.addEventListener('touchend', onTouchEnd);
+          });
+          
+          // Drag events for reordering columns
           hdr.setAttribute('draggable', true);
           hdr.addEventListener('dragstart',(e)=>{
             if(!isDraggingCol) return e.preventDefault();
@@ -1232,7 +1370,10 @@
         // Resizer handle (right edge)
         if(!def.isButton && colKey!=='actions'){
           const resizer = document.createElement('div');
-          resizer.style.cssText='position:absolute;right:-2px;top:0;bottom:0;width:4px;cursor:col-resize;z-index:10;background:transparent';
+          resizer.style.cssText='position:absolute;right:-6px;top:-8px;bottom:-8px;width:12px;cursor:col-resize;z-index:10;background:rgba(209,213,219,0.5);touch-action:none';resizer.title='Drag to resize';
+          resizer.classList.add('resizer');
+          
+          // Mouse resize
           resizer.addEventListener('mousedown',(e)=>{
             e.stopPropagation();
             const startX = e.clientX;
@@ -1251,11 +1392,138 @@
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup', onUp);
           });
+          
+          // Touch resize
+          resizer.addEventListener('touchstart',(e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.touches[0];
+            if(!touch) return;
+            const startX = touch.clientX;
+            const startWidth = width;
+            let isResizing = true;
+            const onMove = (e2)=>{
+              e2.preventDefault();
+              if(!isResizing) return;
+              const t = e2.touches[0];
+              if(!t) return;
+              const delta = t.clientX - startX;
+              const newWidth = Math.max(20, startWidth + delta);
+              colWidths[colKey] = newWidth;
+              hdr.style.width = newWidth + 'px';
+            };
+            const onUp = ()=>{
+              isResizing = false;
+              document.removeEventListener('touchmove', onMove, {passive:false});
+              document.removeEventListener('touchend', onUp);
+              document.removeEventListener('touchcancel', onUp);
+              saveAll();
+              renderDB();
+            };
+            document.addEventListener('touchmove', onMove, {passive:false});
+            document.addEventListener('touchend', onUp);
+            document.addEventListener('touchcancel', onUp);
+          });
+          
           hdr.appendChild(resizer);
         }
         
         hdrRow.appendChild(hdr);
       });
+      
+      // Hidden Columns eye emoji button on header row
+      if(hiddenCols.length > 0){
+        const eyeHdr = document.createElement('div');
+        eyeHdr.style.cssText = 'position:relative;flex-shrink:0;width:40px;text-align:center;cursor:pointer;user-select:none';
+        const restoreBtn = document.createElement('button');
+        restoreBtn.textContent = '👀';
+        restoreBtn.type = 'button';
+        restoreBtn.title = `${hiddenCols.length} hidden column${hiddenCols.length>1?'s':''}`;
+        restoreBtn.style.cssText = 'padding:2px 4px;border:none;background:transparent;font-size:20px;cursor:pointer;position:relative';
+        const popup = document.createElement('div');
+        popup.style.cssText = 'display:none;position:absolute;z-index:100;background:#fff;border:1px solid #d1d5db;border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:240px;top:100%;right:0;margin-top:2px';
+        hiddenCols.forEach(colKey=>{
+          const def = colDefs[colKey];
+          if(!def) return;
+          const rowDiv = document.createElement('div');
+          rowDiv.style.cssText = 'display:flex;align-items:center;gap:6px;margin:2px 0';
+          const showBtn = document.createElement('button');
+          showBtn.textContent = `Show ${def.text || colKey}`;
+          showBtn.type = 'button';
+          showBtn.style.cssText = 'flex:1;padding:4px 8px;border:1px solid #d1d5db;border-radius:3px;background:#f9fafb;cursor:pointer;text-align:left;font-size:12px';
+          showBtn.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            const idx = hiddenCols.indexOf(colKey);
+            if(idx > -1){
+              hiddenCols.splice(idx, 1);
+              gig.dbColumns.hidden = hiddenCols;
+              saveAll();
+              renderDB();
+            }
+          });
+          // Only show delete checkbox for custom columns
+          const isCustom = def.isCustom || (gig.customColumns && gig.customColumns.find(c => c.key === colKey));
+          if(isCustom){
+            const delChk = document.createElement('input');
+            delChk.type = 'checkbox';
+            delChk.title = 'Delete column permanently';
+            delChk.style.cssText = 'width:16px;height:16px;cursor:pointer';
+            const delLbl = document.createElement('label');
+            delLbl.textContent = '🗑️';
+            delLbl.title = 'Delete permanently';
+            delLbl.style.cssText = 'cursor:pointer;font-size:14px';
+            delChk.addEventListener('change', ()=>{
+              if(delChk.checked && confirm(`Permanently delete custom column "${def.text || colKey}"? This will remove all data in this column from all songs.`)){
+                // Remove from hidden columns
+                const hiddenIdx = hiddenCols.indexOf(colKey);
+                if(hiddenIdx > -1){
+                  hiddenCols.splice(hiddenIdx, 1);
+                  gig.dbColumns.hidden = hiddenCols;
+                }
+                // Remove from column order
+                const orderIdx = gig.dbColumns.order.indexOf(colKey);
+                if(orderIdx > -1){
+                  gig.dbColumns.order.splice(orderIdx, 1);
+                }
+                // Remove from custom columns
+                if(gig.customColumns){
+                  const customIdx = gig.customColumns.findIndex(c => c.key === colKey);
+                  if(customIdx > -1){
+                    gig.customColumns.splice(customIdx, 1);
+                  }
+                }
+                // Remove column width
+                if(gig.dbColumns.widths && gig.dbColumns.widths[colKey]){
+                  delete gig.dbColumns.widths[colKey];
+                }
+                // Remove data from all songs
+                db.forEach(song => {
+                  if(song.customFields && song.customFields[colKey]){
+                    delete song.customFields[colKey];
+                  }
+                });
+                saveAll();
+                renderDB();
+              } else {
+                delChk.checked = false;
+              }
+            });
+            rowDiv.append(showBtn, delChk, delLbl);
+          } else {
+            rowDiv.appendChild(showBtn);
+          }
+          popup.appendChild(rowDiv);
+        });
+        restoreBtn.addEventListener('mouseenter', ()=>{ popup.style.display = 'block'; });
+        restoreBtn.addEventListener('mouseleave', ()=>{ popup.style.display = 'none'; });
+        restoreBtn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); popup.style.display = popup.style.display==='block'?'none':'block'; });
+        popup.addEventListener('click', (e)=>{ e.stopPropagation(); });
+        popup.addEventListener('touchstart', (e)=>{ e.stopPropagation(); });
+        popup.addEventListener('touchend', (e)=>{ e.stopPropagation(); });
+        restoreBtn.appendChild(popup);
+        eyeHdr.appendChild(restoreBtn);
+        hdrRow.appendChild(eyeHdr);
+      }
       
       list.appendChild(hdrRow);
       // Filters / sort
@@ -1352,6 +1620,23 @@
         const bpm=document.createElement('input'); bpm.type='number'; bpm.min='30'; bpm.max='300'; bpm.value=String(Number.isInteger(s.bpm) && s.bpm>0 ? s.bpm : ''); bpm.placeholder='BPM'; bpm.title='Beats per minute'; bpm.style.cssText='width:40px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center';
         bpm.addEventListener('change',()=>{ let v=parseInt(bpm.value,10); if(!Number.isInteger(v) || v<30) v=0; if(v>300) v=300; s.bpm=v||0; bpm.value=v>0?String(v):''; saveAll(); buildSheet('sheetInline'); });
         
+        // Custom columns rendering
+        const customColInputs = {};
+        gig.customColumns.forEach(cc=>{
+          const custInput = document.createElement('input');
+          custInput.placeholder = cc.name;
+          if(!s.customFields) s.customFields = {};
+          custInput.value = s.customFields[cc.key] || '';
+          custInput.style.cssText = `width:${colWidths[cc.key]||100}px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:13px`;
+          custInput.addEventListener('change', ()=>{
+            if(!s.customFields) s.customFields = {};
+            s.customFields[cc.key] = custInput.value.trim();
+            saveAll();
+            buildSheet('sheetInline');
+          });
+          customColInputs[cc.key] = custInput;
+        });
+        
         // Mood submenu (hoverable)
         const moodBtn=document.createElement('button'); moodBtn.textContent='♫'; moodBtn.type='button'; moodBtn.title='Moods'; moodBtn.style.cssText='padding:2px 6px;border:1px solid #d1d5db;border-radius:3px;background:#fff;cursor:pointer;position:relative;font-size:14px;width:28px;height:24px';
         const moodMenu=document.createElement('div'); moodMenu.style.cssText='display:none;position:absolute;z-index:100;background:#fff;border:1px solid #d1d5db;border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:140px;top:100%;left:0;margin-top:2px;text-align:left';
@@ -1403,7 +1688,7 @@
         moodMenu.addEventListener('mouseleave',()=>{ moodMenu.style.display='none'; });
         // Lyrics / chords quick edit (collapsed textarea)
         const lyricsWrap=document.createElement('div'); lyricsWrap.style.cssText='display:flex;flex-direction:row;gap:6px;align-items:center;flex:1 1 auto;min-width:100px;max-width:180px';
-        const lyrBtn=document.createElement('button'); lyrBtn.textContent='Lyrics'; lyrBtn.className='btn secondary'; lyrBtn.type='button'; lyrBtn.style.cssText='padding:2px 6px;font-size:10px;border-radius:3px;flex-shrink:0'; lyrBtn.title='Edit lyrics / chords for this song';
+        const lyrBtn=document.createElement('button'); lyrBtn.textContent='Lyrics'; lyrBtn.className='btn'; lyrBtn.type='button'; lyrBtn.style.cssText='padding:2px 6px;font-size:10px;border-radius:3px;flex-shrink:0;background:#6b7280;color:#f9fafb'; lyrBtn.title='Edit lyrics / chords for this song';
         const lyricsPreview=document.createElement('div'); lyricsPreview.style.cssText='font-size:10px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto';
         const findFirstLyricLine=(txt)=>{ const lines=(txt||'').split('\n'); for(let l of lines){ const t=l.trim(); if(!t) continue; if(t.startsWith('[') && t.includes(']')) continue; if(t.startsWith('|')) continue; if(/^[A-G]([#b]?m?|add\d|maj|min|sus|dim|aug|\d)*[\s\/]+/.test(t)) continue; return t; } return ''; };
         const firstLine=findFirstLyricLine(s.lyrics); lyricsPreview.textContent=firstLine? (firstLine.length>25? firstLine.substring(0,25)+'...' : firstLine) : '';
@@ -1489,6 +1774,11 @@
         
         // Append in column order, applying widths
         const cellMap = {
+          add: (() => {
+            const addPlaceholder = document.createElement('div');
+            addPlaceholder.style.cssText='width:24px;height:24px;flex-shrink:0';
+            return addPlaceholder;
+          })(),
           cover: coverChk,
           title: title,
           artist: artist,
@@ -1507,9 +1797,13 @@
             return actionsWrap;
           })()
         };
+        // Add custom column cells to cellMap
+        gig.customColumns.forEach(cc=>{
+          cellMap[cc.key] = customColInputs[cc.key];
+        });
         
         colOrder.forEach(colKey=>{
-          if(colKey==='add') return; // Skip add button in rows
+          if(hiddenCols.includes(colKey)) return; // Skip hidden columns
           const cell = cellMap[colKey];
           if(!cell) return;
           const width = colWidths[colKey];
@@ -1834,7 +2128,7 @@
         if(it.type==='break'){
           const numSpan=document.createElement('span'); numSpan.textContent='⏸'; numSpan.style.minWidth='24px'; numSpan.style.fontSize='18px';
           const main=document.createElement('div'); main.style.flex='1 1 auto';
-          const ttl=document.createElement('div'); ttl.textContent=it.title||'Break'; ttl.style.fontWeight='600'; ttl.style.fontSize='16px'; ttl.style.color='#dc2626';
+          const ttl=document.createElement('div'); ttl.textContent=it.title||'Break'; ttl.style.fontWeight='600'; ttl.style.fontSize='16px'; ttl.style.color='#374151';
           const meta=document.createElement('div'); meta.style.fontSize='12px'; meta.style.color='#6b7280'; meta.textContent=it.length+'m';
           main.append(ttl,meta);
           row.append(numSpan,main);
@@ -1846,7 +2140,7 @@
         if(it.type==='encore'){
           const numSpan=document.createElement('span'); numSpan.textContent='⭐'; numSpan.style.minWidth='24px'; numSpan.style.fontSize='18px';
           const main=document.createElement('div'); main.style.flex='1 1 auto';
-          const ttl=document.createElement('div'); ttl.textContent=(it.title||'ENCORE').toUpperCase(); ttl.style.fontWeight='600'; ttl.style.fontSize='16px'; ttl.style.color='#ea580c';
+          const ttl=document.createElement('div'); ttl.textContent=(it.title||'ENCORE').toUpperCase(); ttl.style.fontWeight='600'; ttl.style.fontSize='16px'; ttl.style.color='#1f2937';
           main.append(ttl);
           row.append(numSpan,main);
           // No lyrics, just show as button - long hold to reorder
@@ -1902,10 +2196,25 @@
         row.append(numSpan,main);
         // Track if we're dragging to prevent click during drag
         let clickAllowed=true;
-        row.addEventListener('touchstart',()=>{ clickAllowed=true; setTimeout(()=>{clickAllowed=false;},500); });
-        row.addEventListener('mousedown',()=>{ clickAllowed=true; setTimeout(()=>{clickAllowed=false;},500); });
-        row.addEventListener('touchend',()=>{ setTimeout(()=>{clickAllowed=true;},100); });
-        row.addEventListener('mouseup',()=>{ setTimeout(()=>{clickAllowed=true;},100); });
+        let clickTimer=null;
+        row.addEventListener('touchstart',()=>{ 
+          clickAllowed=true; 
+          if(clickTimer) clearTimeout(clickTimer);
+          clickTimer=setTimeout(()=>{clickAllowed=false;},500); 
+        });
+        row.addEventListener('mousedown',()=>{ 
+          clickAllowed=true; 
+          if(clickTimer) clearTimeout(clickTimer);
+          clickTimer=setTimeout(()=>{clickAllowed=false;},500); 
+        });
+        row.addEventListener('touchend',()=>{ 
+          if(clickTimer){ clearTimeout(clickTimer); clickTimer=null; }
+          setTimeout(()=>{clickAllowed=true;},100); 
+        });
+        row.addEventListener('mouseup',()=>{ 
+          if(clickTimer){ clearTimeout(clickTimer); clickTimer=null; }
+          setTimeout(()=>{clickAllowed=true;},100); 
+        });
         row.addEventListener('click',()=>{
           if(!clickAllowed) return; // Prevent click during long-hold drag
           document.querySelectorAll('#liveList .live-row').forEach(r=> r.style.background='');
@@ -1922,7 +2231,7 @@
             const ratingIcons = ['\ud83d\udc4e','\ud83d\udc48','\ud83d\udc4d','\ud83d\udc4d\u200a\ud83d\udc4d'];
             const updateRatingButtons=()=>{
               ratingBtns.innerHTML='';
-              [0,1,2,3].forEach(r=>{ const btn=document.createElement('button'); btn.type='button'; btn.textContent=ratingIcons[r]; btn.style.cssText='padding:8px 16px;border:2px solid '+(it.audienceRating===r? '#3b82f6':'#d1d5db')+';border-radius:8px;background:'+(it.audienceRating===r? '#dbeafe':'#fff')+';cursor:pointer;font-size:24px;touch-action:manipulation'; btn.title='Rating: '+r; btn.addEventListener('click',(e)=>{ e.stopPropagation(); const baseSong=findSongById(it.id)||findSongByTitle(it.title); if(baseSong){ baseSong.audienceRating=r; it.audienceRating=r; saveAll(); updateRatingButtons(); } }); ratingBtns.appendChild(btn); });
+              [0,1,2,3].forEach(r=>{ const btn=document.createElement('button'); btn.type='button'; btn.textContent=ratingIcons[r]; btn.style.cssText='padding:8px 16px;border:2px solid '+(it.audienceRating===r? '#374151':'#d1d5db')+';border-radius:8px;background:'+(it.audienceRating===r? '#e5e7eb':'#fff')+';cursor:pointer;font-size:24px;touch-action:manipulation'; btn.title='Rating: '+r; btn.addEventListener('click',(e)=>{ e.stopPropagation(); const baseSong=findSongById(it.id)||findSongByTitle(it.title); if(baseSong){ baseSong.audienceRating=r; it.audienceRating=r; saveAll(); updateRatingButtons(); } }); ratingBtns.appendChild(btn); });
             };
             updateRatingButtons();
             ratingDiv.append(ratingLabel,ratingBtns); bodyEl.appendChild(ratingDiv);
@@ -1964,31 +2273,39 @@
       function setupLiveRowReorder(row,index){
         let holdTimer=null;
         let isDragging=false;
+        let dragReady=false; // Hold completed, ready to drag
         let startY=0;
         let currentY=0;
         let placeholder=null;
         
         const startHold=(e)=>{
           if(holdTimer) return;
+          dragReady=false;
           holdTimer=setTimeout(()=>{
-            isDragging=true;
-            row.style.opacity='0.7';
-            row.style.transform='scale(1.05)';
-            row.style.zIndex='1000';
-            row.style.position='relative';
-            // Create placeholder
-            placeholder=document.createElement('div');
-            placeholder.style.height=row.offsetHeight+'px';
-            placeholder.style.background='#dbeafe';
-            placeholder.style.border='2px dashed #3b82f6';
-            placeholder.style.borderRadius='4px';
-            placeholder.style.margin='4px 0';
-            row.parentNode.insertBefore(placeholder, row.nextSibling);
+            dragReady=true; // Hold completed - now ready to activate drag on move
           }, 500);
+        };
+        
+        const activateDrag=()=>{
+          if(isDragging) return;
+          isDragging=true;
+          row.style.opacity='0.7';
+          row.style.transform='scale(1.05)';
+          row.style.zIndex='1000';
+          row.style.position='relative';
+          // Create placeholder
+          placeholder=document.createElement('div');
+          placeholder.style.height=row.offsetHeight+'px';
+          placeholder.style.background='#dbeafe';
+          placeholder.style.border='2px dashed #374151';
+          placeholder.style.borderRadius='4px';
+          placeholder.style.margin='4px 0';
+          row.parentNode.insertBefore(placeholder, row.nextSibling);
         };
         
         const endHold=()=>{
           if(holdTimer){ clearTimeout(holdTimer); holdTimer=null; }
+          dragReady=false;
           if(isDragging){
             // Get the current index from the dataset (in case it changed)
             const currentIndex = parseInt(row.dataset.index, 10);
@@ -2037,6 +2354,10 @@
         };
         
         const moveWhileDragging=(e)=>{
+          // Only activate drag if hold completed AND user is moving
+          if(dragReady && !isDragging){
+            activateDrag();
+          }
           if(!isDragging) return;
           e.preventDefault();
           const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
@@ -2163,6 +2484,23 @@
     let liveOverlayZoomPx=20; // fullscreen overlay zoom
     let liveScrollSpeed=5; // user-adjustable scroll speed (0-9, default 5, 0=stopped, 9=fastest)
     let liveManualScrollOffset=0; // manual scroll adjustment during playback
+    // Compute scroll duration based on lines-per-minute model
+    function computeScrollDuration(container, bodyEl, zoomPx, speedSetting){
+      try{
+        if(!container || !bodyEl) return 0;
+        const lineHeightPx = zoomPx * 1.4; // approximate line-height factor
+        const totalLines = Math.max(1, Math.round(bodyEl.scrollHeight / lineHeightPx));
+        const visibleLines = Math.max(1, Math.round(container.clientHeight / lineHeightPx));
+        const linesToScroll = Math.max(1, totalLines - visibleLines);
+        if(speedSetting===0) return 0;
+        // Base lines per minute scaling; speed 9 roughly 2x previous max
+        const baseLinesPerMin = 30 + speedSetting * 10; // 1=>40, 9=>120
+        // Bigger zoom => fewer lines visible, scroll proportionally faster
+        const linesPerMin = baseLinesPerMin * (zoomPx / 20);
+        const durationMs = (linesToScroll / linesPerMin) * 60000;
+        return durationMs;
+      }catch(e){ return 0; }
+    }
     // Inline (desktop) auto-scroll
     let liveInlineScrollTimer=null;
     let liveInlineScrollStart=null;
@@ -2201,7 +2539,7 @@
       const ratingIcons = ['\ud83d\udc4e','\ud83d\udc48','\ud83d\udc4d','\ud83d\udc4d\u200a\ud83d\udc4d'];
       const updateRatingButtons=()=>{
         ratingBtns.innerHTML='';
-        [0,1,2,3].forEach(r=>{ const btn=document.createElement('button'); btn.type='button'; btn.textContent=ratingIcons[r]; btn.style.cssText='padding:10px 20px;border:2px solid '+(item.audienceRating===r? '#3b82f6':'#d1d5db')+';border-radius:8px;background:'+(item.audienceRating===r? '#dbeafe':'#fff')+';cursor:pointer;font-size:32px;touch-action:manipulation'; btn.title='Rating: '+r; btn.addEventListener('click',(e)=>{ e.stopPropagation(); const baseSong=findSongById(item.id)||findSongByTitle(item.title); if(baseSong){ baseSong.audienceRating=r; item.audienceRating=r; saveAll(); updateRatingButtons(); } }); ratingBtns.appendChild(btn); });
+        [0,1,2,3].forEach(r=>{ const btn=document.createElement('button'); btn.type='button'; btn.textContent=ratingIcons[r]; btn.style.cssText='padding:10px 20px;border:2px solid '+(item.audienceRating===r? '#374151':'#d1d5db')+';border-radius:8px;background:'+(item.audienceRating===r? '#e5e7eb':'#fff')+';cursor:pointer;font-size:32px;touch-action:manipulation'; btn.title='Rating: '+r; btn.addEventListener('click',(e)=>{ e.stopPropagation(); const baseSong=findSongById(item.id)||findSongByTitle(item.title); if(baseSong){ baseSong.audienceRating=r; item.audienceRating=r; saveAll(); updateRatingButtons(); } }); ratingBtns.appendChild(btn); });
       };
       updateRatingButtons();
       ratingDiv.append(ratingLabel,ratingBtns); bodyEl.appendChild(ratingDiv);
@@ -2229,11 +2567,9 @@
       if(!overlay || !main || !overlay.classList.contains('open')) return;
       const titleText=document.getElementById('liveLyricsOverlayTitle')?.textContent || '';
       const song=setlist.find(x=> x.type==='song' && x.title===titleText);
-      const lenMin = song && typeof song.length==='number' ? song.length : 3.5;
-      // Bottom line visible at 50% of song duration (much slower crawl)
-      const speedMultiplier = liveScrollSpeed === 0 ? 0.001 : (liveScrollSpeed / 5.0);
-      liveScrollDurationMs = (lenMin * 60 * 1000 * 0.5) / speedMultiplier;
-      if(liveScrollDurationMs<=0) liveScrollDurationMs=60*1000*0.5;
+      const body=document.getElementById('liveLyricsOverlayBody');
+      liveScrollDurationMs = computeScrollDuration(main, body, liveOverlayZoomPx, liveScrollSpeed);
+      if(liveScrollDurationMs<=0) liveScrollDurationMs=15000; // fallback
       const maxTop = main.scrollHeight - main.clientHeight;
       if(maxTop<=0){ return; }
       const startTop = 0;
@@ -2279,10 +2615,9 @@
       if(!main) return;
       const titleText=document.getElementById('liveLyricsTitle')?.textContent || '';
       const song=setlist.find(x=> x.type==='song' && x.title===titleText);
-      const lenMin = song && typeof song.length==='number' ? song.length : 3.5;
-      const speedMultiplier = liveScrollSpeed === 0 ? 0.001 : (liveScrollSpeed / 5.0);
-      liveInlineScrollDurationMs = (lenMin * 60 * 1000 * 0.5) / speedMultiplier;
-      if(liveInlineScrollDurationMs<=0) liveInlineScrollDurationMs=60*1000*0.5;
+      const body=document.getElementById('liveLyricsBody');
+      liveInlineScrollDurationMs = computeScrollDuration(main, body, liveZoomPx, liveScrollSpeed);
+      if(liveInlineScrollDurationMs<=0) liveInlineScrollDurationMs=15000;
       const maxTop = main.scrollHeight - main.clientHeight;
       if(maxTop<=0){ return; }
       const startTop = 0;
@@ -2375,10 +2710,8 @@
             const elapsed = performance.now() - liveScrollStart;
             const oldT = Math.min(1, elapsed / liveScrollDurationMs);
             const main=document.getElementById('liveLyricsOverlayMain');
-            const song=setlist.find(x=> x.type==='song' && x.title===document.getElementById('liveLyricsOverlayTitle')?.textContent);
-            const lenMin = song && typeof song.length==='number' ? song.length : 3.5;
-            const speedMultiplier = liveScrollSpeed === 0 ? 0.001 : (liveScrollSpeed / 5.0);
-            liveScrollDurationMs = (lenMin * 60 * 1000 * 0.5) / speedMultiplier;
+            const body=document.getElementById('liveLyricsOverlayBody');
+            liveScrollDurationMs = computeScrollDuration(main, body, liveOverlayZoomPx, liveScrollSpeed);
             liveScrollStart = performance.now() - (oldT * liveScrollDurationMs);
           }
         });
@@ -2391,10 +2724,8 @@
             const elapsed = performance.now() - liveScrollStart;
             const oldT = Math.min(1, elapsed / liveScrollDurationMs);
             const main=document.getElementById('liveLyricsOverlayMain');
-            const song=setlist.find(x=> x.type==='song' && x.title===document.getElementById('liveLyricsOverlayTitle')?.textContent);
-            const lenMin = song && typeof song.length==='number' ? song.length : 3.5;
-            const speedMultiplier = liveScrollSpeed === 0 ? 0.001 : (liveScrollSpeed / 5.0);
-            liveScrollDurationMs = (lenMin * 60 * 1000 * 0.5) / speedMultiplier;
+            const body=document.getElementById('liveLyricsOverlayBody');
+            liveScrollDurationMs = computeScrollDuration(main, body, liveOverlayZoomPx, liveScrollSpeed);
             liveScrollStart = performance.now() - (oldT * liveScrollDurationMs);
           }
         });
@@ -2456,10 +2787,8 @@
             const elapsed = performance.now() - liveInlineScrollStart;
             const oldT = Math.min(1, elapsed / liveInlineScrollDurationMs);
             const main=document.getElementById('liveLyrics');
-            const song=setlist.find(x=> x.type==='song' && x.title===document.getElementById('liveLyricsTitle')?.textContent);
-            const lenMin = song && typeof song.length==='number' ? song.length : 3.5;
-            const speedMultiplier = liveScrollSpeed === 0 ? 0.001 : (liveScrollSpeed / 5.0);
-            liveInlineScrollDurationMs = (lenMin * 60 * 1000 * 0.5) / speedMultiplier;
+            const body=document.getElementById('liveLyricsBody');
+            liveInlineScrollDurationMs = computeScrollDuration(main, body, liveZoomPx, liveScrollSpeed);
             liveInlineScrollStart = performance.now() - (oldT * liveInlineScrollDurationMs);
           }
         });
@@ -2472,24 +2801,23 @@
             const elapsed = performance.now() - liveInlineScrollStart;
             const oldT = Math.min(1, elapsed / liveInlineScrollDurationMs);
             const main=document.getElementById('liveLyrics');
-            const song=setlist.find(x=> x.type==='song' && x.title===document.getElementById('liveLyricsTitle')?.textContent);
-            const lenMin = song && typeof song.length==='number' ? song.length : 3.5;
-            const speedMultiplier = liveScrollSpeed === 0 ? 0.001 : (liveScrollSpeed / 5.0);
-            liveInlineScrollDurationMs = (lenMin * 60 * 1000 * 0.5) / speedMultiplier;
+            const body=document.getElementById('liveLyricsBody');
+            liveInlineScrollDurationMs = computeScrollDuration(main, body, liveZoomPx, liveScrollSpeed);
             liveInlineScrollStart = performance.now() - (oldT * liveInlineScrollDurationMs);
           }
         });
       }
     })();
 
-    // Metronome functionality
+    // Metronome functionality with tap tempo (4+ taps) & overlay support
     (function(){
       let metronomeState = 0; // 0=off, 1=flash, 2=flash+click
       let metronomeInterval = null;
       let metronomeBPM = 120;
       let metronomeHoldTimer = null;
-      const metronomeBtn = document.getElementById('metronomeBtn');
-      if(!metronomeBtn) return;
+      let tapTimes=[]; let lastClickTime=0;
+      const btns=[document.getElementById('metronomeBtn'), document.getElementById('metronomeBtnOverlay')].filter(Boolean);
+      if(!btns.length) return;
 
       // Create audio context for click sound
       let audioCtx = null;
@@ -2512,95 +2840,124 @@
         } catch(e) {}
       };
 
-      const flashButton = () => {
-        metronomeBtn.style.background = '#fbbf24';
-        metronomeBtn.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-          metronomeBtn.style.background = '#fff';
-          metronomeBtn.style.transform = 'scale(1)';
-        }, 100);
+      const flashButtons = () => {
+        btns.forEach(b=>{ b.style.background = b.id==='metronomeBtnOverlay'? '#fbbf24':'#fbbf24'; b.style.transform='scale(1.12)'; });
+        setTimeout(()=>{ btns.forEach(b=>{ b.style.background = b.id==='metronomeBtnOverlay'? '#1f2937':'#fff'; b.style.transform='scale(1)'; }); },110);
       };
 
-      const startMetronome = () => {
+      const updateTitles=()=>{
+        btns.forEach(b=>{
+          if(metronomeState===0){ b.title='Metronome OFF - Tap (4+) to set tempo. Pause then click cycles mode. Hold to set BPM.'; b.style.border=b.id==='metronomeBtnOverlay'?'2px solid #444':'2px solid #d1d5db'; }
+          else { b.title=metronomeBPM+' BPM - '+(metronomeState===1?'Flash':'Flash + Click'); b.style.border='2px solid #065f46'; }
+        });
+      };
+      const startMetronome=()=>{
         if(metronomeInterval) clearInterval(metronomeInterval);
-        const intervalMs = 60000 / metronomeBPM;
-        metronomeInterval = setInterval(() => {
-          flashButton();
-          if(metronomeState === 2) playClick();
-        }, intervalMs);
-        metronomeBtn.style.border = '2px solid #3b82f6';
-        metronomeBtn.title = metronomeBPM + ' BPM - ' + (metronomeState === 1 ? 'Flash only' : 'Flash + Click');
+        const intervalMs=60000/metronomeBPM;
+        metronomeInterval=setInterval(()=>{ flashButtons(); if(metronomeState===2) playClick(); }, intervalMs);
+        updateTitles();
       };
 
-      const stopMetronome = () => {
-        if(metronomeInterval) clearInterval(metronomeInterval);
-        metronomeInterval = null;
-        metronomeBtn.style.border = '2px solid #d1d5db';
-        metronomeBtn.style.background = '#fff';
-        metronomeBtn.style.transform = 'scale(1)';
-        metronomeBtn.title = 'Metronome: Tap once=flash, twice=click, thrice=off. Hold to set BPM';
-      };
+      const stopMetronome=()=>{ if(metronomeInterval) clearInterval(metronomeInterval); metronomeInterval=null; updateTitles(); };
 
-      metronomeBtn.addEventListener('click', () => {
-        metronomeState = (metronomeState + 1) % 3;
-        if(metronomeState === 0) {
-          stopMetronome();
-        } else {
-          // Get BPM from current song if available
-          const titleEl = document.getElementById('liveLyricsTitle');
-          if(titleEl && titleEl.textContent) {
-            const song = setlist.find(x => x.type === 'song' && x.title === titleEl.textContent);
-            if(song && song.bpm && song.bpm > 0) metronomeBPM = song.bpm;
-          }
-          startMetronome();
+      const persistSongBPM=(bpm)=>{
+        const titleEl=document.getElementById('liveLyricsTitle');
+        if(titleEl && titleEl.textContent){
+          const song=setlist.find(x=>x.type==='song' && x.title===titleEl.textContent);
+          const baseSong=song?(findSongById(song.id)||findSongByTitle(song.title)):null;
+          if(baseSong){ baseSong.bpm=bpm; song.bpm=bpm; saveAll(); }
         }
-      });
-
-      // Hold to edit BPM
-      metronomeBtn.addEventListener('mousedown', (e) => {
-        metronomeHoldTimer = setTimeout(() => {
-          const newBPM = prompt('Enter BPM (30-300):', String(metronomeBPM));
-          if(newBPM) {
-            const bpm = parseInt(newBPM, 10);
-            if(bpm >= 30 && bpm <= 300) {
-              metronomeBPM = bpm;
-              if(metronomeState > 0) {
-                stopMetronome();
-                startMetronome();
-              }
+      };
+      const handleTap=(e)=>{
+        // Cancel hold timer immediately on quick tap
+        if(metronomeHoldTimer){ clearTimeout(metronomeHoldTimer); metronomeHoldTimer=null; }
+        
+        const now=performance.now();
+        const gap=now-lastClickTime;
+        lastClickTime=now;
+        
+        // Long pause (>1200ms) = mode cycle
+        if(gap>1200){
+          tapTimes=[];
+          metronomeState=(metronomeState+1)%3;
+          if(metronomeState===0){ stopMetronome(); }
+          else {
+            // adopt song bpm if exists
+            const titleEl=document.getElementById('liveLyricsTitle');
+            if(titleEl && titleEl.textContent){
+              const song=setlist.find(x=>x.type==='song' && x.title===titleEl.textContent);
+              if(song && song.bpm && song.bpm>0) metronomeBPM=song.bpm;
             }
+            startMetronome();
           }
-        }, 800);
-      });
-
-      metronomeBtn.addEventListener('mouseup', () => {
-        if(metronomeHoldTimer) clearTimeout(metronomeHoldTimer);
-      });
-
-      metronomeBtn.addEventListener('mouseleave', () => {
-        if(metronomeHoldTimer) clearTimeout(metronomeHoldTimer);
-      });
-
-      // Touch support
-      metronomeBtn.addEventListener('touchstart', (e) => {
-        metronomeHoldTimer = setTimeout(() => {
-          const newBPM = prompt('Enter BPM (30-300):', String(metronomeBPM));
-          if(newBPM) {
-            const bpm = parseInt(newBPM, 10);
-            if(bpm >= 30 && bpm <= 300) {
-              metronomeBPM = bpm;
-              if(metronomeState > 0) {
-                stopMetronome();
-                startMetronome();
-              }
+          updateTitles();
+          return;
+        }
+        
+        // Tap tempo: collect tap times
+        tapTimes.push(now);
+        
+        // After 4+ taps, calculate BPM from intervals
+        if(tapTimes.length>=4){
+          const intervals=[];
+          for(let i=1;i<tapTimes.length;i++){ 
+            const dt=tapTimes[i]-tapTimes[i-1]; 
+            if(dt>0 && dt<2000) intervals.push(dt); 
+          }
+          if(intervals.length>=3){
+            const recent=intervals.slice(-Math.min(8, intervals.length)); // use last 8 intervals max
+            const avg=recent.reduce((a,b)=>a+b,0)/recent.length;
+            let bpm=Math.round(60000/avg); 
+            if(bpm<30)bpm=30; 
+            if(bpm>300)bpm=300;
+            metronomeBPM=bpm;
+            persistSongBPM(bpm);
+            // Start metronome with new BPM immediately
+            if(metronomeState===0){ metronomeState=1; }
+            stopMetronome();
+            startMetronome();
+          }
+        }
+        updateTitles();
+      };
+      
+      btns.forEach(btn=>{
+        btn.addEventListener('click', handleTap);
+        btn.addEventListener('mousedown', (e)=>{
+          metronomeHoldTimer=setTimeout(()=>{
+            tapTimes=[]; lastClickTime=0; // reset tap state
+            const newBPM=prompt('Enter BPM (30-300):', String(metronomeBPM));
+            if(newBPM){ 
+              const bpm=parseInt(newBPM,10); 
+              if(bpm>=30 && bpm<=300){ 
+                metronomeBPM=bpm; 
+                persistSongBPM(bpm); 
+                if(metronomeState>0){ stopMetronome(); startMetronome(); } 
+              } 
             }
-          }
-        }, 800);
+            updateTitles();
+          },800);
+        });
+        btn.addEventListener('mouseup', ()=>{ if(metronomeHoldTimer){ clearTimeout(metronomeHoldTimer); metronomeHoldTimer=null; } });
+        btn.addEventListener('mouseleave', ()=>{ if(metronomeHoldTimer){ clearTimeout(metronomeHoldTimer); metronomeHoldTimer=null; } });
+        btn.addEventListener('touchstart', (e)=>{
+          metronomeHoldTimer=setTimeout(()=>{
+            tapTimes=[]; lastClickTime=0;
+            const newBPM=prompt('Enter BPM (30-300):', String(metronomeBPM));
+            if(newBPM){ 
+              const bpm=parseInt(newBPM,10); 
+              if(bpm>=30 && bpm<=300){ 
+                metronomeBPM=bpm; 
+                persistSongBPM(bpm); 
+                if(metronomeState>0){ stopMetronome(); startMetronome(); } 
+              } 
+            }
+            updateTitles();
+          },800);
+        });
+        btn.addEventListener('touchend', ()=>{ if(metronomeHoldTimer){ clearTimeout(metronomeHoldTimer); metronomeHoldTimer=null; } });
       });
-
-      metronomeBtn.addEventListener('touchend', () => {
-        if(metronomeHoldTimer) clearTimeout(metronomeHoldTimer);
-      });
+      updateTitles();
     })();
 
     function buildSheet(target='sheet'){
@@ -2652,6 +3009,19 @@
         row.append(el('div','no', String(++songCounter)));
         const title=el('div','title', shorten(it.title));
         if(it.notes){ const noteSpan=el('span','notePrint',' – '+it.notes); title.appendChild(noteSpan); }
+        // Add custom column data if pushToSetlist is enabled
+        if(gig.customColumns && it.customFields){
+          const customBits = [];
+          gig.customColumns.forEach(cc=>{
+            if(cc.pushToSetlist && it.customFields[cc.key]){
+              customBits.push(it.customFields[cc.key]);
+            }
+          });
+          if(customBits.length > 0){
+            const customSpan = el('span','notePrint',' – ' + customBits.join(' – '));
+            title.appendChild(customSpan);
+          }
+        }
         row.append(title);
         const keyBits=[]; if(it.key) keyBits.push(String(it.key)); if(Number.isInteger(it.capo) && it.capo>0) keyBits.push('Capo '+it.capo); if(Number.isInteger(it.bpm) && it.bpm>0) keyBits.push(it.bpm+' BPM');
         const keyTxt = keyBits.join(' • ');
@@ -3289,10 +3659,10 @@
     const ROUTE_TARGETS={
       drum:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','monitor'], // can connect to everything except utility
       cymbal:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','monitor'],
-      mic:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // can connect to everything except utility
+      mic:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'], // mics can NOT connect to other mics
       di:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // can connect to everything except utility
       fx:['di','channel','sampler','fx','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // FX intermediates can connect between any items
-      amp:['mic','di','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'], // can connect to everything except utility
+      amp:['mic','di','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'], // amps can connect to mics
       acoustic:['di','mic','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
       electric:['fx','amp','di','channel','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
       deck:['fx','di','channel','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
@@ -3345,7 +3715,11 @@
           b.className='tool';
           b.innerHTML=`<img src="${t.src}" alt="${t.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${t.label}`;
           b.setAttribute('draggable','true');
-          b.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', t.key); });
+          let dragUsed = false;
+          b.addEventListener('dragstart',ev=>{ dragUsed = false; ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', t.key); });
+          b.addEventListener('dragend',ev=>{ dragUsed = false; });
+          b.dataset.getDragUsed = ()=> dragUsed;
+          b.dataset.setDragUsed = ()=> { dragUsed = true; };
           b.addEventListener('touchstart',ev=>{ const touch=ev.touches[0]; if(!touch) return; activeToolTouch={ key:t.key, x:touch.clientX, y:touch.clientY }; ev.preventDefault(); }, {passive:false});
           // Long press (~1s) to hide icon: only when cursor/finger stays put
           let lpTimer=null; let startPos=null; const cancel=()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } startPos=null; };
@@ -3377,7 +3751,7 @@
             b.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', imgObj.key); });
             b.style.touchAction='none';
             b.addEventListener('touchstart',ev=>{ const touch=ev.touches[0]; if(!touch) return; activeToolTouch={ key:imgObj.key, x:touch.clientX, y:touch.clientY }; ev.preventDefault(); }, {passive:false});
-            const del=document.createElement('button'); del.textContent='×'; del.title='Remove'; del.style.position='absolute'; del.style.top='2px'; del.style.right='2px'; del.style.width='20px'; del.style.height='20px'; del.style.lineHeight='16px'; del.style.padding='0'; del.style.fontSize='14px'; del.style.background='#dc2626'; del.style.color='#fff'; del.style.border='none'; del.style.borderRadius='4px'; del.style.cursor='pointer';
+            const del=document.createElement('button'); del.textContent='×'; del.title='Remove'; del.style.position='absolute'; del.style.top='2px'; del.style.right='2px'; del.style.width='20px'; del.style.height='20px'; del.style.lineHeight='16px'; del.style.padding='0'; del.style.fontSize='14px'; del.style.background='#374151'; del.style.color='#fff'; del.style.border='none'; del.style.borderRadius='4px'; del.style.cursor='pointer';
             del.addEventListener('click',()=>{ if(!confirm('Delete custom icon?')) return; gig.customImages = (gig.customImages||[]).filter(ci=>ci.key!==imgObj.key); saveAll(); buildTools(); rebuildCustomImages(); });
             wrap.appendChild(b); wrap.appendChild(del); tools.appendChild(wrap);
           });
@@ -3489,9 +3863,42 @@
     // Helper: connect source->target if allowed, otherwise try reverse
     function connectEitherDirection(source, target){
       if(!source || !target || source===target) return false;
-      const sAllowed=effectiveTargets(source); const tAllowed=effectiveTargets(target);
-      if(sAllowed.includes(target.dataset.type||'other')){ source.dataset.routeTo=target.dataset.id; return true; }
-      if(tAllowed.includes(source.dataset.type||'other')){ target.dataset.routeTo=source.dataset.id; return true; }
+      
+      // Determine connection priority based on type hierarchy: instruments → amps → mics → channels
+      const getConnectionPriority=(node)=>{
+        const type=node.dataset.type||'other';
+        if(type==='acoustic' || type==='electric' || type==='keys' || type==='sax' || type==='deck' || type==='drum' || type==='cymbal') return 0; // instruments
+        if(type==='amp') return 1; // amps
+        if(type==='mic') return 2; // mics
+        if(type==='di') return 1.5; // DI
+        if(type==='fx') return 1.7; // FX
+        if(type==='sampler') return 0.5; // samplers
+        return 3; // others/endpoints
+      };
+      
+      const sPriority=getConnectionPriority(source);
+      const tPriority=getConnectionPriority(target);
+      const sAllowed=effectiveTargets(source);
+      const tAllowed=effectiveTargets(target);
+      const sCanTarget=sAllowed.includes(target.dataset.type||'other');
+      const tCanTarget=tAllowed.includes(source.dataset.type||'other');
+      
+      // If both directions are valid, choose based on priority (lower priority → higher priority)
+      if(sCanTarget && tCanTarget){
+        if(sPriority < tPriority){ 
+          // source has lower priority (e.g., amp) and target has higher priority (e.g., mic)
+          source.dataset.routeTo=target.dataset.id; 
+          return true; 
+        } else { 
+          // target has lower priority, so target routes to source
+          target.dataset.routeTo=source.dataset.id; 
+          return true; 
+        }
+      }
+      
+      // Only one direction is valid
+      if(sCanTarget){ source.dataset.routeTo=target.dataset.id; return true; }
+      if(tCanTarget){ target.dataset.routeTo=source.dataset.id; return true; }
       return false;
     }
     // Helper: find chain endpoint (following valid routeTo)
@@ -3607,6 +4014,97 @@
         if(touchId==null) return; let still=false; for(const t of e.touches){ if(t.identifier===touchId){ still=true; break; } } if(!still){ touchId=null; saveAll(); snapshotStage(); }
       });
       node.addEventListener('touchcancel',()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } if(lpLine){ lpLine.remove(); lpLine=null; } lpActive=false; lpSource=null; lpTouchId=null; if(touchId!=null){ touchId=null; saveAll(); }});
+      
+      // Enable label dragging (independent of parent item)
+      enableLabelDrag(node);
+    }
+    
+    function enableLabelDrag(node){
+      const lbl=findText(node);
+      if(!lbl) return;
+      
+      let labelStart=null;
+      let labelOrig=null;
+      const maxOffset=150; // Maximum distance from parent
+      
+      const clampOffset=(val)=> Math.max(-maxOffset, Math.min(maxOffset, val));
+      
+      // Mouse drag for label
+      lbl.addEventListener('mousedown',e=>{
+        if(e.button!==0) return;
+        if(node.dataset.showLabel!=='1') return; // Only drag if label is shown
+        e.stopPropagation(); // Prevent parent drag
+        labelStart={x:e.clientX, y:e.clientY};
+        labelOrig={x:parseFloat(node.dataset.labelOffsetX||'0'), y:parseFloat(node.dataset.labelOffsetY||'0')};
+        document.addEventListener('mousemove',labelMove);
+        document.addEventListener('mouseup',labelUp);
+        lbl.style.cursor='grabbing';
+      });
+      
+      const labelMove=(e)=>{
+        if(!labelStart) return;
+        const zoom=parseFloat(document.getElementById('stageZoom')?.value||'1');
+        const dx=(e.clientX-labelStart.x)/zoom;
+        const dy=(e.clientY-labelStart.y)/zoom;
+        node.dataset.labelOffsetX=String(clampOffset((labelOrig.x||0)+dx));
+        node.dataset.labelOffsetY=String(clampOffset((labelOrig.y||0)+dy));
+        applyLabelTransform(node);
+        queueSave();
+      };
+      
+      const labelUp=()=>{
+        labelStart=null;
+        document.removeEventListener('mousemove',labelMove);
+        document.removeEventListener('mouseup',labelUp);
+        lbl.style.cursor='grab';
+        saveAll();
+      };
+      
+      // Touch drag for label
+      let labelTouchId=null;
+      lbl.addEventListener('touchstart',e=>{
+        if(node.dataset.showLabel!=='1') return;
+        const t=e.touches[0];
+        if(!t || labelTouchId!=null) return;
+        e.stopPropagation(); // Prevent parent drag
+        labelTouchId=t.identifier;
+        labelStart={x:t.clientX, y:t.clientY};
+        labelOrig={x:parseFloat(node.dataset.labelOffsetX||'0'), y:parseFloat(node.dataset.labelOffsetY||'0')};
+      }, {passive:false});
+      
+      lbl.addEventListener('touchmove',e=>{
+        if(labelTouchId==null) return;
+        for(const t of e.touches){
+          if(t.identifier===labelTouchId){
+            const zoom=parseFloat(document.getElementById('stageZoom')?.value||'1');
+            const dx=(t.clientX-labelStart.x)/zoom;
+            const dy=(t.clientY-labelStart.y)/zoom;
+            node.dataset.labelOffsetX=String(clampOffset((labelOrig.x||0)+dx));
+            node.dataset.labelOffsetY=String(clampOffset((labelOrig.y||0)+dy));
+            applyLabelTransform(node);
+            queueSave();
+            e.preventDefault();
+            break;
+          }
+        }
+      }, {passive:false});
+      
+      lbl.addEventListener('touchend',e=>{
+        if(labelTouchId==null) return;
+        let still=false;
+        for(const t of e.touches){
+          if(t.identifier===labelTouchId){ still=true; break; }
+        }
+        if(!still){
+          labelTouchId=null;
+          saveAll();
+        }
+      });
+      
+      // Set cursor style when label is draggable
+      if(node.dataset.showLabel==='1'){
+        lbl.style.cursor='grab';
+      }
     }
 
     // Right-click cable drag connection gesture
@@ -3685,6 +4183,18 @@
     }
 
   function findText(node){ return node.querySelector('text[data-role="label"]') || node.querySelector('text'); }
+  
+  // Apply label offset transform (labels can be dragged independently)
+  function applyLabelTransform(node){
+    const lbl=findText(node);
+    if(!lbl) return;
+    const offsetX=parseFloat(node.dataset.labelOffsetX||'0');
+    const offsetY=parseFloat(node.dataset.labelOffsetY||'0');
+    lbl.setAttribute('x',String(offsetX));
+    lbl.setAttribute('y',String(offsetY));
+    const size=parseInt(node.dataset.labelSize||'16',10);
+    lbl.setAttribute('font-size',String(size));
+  }
 
     // selection + inspector
     let selectedNode=null;
@@ -3717,13 +4227,226 @@
       const nameInp=document.getElementById('selName');
       const sizeInp=document.getElementById('selSize');
       const showLabelChk=document.getElementById('selShowLabel');
-      if(!nameInp||!sizeInp) return;
-      if(!g){ nameInp.value=''; sizeInp.value='1'; if(showLabelChk) showLabelChk.checked=false; return; }
+      const inspector=document.getElementById('stageInspector');
+      if(!nameInp||!sizeInp||!inspector) return;
+      
+      // Clear any existing connection chain display
+      const existingChain=inspector.querySelector('.connection-chain');
+      if(existingChain) existingChain.remove();
+      
+      if(!g){ 
+        nameInp.value=''; 
+        sizeInp.value='1'; 
+        if(showLabelChk) showLabelChk.checked=false; 
+        return; 
+      }
+      
       g.classList.add('selected');
       initDatasetFromTransform(g);
-      const txt=findText(g); nameInp.value=txt? (txt.textContent||'') : '';
+      const txt=findText(g); 
+      nameInp.value=txt? (txt.textContent||'') : '';
       sizeInp.value=g.dataset.scale||'1';
-      if(showLabelChk){ showLabelChk.checked = g.dataset.showLabel==='1'; }
+      if(showLabelChk){ 
+        showLabelChk.checked = g.dataset.showLabel==='1'; 
+        // Show/hide label size controls
+        const labelSizeControls=document.getElementById('labelSizeControls');
+        const labelSizeSlider=document.getElementById('selLabelSize');
+        if(labelSizeControls){ labelSizeControls.style.display= showLabelChk.checked ? 'flex':'none'; }
+        if(labelSizeSlider && showLabelChk.checked){ labelSizeSlider.value=g.dataset.labelSize||'16'; }
+      }
+      
+      // Build connection chain display
+      buildConnectionChain(g, inspector);
+    }
+    
+    function buildConnectionChain(selectedItem, inspector){
+      const svg=selectedItem.closest('svg');
+      if(!svg) return;
+      const allNodes=Array.from(svg.querySelectorAll('g[data-draggable]'));
+      const nameInp=document.getElementById('selName');
+      const selLabel=document.getElementById('selLabel');
+      
+      // Build the complete chain by finding the true start
+      const chain=[];
+      const visited=new Set();
+      
+      // Helper: determine type priority for proper chain ordering
+      const typePriority=(node)=>{
+        const type=node.dataset.type||'other';
+        if(type==='acoustic' || type==='electric' || type==='keys' || type==='sax' || type==='deck' || type==='drum' || type==='cymbal') return 0; // instruments/sources
+        if(type==='amp') return 1; // amps
+        if(type==='mic') return 2; // mics
+        if(type==='di') return 1.5; // DI boxes
+        if(type==='fx') return 1.7; // FX
+        if(type==='sampler') return 0.5; // samplers
+        return 3; // others/channel endpoints
+      };
+      
+      // Find the absolute start of the chain by walking backwards from selected item
+      const findChainStart=(item)=>{
+        const candidates=[];
+        const seen=new Set();
+        
+        // Recursively find all items that route to this item
+        const walkBack=(target)=>{
+          if(seen.has(target.dataset.id)) return;
+          seen.add(target.dataset.id);
+          const incoming=allNodes.filter(n=> n.dataset.routeTo===target.dataset.id);
+          if(incoming.length===0){
+            candidates.push(target); // This is a potential start
+          } else {
+            incoming.forEach(src=> walkBack(src));
+          }
+        };
+        
+        walkBack(item);
+        
+        // Sort candidates by priority to get the true start (instrument before amp before mic)
+        candidates.sort((a,b)=> typePriority(a) - typePriority(b));
+        return candidates.length>0 ? candidates[0] : item;
+      };
+      
+      const chainStart = findChainStart(selectedItem);
+      
+      // Walk forward from the true start to build the COMPLETE chain (don't stop at intermediate items with channels)
+      let current=chainStart;
+      const maxIterations=50; // safety limit
+      let iterations=0;
+      while(current && !visited.has(current) && iterations<maxIterations){
+        iterations++;
+        visited.add(current);
+        chain.push(current);
+        const nextId=current.dataset.routeTo;
+        if(!nextId) break;
+        const next=allNodes.find(n=> n.dataset.id===nextId);
+        if(!next) break;
+        // validate connection is allowed
+        const allowed=effectiveTargets(current);
+        if(!allowed.includes(next.dataset.type||'other')) break;
+        current=next;
+      }
+      
+      // Ensure selected item is in the chain
+      if(!chain.includes(selectedItem)){
+        chain.push(selectedItem);
+      }
+      
+      // Always use chain display for consistency (even for single items)
+      // Hide standard name input
+      if(nameInp) nameInp.style.display='none';
+      if(selLabel) selLabel.style.display='none';
+      
+      // Create chain display (single row, no wrap) - ALWAYS shown for consistency
+      const chainDiv=document.createElement('div');
+      chainDiv.className='connection-chain';
+      chainDiv.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:nowrap;padding:6px 8px;background:#f3f4f6;border-radius:6px;overflow-x:auto;width:100%';
+      
+      chain.forEach((node,idx)=>{
+        const isSelected = node===selectedItem;
+        const isLast = idx===chain.length-1;
+        
+        // Item name field - fixed width for consistency
+        const itemInput=document.createElement('input');
+        itemInput.type='text';
+        itemInput.value=findText(node)?.textContent || node.dataset.key||'Item';
+        itemInput.style.cssText=`padding:4px 8px;border:2px solid ${isSelected?'#374151':'#d1d5db'};border-radius:4px;font-size:13px;font-weight:${isSelected?'700':'400'};background:${isSelected?'#e5e7eb':'#fff'};width:120px;flex-shrink:0`;
+        itemInput.title='Name: '+itemInput.value;
+        itemInput.addEventListener('change',()=>{
+          const t=findText(node);
+          if(t){ 
+            t.textContent=itemInput.value; 
+            saveAll(); 
+            refreshStageLegend();
+            if(node===selectedItem) syncInspectorFrom(node);
+          }
+        });
+        chainDiv.appendChild(itemInput);
+        
+        // Arrow between items (only if there's actually a connection)
+        if(!isLast){
+          const arrow=document.createElement('span');
+          arrow.textContent='→';
+          arrow.style.cssText='color:#6b7280;font-size:14px;font-weight:bold;flex-shrink:0';
+          chainDiv.appendChild(arrow);
+        }
+      });
+      
+      // Find which item in the chain can/should have the channel
+      // Check all items in chain (backwards) to find one with channel capability
+      let channelNode=null;
+      
+      // First check if any item already has a channel assigned
+      for(let i=chain.length-1; i>=0; i--){
+        const node=chain[i];
+        if(node.dataset.channel && node.dataset.channel!==''){
+          channelNode=node;
+          break;
+        }
+      }
+      
+      // If no channel assigned, check if any item CAN have a channel (prefer last item)
+      if(!channelNode){
+        for(let i=chain.length-1; i>=0; i--){
+          const node=chain[i];
+          const targets=effectiveTargets(node);
+          if(targets.includes('channel')){
+            channelNode=node;
+            break;
+          }
+        }
+      }
+      
+      // ALWAYS add channel field if any item can have one (for consistent formatting)
+      if(channelNode){
+        const isStereo=(channelNode.dataset.key||'')==='stereoPair';
+        const chInput=document.createElement('input');
+        chInput.type='number';
+        chInput.min='1';
+        chInput.max=isStereo?'63':'64';
+        chInput.placeholder='Ch';
+        chInput.value=channelNode.dataset.channel||'';
+        chInput.style.cssText='padding:4px 8px;border:2px solid #10b981;border-radius:4px;font-size:13px;font-weight:700;background:#d1fae5;width:70px;flex-shrink:0';
+        chInput.title='Channel number (assigned to '+((findText(channelNode)?.textContent)||'this item')+')';
+        
+        chInput.addEventListener('change',()=>{
+          const newCh=parseInt(chInput.value,10);
+          if(!Number.isFinite(newCh) || newCh<1){
+            delete channelNode.dataset.channel;
+            channelNode.removeAttribute('data-channel');
+          } else {
+            // Check if channel is taken
+            const taken=allNodes.find(n=> n!==channelNode && occupiesChannelHelper(n,newCh));
+            if(taken){
+              const takenName=findText(taken)?.textContent||'another item';
+              if(!confirm(`Channel ${newCh} is used by ${takenName}. Reassign anyway? (This will disconnect ${takenName})`)){
+                chInput.value=channelNode.dataset.channel||'';
+                return;
+              }
+              delete taken.dataset.channel;
+              taken.removeAttribute('data-channel');
+            }
+            channelNode.dataset.channel=String(newCh);
+          }
+          saveAll();
+          refreshStageLegend();
+          const stageSvg=channelNode.closest('svg');
+          if(stageSvg) refreshCables(stageSvg);
+        });
+        
+        chainDiv.appendChild(chInput);
+      }
+      
+      // Insert chain display before the standard name input
+      inspector.insertBefore(chainDiv, inspector.firstChild);
+    }
+    
+    function occupiesChannelHelper(node,ch){
+      if(!ch) return false;
+      const a=parseInt(node.dataset.channel||'0',10);
+      if(!a) return false;
+      const isStereo=(node.dataset.key||'')==='stereoPair';
+      if(isStereo){ return ch===a || ch===a+1; }
+      return ch===a;
     }
     function syncInspectorFrom(g){ if(!g) return; const nameInp=document.getElementById('selName'); const sizeInp=document.getElementById('selSize'); if(nameInp){ const txt=findText(g); nameInp.value=txt? (txt.textContent||'') : ''; } if(sizeInp){ sizeInp.value=g.dataset.scale||'1'; } }
   document.getElementById('selName').addEventListener('change',()=>{ if(!selectedNode) return; const t=findText(selectedNode); if(t){ t.textContent=document.getElementById('selName').value; saveAll(); }});
@@ -3734,9 +4457,36 @@
   document.getElementById('delSel').addEventListener('click',()=> refreshStageLegend());
   // Show label toggle
   const showLabelChk=document.getElementById('selShowLabel');
+  const labelSizeControls=document.getElementById('labelSizeControls');
+  const labelSizeSlider=document.getElementById('selLabelSize');
   if(showLabelChk){
     showLabelChk.addEventListener('change',()=>{
-      if(!selectedNode) return; selectedNode.dataset.showLabel= showLabelChk.checked ? '1':'0'; const lbl=findText(selectedNode); if(lbl){ lbl.style.display= showLabelChk.checked ? 'block':'none'; } saveAll(); refreshStageLegend();
+      if(!selectedNode) return; 
+      selectedNode.dataset.showLabel= showLabelChk.checked ? '1':'0'; 
+      const lbl=findText(selectedNode); 
+      if(lbl){ 
+        lbl.style.display= showLabelChk.checked ? 'block':'none'; 
+        // Initialize label offset if not set
+        if(!selectedNode.dataset.labelOffsetX) selectedNode.dataset.labelOffsetX='0';
+        if(!selectedNode.dataset.labelOffsetY) selectedNode.dataset.labelOffsetY='0';
+        if(!selectedNode.dataset.labelSize) selectedNode.dataset.labelSize='16';
+        applyLabelTransform(selectedNode);
+      }
+      // Show/hide label size controls
+      if(labelSizeControls){ labelSizeControls.style.display= showLabelChk.checked ? 'flex':'none'; }
+      if(labelSizeSlider && showLabelChk.checked){ labelSizeSlider.value=selectedNode.dataset.labelSize||'16'; }
+      saveAll(); refreshStageLegend();
+    });
+  }
+  // Label size slider
+  if(labelSizeSlider){
+    labelSizeSlider.addEventListener('input',()=>{
+      if(!selectedNode) return;
+      const size=parseInt(labelSizeSlider.value,10);
+      selectedNode.dataset.labelSize=String(size);
+      const lbl=findText(selectedNode);
+      if(lbl){ lbl.setAttribute('font-size',String(size)); }
+      saveAll();
     });
   }
   // Duplicate button
@@ -3834,10 +4584,54 @@
       const to=src.dataset.routeTo; if(!to) return; const dst=byId.get(to); if(!dst) return;
       // make sure the connection is allowed; use effectiveTargets if available
       try{ if(typeof effectiveTargets==='function'){ const ok=effectiveTargets(src).includes(dst.dataset.type||'other'); if(!ok) return; } }catch(_){ /* ignore */ }
+      
+      // Check if this is a mic-amp connection (either direction)
+      const srcType=src.dataset.type||'other';
+      const dstType=dst.dataset.type||'other';
+      const isMicAmpConnection = (srcType==='amp' && dstType==='mic') || (srcType==='mic' && dstType==='amp');
+      
       const a=centerOf(src), b=centerOf(dst); const dx=b.x-a.x, dy=b.y-a.y; const len=Math.hypot(dx,dy)||1; const mx=(a.x+b.x)/2, my=(a.y+b.y)/2; const nx=-dy/len, ny=dx/len; const baseK=30; const init={x:mx+nx*baseK, y:my+ny*baseK};
-      const c=pickControl(a,b,init, obstacles);
-      const d=`M ${a.x} ${a.y} Q ${c.x} ${c.y} ${b.x} ${b.y}`;
-      const p=document.createElementNS('http://www.w3.org/2000/svg','path'); p.setAttribute('d', d); p.setAttribute('fill','none'); p.setAttribute('stroke','#111'); p.setAttribute('stroke-width','1.5'); p.setAttribute('stroke-dasharray','4 3'); layer.appendChild(p);
+      
+      if(isMicAmpConnection){
+        // Draw straight arrow for mic-amp connection (no curve)
+        const d=`M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+        const p=document.createElementNS('http://www.w3.org/2000/svg','path'); 
+        p.setAttribute('d', d); 
+        p.setAttribute('fill','none'); 
+        p.setAttribute('stroke','#111'); 
+        p.setAttribute('stroke-width','2'); 
+        p.setAttribute('marker-end','url(#arrowhead)');
+        layer.appendChild(p);
+        
+        // Ensure arrowhead marker exists
+        let defs=svg.querySelector('defs');
+        if(!defs){ defs=document.createElementNS('http://www.w3.org/2000/svg','defs'); svg.insertBefore(defs, svg.firstChild); }
+        if(!defs.querySelector('#arrowhead')){
+          const marker=document.createElementNS('http://www.w3.org/2000/svg','marker');
+          marker.setAttribute('id','arrowhead');
+          marker.setAttribute('markerWidth','10');
+          marker.setAttribute('markerHeight','10');
+          marker.setAttribute('refX','9');
+          marker.setAttribute('refY','3');
+          marker.setAttribute('orient','auto');
+          const triangle=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+          triangle.setAttribute('points','0 0, 10 3, 0 6');
+          triangle.setAttribute('fill','#111');
+          marker.appendChild(triangle);
+          defs.appendChild(marker);
+        }
+      } else {
+        // Draw normal curved dotted cable
+        const c=pickControl(a,b,init, obstacles);
+        const d=`M ${a.x} ${a.y} Q ${c.x} ${c.y} ${b.x} ${b.y}`;
+        const p=document.createElementNS('http://www.w3.org/2000/svg','path'); 
+        p.setAttribute('d', d); 
+        p.setAttribute('fill','none'); 
+        p.setAttribute('stroke','#111'); 
+        p.setAttribute('stroke-width','1.5'); 
+        p.setAttribute('stroke-dasharray','4 3'); 
+        layer.appendChild(p);
+      }
     });
   }
   function refreshStageLegend(){
@@ -4125,7 +4919,10 @@
           // Remove any legacy filter attributes
           Array.from(gr.querySelectorAll('image[filter]')).forEach(im=> im.removeAttribute('filter'));
         });
-  Array.from(full.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
+  Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=>{
+    enableSvgDrag(g);
+    applyLabelTransform(g); // Apply saved label offsets and size
+  });
   refreshCables(full);
         bindSelection(full);
         const modal=document.getElementById('stageModal'); if(!modal){ throw new Error('Stage modal not found'); }
@@ -4228,13 +5025,140 @@
   const closeNotesBtn=document.getElementById('closeNotes');
   if(closeNotesBtn){ closeNotesBtn.addEventListener('click',()=> document.getElementById('notesModal').classList.remove('open')); }
 
+    // Stage Preset Management
+    if(!gig.stagePresets) gig.stagePresets = [];
+    
+    function renderPresetList(){
+      const list = document.getElementById('presetList');
+      if(!list) return;
+      list.innerHTML = '';
+      if(!gig.stagePresets || gig.stagePresets.length === 0){
+        list.innerHTML = '<div style="color:#6b7280;font-size:14px;padding:16px;text-align:center;border:2px dashed #d1d5db;border-radius:6px">No presets saved yet. Click "Save Current" to create one.</div>';
+        return;
+      }
+      gig.stagePresets.forEach((preset, idx)=>{
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb';
+        const nameBtn = document.createElement('button');
+        nameBtn.textContent = '📋 ' + preset.name;
+        nameBtn.className = 'btn';
+        nameBtn.style.cssText = 'flex:1;text-align:left;padding:8px 12px;font-size:14px;background:#fff';
+        nameBtn.title = 'Load this preset';
+        nameBtn.addEventListener('click', ()=>{
+          if(confirm(`Load preset "${preset.name}"? This will replace your current stage plot.`)){
+            loadStagePreset(preset);
+            document.getElementById('presetModal').style.display='none';
+          }
+        });
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '🗑️';
+        delBtn.className = 'btn danger';
+        delBtn.style.cssText = 'padding:6px 12px;font-size:16px;min-width:40px';
+        delBtn.title = 'Delete preset';
+        delBtn.addEventListener('click', ()=>{
+          if(confirm(`Delete preset "${preset.name}"?`)){
+            gig.stagePresets.splice(idx, 1);
+            saveAll();
+            renderPresetList();
+          }
+        });
+        row.append(nameBtn, delBtn);
+        list.appendChild(row);
+      });
+    }
+    
+    function saveStagePreset(){
+      const svg = document.getElementById('stageSvgFull');
+      if(!svg) return;
+      const defaultName = `${gig.band || 'Band'}_${gig.date || 'Date'}_StagePlot`.replace(/\s+/g, '_');
+      const name = prompt('Preset name:', defaultName);
+      if(!name || name.trim().length === 0) return;
+      const preset = {
+        name: name.trim(),
+        date: new Date().toISOString(),
+        stage: svg.outerHTML,
+        gearSummary: gearSummary || ''
+      };
+      if(!gig.stagePresets) gig.stagePresets = [];
+      gig.stagePresets.push(preset);
+      saveAll();
+      renderPresetList();
+      alert(`Preset "${preset.name}" saved!`);
+    }
+    
+    function loadStagePreset(preset){
+      if(!preset || !preset.stage) return;
+      const svg = document.getElementById('stageSvgFull');
+      if(!svg) return;
+      const parent = svg.parentNode;
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = preset.stage;
+      const newSvg = tempDiv.querySelector('svg');
+      if(!newSvg) return;
+      newSvg.id = 'stageSvgFull';
+      parent.replaceChild(newSvg, svg);
+      if(preset.gearSummary !== undefined){
+        gearSummary = preset.gearSummary;
+        const gearEl = document.getElementById('gear');
+        if(gearEl) gearEl.value = gearSummary;
+      }
+      saveAll();
+      rebuildStageInteractions();
+      alert(`Preset "${preset.name}" loaded!`);
+    }
+    
+    function rebuildStageInteractions(){
+      const svg = document.getElementById('stageSvgFull');
+      if(!svg) return;
+      svg.querySelectorAll('g[data-draggable]').forEach(enableSvgDrag);
+      refreshStageLegend();
+      refreshCables(svg);
+    }
+    
+    const presetBtn = document.getElementById('stagePresetBtn');
+    const presetModal = document.getElementById('presetModal');
+    const closePresetBtn = document.getElementById('closePreset');
+    const addPresetBtn = document.getElementById('addPresetBtn');
+    
+    if(presetBtn && presetModal){
+      presetBtn.addEventListener('click', ()=>{
+        renderPresetList();
+        presetModal.style.display='flex';
+      });
+      presetModal.addEventListener('click', (e)=>{
+        if(e.target === presetModal){
+          presetModal.style.display='none';
+        }
+      });
+    }
+    if(closePresetBtn && presetModal){
+      closePresetBtn.addEventListener('click', ()=>{
+        presetModal.style.display='none';
+      });
+    }
+    if(addPresetBtn){
+      addPresetBtn.addEventListener('click', saveStagePreset);
+    }
+
     // Drag from toolbox into full SVG at drop position
   const fullSvg=document.getElementById('stageSvgFull');
+    let currentDragSource = null;
     fullSvg.addEventListener('dragover',ev=> ev.preventDefault());
     fullSvg.addEventListener('drop',ev=>{
       ev.preventDefault();
       const key=ev.dataTransfer.getData('text/plain');
       if(!key) return;
+      
+      // Check if this drag has already created an item
+      if(currentDragSource && currentDragSource.dataset.getDragUsed && currentDragSource.dataset.getDragUsed()){
+        return; // Already created one item from this drag
+      }
+      
+      // Mark this drag as used
+      if(currentDragSource && currentDragSource.dataset.setDragUsed){
+        currentDragSource.dataset.setDragUsed();
+      }
+      
       // detect target under cursor BEFORE adding new glyph
       const el=document.elementFromPoint(ev.clientX, ev.clientY);
       const dropTarget= el && el.closest && el.closest('g[data-draggable]');
@@ -4247,6 +5171,17 @@
           refreshCables(fullSvg);
         }
       }
+    });
+    
+    // Track drag source for duplicate prevention
+    document.addEventListener('dragstart', (ev)=>{
+      const toolBtn = ev.target.closest('.tool');
+      if(toolBtn){
+        currentDragSource = toolBtn;
+      }
+    });
+    document.addEventListener('dragend', ()=>{
+      currentDragSource = null;
     });
 
     // Arrow drawing: drag anywhere in SVG (hold Shift to draw over items)
@@ -4655,6 +5590,23 @@
     async function printSetOnce(){ 
       buildSheet(); 
       const modal=document.getElementById('modal'); 
+      
+      // iOS/iPad fix: Explicitly hide all non-printable content
+      const wrap=document.querySelector('.wrap');
+      const brandBar=document.querySelector('.brand-bar');
+      const printChooser=document.getElementById('printChooser');
+      const stageModal=document.getElementById('stageModal');
+      const notesModal=document.getElementById('notesModal');
+      
+      if(isIOS() || isMobileLike()){
+        // Hide everything except the modal content
+        if(wrap) wrap.style.display='none';
+        if(brandBar) brandBar.style.display='none';
+        if(printChooser) printChooser.style.display='none';
+        if(stageModal) stageModal.style.display='none';
+        if(notesModal) notesModal.style.display='none';
+      }
+      
       modal.classList.add('open'); 
       await printPromise(); 
       // Force layout recalculation on mobile devices
@@ -4668,6 +5620,16 @@
       window.print(); 
       await printPromise();
       modal.classList.remove('open'); 
+      
+      // Restore visibility
+      if(isIOS() || isMobileLike()){
+        if(wrap) wrap.style.display='';
+        if(brandBar) brandBar.style.display='';
+        if(printChooser) printChooser.style.display='';
+        if(stageModal) stageModal.style.display='';
+        if(notesModal) notesModal.style.display='';
+      }
+      
       await printPromise(); 
     }
     function prepHdrTech(){
@@ -4697,6 +5659,23 @@
       // Remove page breaks to fit everything on one page
       techOut.style.breakBefore = 'auto'; techOut.style.pageBreakBefore = 'auto';
       stageOut.style.breakInside = 'avoid'; stageOut.style.pageBreakInside = 'avoid';
+      
+      // iOS/iPad fix: Explicitly hide all non-printable content
+      const wrap=document.querySelector('.wrap');
+      const brandBar=document.querySelector('.brand-bar');
+      const printChooser=document.getElementById('printChooser');
+      const setlistModal=document.getElementById('modal');
+      
+      if(isIOS() || isMobileLike()){
+        // Hide everything except the tech/stage modal content
+        if(wrap) wrap.style.display='none';
+        if(brandBar) brandBar.style.display='none';
+        if(printChooser) printChooser.style.display='none';
+        if(setlistModal) setlistModal.style.display='none';
+        if(stageModal) stageModal.style.display='none';
+        if(notesModal) notesModal.style.display='none';
+      }
+      
       const modal=document.getElementById('modalTech');
       modal.classList.add('open');
       await printPromise();
@@ -4711,6 +5690,17 @@
       window.print();
       await printPromise();
       modal.classList.remove('open');
+      
+      // Restore visibility
+      if(isIOS() || isMobileLike()){
+        if(wrap) wrap.style.display='';
+        if(brandBar) brandBar.style.display='';
+        if(printChooser) printChooser.style.display='';
+        if(setlistModal) setlistModal.style.display='';
+        if(stageModal) stageModal.style.display='';
+        if(notesModal) notesModal.style.display='';
+      }
+      
       await printPromise();
       
       // Restore Tech/Stage tab view if user is on that tab
@@ -4744,6 +5734,23 @@
       // Ensure no forced page break when printing tech-only
       techOut.style.breakBefore = 'auto'; techOut.style.pageBreakBefore = 'auto';
       const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); const note=(techNotes && techNotes[s.id]) || s.tech || ''; tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${note}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl); 
+      
+      // iOS/iPad fix: Explicitly hide all non-printable content
+      const wrap=document.querySelector('.wrap');
+      const brandBar=document.querySelector('.brand-bar');
+      const printChooser=document.getElementById('printChooser');
+      const setlistModal=document.getElementById('modal');
+      
+      if(isIOS() || isMobileLike()){
+        // Hide everything except the tech modal content
+        if(wrap) wrap.style.display='none';
+        if(brandBar) brandBar.style.display='none';
+        if(printChooser) printChooser.style.display='none';
+        if(setlistModal) setlistModal.style.display='none';
+        if(stageModal) stageModal.style.display='none';
+        if(notesModal) notesModal.style.display='none';
+      }
+      
       const modal=document.getElementById('modalTech'); 
       modal.classList.add('open'); 
       await printPromise(); 
@@ -4758,6 +5765,17 @@
       window.print(); 
       await printPromise();
       modal.classList.remove('open'); 
+      
+      // Restore visibility
+      if(isIOS() || isMobileLike()){
+        if(wrap) wrap.style.display='';
+        if(brandBar) brandBar.style.display='';
+        if(printChooser) printChooser.style.display='';
+        if(setlistModal) setlistModal.style.display='';
+        if(stageModal) stageModal.style.display='';
+        if(notesModal) notesModal.style.display='';
+      }
+      
       await printPromise();
       
       // Restore Tech/Stage tab view if user is on that tab
