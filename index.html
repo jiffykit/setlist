@@ -8200,11 +8200,9 @@
           b.className='tool';
           b.innerHTML=`<img src="${t.src}" alt="${t.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${t.label}`;
           b.setAttribute('draggable','true');
-          let dragUsed = false;
-          b.addEventListener('dragstart',ev=>{ dragUsed = false; ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', t.key); });
-          b.addEventListener('dragend',ev=>{ dragUsed = false; });
-          b.dataset.getDragUsed = ()=> dragUsed;
-          b.dataset.setDragUsed = ()=> { dragUsed = true; };
+          b.dataset.key = t.key;
+          b.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', t.key); });
+          b.addEventListener('dragend',ev=>{});
           b.addEventListener('touchstart',ev=>{ const touch=ev.touches[0]; if(!touch) return; activeToolTouch={ key:t.key, x:touch.clientX, y:touch.clientY }; ev.preventDefault(); }, {passive:false});
           // Long press (~1s) to hide icon: only when cursor/finger stays put
           let lpTimer=null; let startPos=null; const cancel=()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } startPos=null; };
@@ -9539,6 +9537,9 @@
         // ensure toolbox is populated
         try{ buildTools(); }catch(_){ /* ignore */ }
         
+        // Re-attach drag handlers to ensure they work
+        attachStageDragHandlers();
+        
         // FIRST: Load stage from tourDate if available
         if(selectedTourDateId){
           const tourDate = tourDates.find(td => td.id === selectedTourDateId);
@@ -9879,23 +9880,35 @@ function closeStageModal(){
     }
 
     // Drag from toolbox into full SVG at drop position
-  const fullSvg=document.getElementById('stageSvgFull');
     let currentDragSource = null;
-    fullSvg.addEventListener('dragover',ev=> ev.preventDefault());
-    fullSvg.addEventListener('drop',ev=>{
+    let dragHandlersAttached = false;
+    
+    function attachStageDragHandlers(){
+      const fullSvg=document.getElementById('stageSvgFull');
+      if(!fullSvg) return;
+      
+      // Remove old listeners if reattaching
+      if(dragHandlersAttached){
+        fullSvg.removeEventListener('dragover', stageDragOver);
+        fullSvg.removeEventListener('drop', stageDrop);
+      }
+      
+      fullSvg.addEventListener('dragover', stageDragOver);
+      fullSvg.addEventListener('drop', stageDrop);
+      dragHandlersAttached = true;
+    }
+    
+    function stageDragOver(ev){
       ev.preventDefault();
+    }
+    
+    function stageDrop(ev){
+      ev.preventDefault();
+      const fullSvg=document.getElementById('stageSvgFull');
+      if(!fullSvg) return;
+      
       const key=ev.dataTransfer.getData('text/plain');
       if(!key) return;
-      
-      // Check if this drag has already created an item
-      if(currentDragSource && currentDragSource.dataset.getDragUsed && currentDragSource.dataset.getDragUsed()){
-        return; // Already created one item from this drag
-      }
-      
-      // Mark this drag as used
-      if(currentDragSource && currentDragSource.dataset.setDragUsed){
-        currentDragSource.dataset.setDragUsed();
-      }
       
       // detect target under cursor BEFORE adding new glyph
       const el=document.elementFromPoint(ev.clientX, ev.clientY);
@@ -9909,7 +9922,10 @@ function closeStageModal(){
           refreshCables(fullSvg);
         }
       }
-    });
+    }
+    
+    // Attach handlers on page load
+    attachStageDragHandlers();
     
     // Track drag source for duplicate prevention
     document.addEventListener('dragstart', (ev)=>{
