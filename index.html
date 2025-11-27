@@ -37,8 +37,9 @@
   .handle:active{cursor:grabbing}
 
     /* Print preview (paper look) */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:24px;z-index:80;overflow:auto}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:24px;z-index:80;overflow:auto;pointer-events:none}
     .modal.open{display:flex}
+    .modal .modalbox{pointer-events:auto}
     .sheet{width:8.5in;max-width:100%;min-height:11in;background:white;color:var(--paperText);border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0.4in 0.5in;overflow:visible;margin:auto}
   @media (max-width:768px){
     .modal{align-items:flex-start;padding:10px}
@@ -111,6 +112,51 @@
   /* Drop indicator on preview sheet rows */
   .line.drop-before, .break.drop-before{box-shadow:inset 0 3px 0 0 #60a5fa}
   .line.drop-after, .break.drop-after{box-shadow:inset 0 -3px 0 0 #60a5fa}
+  /* Tour date tabs */
+  .tour-date-tab:hover{background:#f0f9ff !important;border-color:#0ea5e9 !important}
+  /* Tour interest chips - draggable */
+  .tour-interest-chip{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    padding:10px 12px;
+    background:#fff;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    cursor:move;
+    font-size:13px;
+    transition:all 0.2s;
+    user-select:none;
+    box-shadow:0 1px 3px rgba(0,0,0,0.1);
+    min-width:250px;
+    max-width:350px;
+  }
+  .tour-interest-chip:hover{
+    box-shadow:0 4px 8px rgba(0,0,0,0.15);
+    transform:translateY(-2px);
+  }
+  .tour-interest-chip.dragging{
+    opacity:0.6;
+    transform:scale(0.98);
+  }
+  .tour-interest-chip .chip-remove{
+    background:none;
+    border:none;
+    color:#9ca3af;
+    cursor:pointer;
+    padding:0;
+    font-size:20px;
+    line-height:1;
+    flex-shrink:0;
+    margin-left:auto;
+  }
+  .tour-interest-chip .chip-remove:hover{
+    color:#dc2626;
+  }
+  #tourInterestsDropZone.drag-over{
+    background:#e0f2fe;
+    border-color:#0ea5e9;
+  }
 
     @media print{
       @page { margin: 0.25in 0.35in; size: letter; }
@@ -265,9 +311,408 @@
   /* Live mode: hide brand bar and any open stage/notes modals for distraction-free view */
   body.live-mode .brand-bar{display:none}
   body.live-mode #stageModal, body.live-mode #notesModal{display:none !important}
+  
+  /* Global date selector header strip */
+  .date-header{
+    position:sticky;
+    top:0;
+    z-index:70;
+    background:linear-gradient(135deg,#1e293b 0%,#334155 100%);
+    border-bottom:2px solid #0ea5e9;
+    padding:6px 12px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15);
+    position:relative;
+  }
+  /* Date box context menu */
+  .date-context-menu{
+    position:fixed;
+    background:#fff;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    z-index:10000;
+    min-width:180px;
+    padding:6px 0;
+  }
+  .date-context-menu button{
+    display:block;
+    width:100%;
+    padding:10px 16px;
+    border:none;
+    background:none;
+    text-align:left;
+    cursor:pointer;
+    font-size:14px;
+    color:#1f2937;
+    transition:background 0.15s;
+  }
+  .date-context-menu button:hover{
+    background:#f3f4f6;
+  }
+  .date-context-menu button.danger{
+    color:#dc2626;
+  }
+  .date-context-menu button.danger:hover{
+    background:#fee2e2;
+  }
+  
+  /* Activity chips and timeline */
+  .activity-chip{
+    user-select:none;
+    transition:all 0.2s;
+  }
+  .activity-chip:active{
+    transform:scale(0.95);
+    opacity:0.8;
+  }
+  .timeline-slot:hover{
+    background:#f9fafb !important;
+  }
+  .itinerary-item{
+    overflow:hidden;
+  }
+  .itinerary-item:hover{
+    z-index:20 !important;
+  }
+  
+  .date-header-label{
+    color:#e5e7eb;
+    font-size:12px;
+    font-weight:700;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .current-date-display{
+    color:#0ea5e9;
+    font-size:14px;
+    font-weight:800;
+    white-space:nowrap;
+    flex-shrink:0;
+    padding:4px 12px;
+    background:rgba(14,165,233,0.15);
+    border-radius:6px;
+    border:1px solid rgba(14,165,233,0.3);
+  }
+  .date-view-selector{
+    display:flex;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .date-view-btn{
+    padding:4px 8px;
+    background:#475569;
+    border:1px solid #64748b;
+    border-radius:6px;
+    color:#f1f5f9;
+    font-size:11px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .date-view-btn:hover{
+    background:#334155;
+  }
+  .date-view-btn.active{
+    background:#0ea5e9;
+    border-color:#0284c7;
+    color:#f0f9ff;
+  }
+  .date-boxes-container{
+    display:flex;
+    gap:4px;
+    flex:1;
+    overflow-x:auto;
+    padding:2px 0;
+  }
+  .date-box{
+    min-width:52px;
+    width:80px;
+    height:48px;
+    background:#f8fafc;
+    border:2px solid #cbd5e1;
+    border-radius:6px;
+    cursor:move;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-size:9px;
+    font-weight:600;
+    color:#1e293b;
+    position:relative;
+    transition:all 0.15s;
+    flex-shrink:0;
+    padding:3px;
+  }
+  .date-box.view-7,
+  .date-box.view-14,
+  .date-box.view-30{
+    width:100px;
+    height:52px;
+    font-size:10px;
+  }
+  .date-box.view-60{
+    width:70px;
+    height:48px;
+    font-size:9px;
+  }
+  .date-box.view-90{
+    width:52px;
+    height:44px;
+    font-size:8px;
+  }
+  .date-box.view-120,
+  .date-box.view-365{
+    width:40px;
+    height:40px;
+    font-size:7px;
+  }
+  .date-box:hover{
+    background:#e0f2fe;
+    border-color:#0ea5e9;
+    transform:translateY(-2px);
+    box-shadow:0 2px 6px rgba(14,165,233,0.3);
+  }
+  .date-box.active{
+    background:#0ea5e9;
+    border-color:#0284c7;
+    color:#f0f9ff;
+    font-weight:800;
+  }
+  .date-box.has-gig{
+    border-color:#22c55e;
+    background:#d1fae5;
+  }
+  .date-box.has-gig.active{
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+  }
+  /* Status-based coloring */
+  .date-box.status-complete{
+    background:#d1fae5;
+    border-color:#22c55e;
+  }
+  .date-box.status-complete.active{
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+  }
+  .date-box.status-incomplete{
+    background:#fed7aa;
+    border-color:#fb923c;
+  }
+  .date-box.status-incomplete.active{
+    background:#fb923c;
+    border-color:#ea580c;
+  }
+  .date-box.status-cancelled{
+    background:#fee2e2;
+    border:2px dashed #dc2626;
+    opacity:0.7;
+  }
+  .date-box.status-cancelled.active{
+    background:#fecaca;
+    border-color:#dc2626;
+    opacity:1;
+  }
+  .date-box.status-today{
+    background:#dbeafe;
+    border-color:#3b82f6;
+    box-shadow:0 0 0 2px #93c5fd;
+  }
+  .date-box.status-today.active{
+    background:#3b82f6;
+    border-color:#2563eb;
+    color:#fff;
+  }
+  .date-box.status-past{
+    background:#f1f5f9;
+    border-color:#cbd5e1;
+    opacity:0.6;
+  }
+  .date-box.status-past.active{
+    background:#e2e8f0;
+    border-color:#94a3b8;
+  }
+  .date-box.tour-gig{
+    background:#d1fae5;
+    border-color:#22c55e;
+  }
+  .date-box.tour-gig.active{
+    background:#22c55e;
+    border-color:#16a34a;
+  }
+  .date-box.tour-drive{
+    background:#fef08a;
+    border-color:#facc15;
+  }
+  .date-box.tour-drive.active{
+    background:#facc15;
+    border-color:#eab308;
+  }
+  .date-box.tour-rest{
+    background:#fed7aa;
+    border-color:#fb923c;
+  }
+  .date-box.tour-rest.active{
+    background:#fb923c;
+    border-color:#ea580c;
+  }
+  .date-box.tour-home{
+    background:#f8fafc;
+    border-color:#cbd5e1;
+  }
+  .date-box.tour-home.active{
+    background:#e2e8f0;
+    border-color:#94a3b8;
+  }
+  .date-box.tour-rehearse,
+  .date-box.tour-party,
+  .date-box.tour-record,
+  .date-box.tour-radio,
+  .date-box.tour-tv,
+  .date-box.tour-dj,
+  .date-box.tour-audition,
+  .date-box.tour-dressrehearsal,
+  .date-box.tour-custom{
+    background:#e9d5ff;
+    border-color:#a855f7;
+  }
+  .date-box.tour-rehearse.active,
+  .date-box.tour-party.active,
+  .date-box.tour-record.active,
+  .date-box.tour-radio.active,
+  .date-box.tour-tv.active,
+  .date-box.tour-dj.active,
+  .date-box.tour-audition.active,
+  .date-box.tour-dressrehearsal.active,
+  .date-box.tour-custom.active{
+    background:#a855f7;
+    border-color:#7e22ce;
+  }
+  /* Cancelled shows */
+  .date-box.tour-cancelled{
+    background:#fee2e2;
+    border:2px dashed #dc2626;
+    opacity:0.7;
+  }
+  .date-box.tour-cancelled.active{
+    background:#fecaca;
+    border-color:#dc2626;
+    opacity:1;
+  }
+  .date-box .date-icon{
+    font-size:14px;
+    line-height:1;
+    margin-top:2px;
+  }
+  .drive-line{
+    position:absolute;
+    top:50%;
+    left:-4px;
+    right:-4px;
+    height:3px;
+    background:#facc15;
+    z-index:-1;
+  }
+  .date-box .date-num{
+    font-size:14px;
+    line-height:1;
+    margin-bottom:1px;
+  }
+  .date-box .date-month{
+    font-size:8px;
+    line-height:1;
+    text-transform:uppercase;
+    opacity:0.75;
+  }
+  .date-box .date-symbol{
+    position:absolute;
+    top:2px;
+    right:2px;
+    font-size:10px;
+    line-height:1;
+  }
+  .date-box .date-count{
+    position:absolute;
+    bottom:2px;
+    right:3px;
+    font-size:9px;
+    line-height:1;
+    background:#374151;
+    color:#f9fafb;
+    border-radius:999px;
+    min-width:14px;
+    height:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 3px;
+  }
+  .date-box.has-gig .date-count{
+    background:#16a34a;
+    color:#f0fdf4;
+  }
+  .date-box .date-city{
+    font-size:8px;
+    line-height:1.1;
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+    margin-top:1px;
+  }
+  .date-box.dragging{
+    opacity:0.5;
+    transform:scale(0.95);
+    cursor:grabbing;
+  }
+  .date-box.drag-over{
+    outline:3px dashed #0ea5e9;
+    outline-offset:2px;
+  }
+  .date-boxes-container::-webkit-scrollbar{
+    height:6px;
+  }
+  .date-boxes-container::-webkit-scrollbar-track{
+    background:#475569;
+    border-radius:3px;
+  }
+  .date-boxes-container::-webkit-scrollbar-thumb{
+    background:#0ea5e9;
+    border-radius:3px;
+  }
+  @media print{
+    .date-header{display:none}
+  }
   </style>
 </head>
 <body>
+  <!-- Global date selector strip: permanently visible across top -->
+  <div class="date-header">
+    <span class="date-header-label">Tour Dates:</span>
+    <span class="current-date-display" id="currentDateDisplay">No date selected</span>
+    <div class="date-view-selector">
+      <button class="date-view-btn" data-days="7">7d</button>
+      <button class="date-view-btn" data-days="14">14d</button>
+      <button class="date-view-btn" data-days="30">30d</button>
+      <button class="date-view-btn" data-days="60">60d</button>
+      <button class="date-view-btn active" data-days="90">90d</button>
+      <button class="date-view-btn" data-days="120">120d</button>
+      <button class="date-view-btn" data-days="365">365d</button>
+    </div>
+    <div class="date-boxes-container" id="dateBoxesContainer">
+      <!-- Date boxes populated by JS -->
+    </div>
+  </div>
+  
   <div class="wrap" style="padding-bottom:28px">
     <!-- Global sticky actions: always available top-left -->
     <div class="global-actions">
@@ -285,7 +730,8 @@
     </div>
 
     <div class="tabs">
-      <button class="tab active" data-tab="db">Song Database</button>
+      <button class="tab active" data-tab="tour">Calendar</button>
+      <button class="tab" data-tab="db">Song Database</button>
       <button class="tab" data-tab="set">Setlist</button>
       <button class="tab" data-tab="adv">Tech / Stage</button>
       <button class="tab" data-tab="live">Live</button>
@@ -514,6 +960,264 @@
         </div>
       </div>
 
+      <!-- Tour Manager: date-based scheduling, itinerary, and location services -->
+      <div id="tour" style="display:none;grid-column:1 / -1;width:100%;margin-top:12px">
+        
+        <!-- Large Date/Venue Header with Day Navigation -->
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:20px">
+            <!-- Large Date and Venue Display -->
+            <div style="flex:1">
+              <div id="tourHeaderDate" style="font-size:32px;font-weight:700;color:#111827;line-height:1.2;margin-bottom:4px">Select a date</div>
+              <div id="tourHeaderVenue" style="font-size:24px;font-weight:500;color:#64748b;line-height:1.3">No venue</div>
+            </div>
+            
+            <!-- Yesterday / Tomorrow Buttons -->
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="tourYesterdayBtn" class="btn" style="padding:12px 20px;font-size:16px;font-weight:600">◀ Yesterday</button>
+              <button id="tourTomorrowBtn" class="btn" style="padding:12px 20px;font-size:16px;font-weight:600">Tomorrow ▶</button>
+              <button id="tourAddDate" class="btn primary" style="padding:12px 20px;font-size:14px;margin-left:12px">+ Add Date</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Main Tour Content: Compact Layout -->
+        <div id="tourContent" style="display:flex;flex-direction:column;gap:12px">
+          
+          <!-- Row 1: Gig Details (1) + Map (2) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            
+            <!-- 1. Gig Details - Compact Form -->
+            <div class="card" style="padding:12px">
+              <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent)">📍 Gig Details</div>
+              <div id="tourNoSelection" style="color:#64748b;font-size:12px">Select or add a date</div>
+              <div id="tourDateDetails" style="display:none">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <input type="date" id="tourDate" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  <input type="text" id="tourVenue" placeholder="Venue name" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  <input type="text" id="tourAddress" placeholder="Address" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                    <input type="time" id="tourLoadIn" placeholder="Load-In" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                    <input type="time" id="tourShowTime" placeholder="Show Time" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  </div>
+                  <input type="text" id="tourBand" placeholder="Band/Artist" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  <select id="tourSetlistSelect" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px">
+                    <option value="current">Use Current Setlist</option>
+                    <option value="custom">Custom Setlist</option>
+                  </select>
+                  <select id="tourStagePlotSelect" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px">
+                    <option value="current">Use Current Stage</option>
+                    <option value="custom">Custom Stage</option>
+                  </select>
+                  <div style="display:flex;gap:6px;margin-top:4px">
+                    <button id="tourSaveDate" class="btn primary" style="flex:1;padding:6px;font-size:12px">Save</button>
+                    <button id="tourDeleteDate" class="btn danger" style="padding:6px;font-size:12px">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 2. Map -->
+            <div class="card" style="padding:12px">
+              <div style="font-size:13px;font-weight:600;margin-bottom:8px">🗺️ Location</div>
+              <div id="tourMapPlaceholder" style="width:100%;height:200px;background:#f1f5f9;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:12px">
+                Map loads when address is entered
+              </div>
+            </div>
+          </div>
+          
+          <!-- Row 2: Itinerary (3) + Right Column (4/5/6) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            
+            <!-- 3. Itinerary -->
+            <div class="card" style="padding:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div style="font-size:13px;font-weight:600">🗓️ Daily Itinerary</div>
+              </div>
+              <div id="tourItineraryContent">
+                <div id="tourItineraryTimeline" style="overflow-y:auto;max-height:400px;padding-left:26px;position:relative">
+                  <!-- Timeline items -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Right Column: 4. Chips, 5. Stage, 6. Setlist -->
+            <div style="display:flex;flex-direction:column;gap:12px">
+              
+              <!-- 4. Activity Chips -->
+              <div class="card" style="padding:12px">
+                <div style="font-size:13px;font-weight:600;margin-bottom:8px">📋 Activity Chips</div>
+                
+                <!-- Tour Activities -->
+                <div style="margin-bottom:8px">
+                  <div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:600">GIG DAY</div>
+                  <div style="display:flex;gap:3px;flex-wrap:wrap">
+                    <div class="activity-chip" draggable="true" data-activity="rehearsal" data-duration="120" data-color="#8b5cf6" style="padding:4px 8px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:4px;font-size:10px;cursor:move">🎸 Rehearsal</div>
+                    <div class="activity-chip" draggable="true" data-activity="soundcheck" data-duration="60" data-color="#3b82f6" style="padding:4px 8px;background:#dbeafe;border:1px solid #93c5fd;border-radius:4px;font-size:10px;cursor:move">🎚️ Soundcheck</div>
+                    <div class="activity-chip" draggable="true" data-activity="loadin" data-duration="45" data-color="#6366f1" style="padding:4px 8px;background:#e0e7ff;border:1px solid #a5b4fc;border-radius:4px;font-size:10px;cursor:move">📦 Load-In</div>
+                    <div class="activity-chip" draggable="true" data-activity="gig" data-duration="180" data-color="#ec4899" style="padding:4px 8px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:4px;font-size:10px;cursor:move">🎤 Gig</div>
+                  </div>
+                </div>
+                
+                <!-- Travel -->
+                <div style="margin-bottom:8px">
+                  <div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:600">TRAVEL</div>
+                  <div style="display:flex;gap:3px;flex-wrap:wrap">
+                    <div class="activity-chip" draggable="true" data-activity="drive" data-duration="120" data-color="#f59e0b" style="padding:4px 8px;background:#fef3c7;border:1px solid #fcd34d;border-radius:4px;font-size:10px;cursor:move">🚗 Drive</div>
+                    <div class="activity-chip" draggable="true" data-activity="home" data-duration="0" data-color="#10b981" style="padding:4px 8px;background:#d1fae5;border:1px solid #6ee7b7;border-radius:4px;font-size:10px;cursor:move">🏠 Home</div>
+                    <div class="activity-chip" draggable="true" data-activity="sleep" data-duration="480" data-color="#64748b" style="padding:4px 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;font-size:10px;cursor:move">😴 Sleep</div>
+                  </div>
+                </div>
+                
+                <!-- Meals -->
+                <div style="margin-bottom:8px">
+                  <div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:600">MEALS</div>
+                  <div style="display:flex;gap:3px;flex-wrap:wrap">
+                    <div class="activity-chip" draggable="true" data-activity="breakfast" data-duration="45" data-color="#fbbf24" style="padding:4px 8px;background:#fef3c7;border:1px solid #fde047;border-radius:4px;font-size:10px;cursor:move">🥐 Breakfast</div>
+                    <div class="activity-chip" draggable="true" data-activity="lunch" data-duration="60" data-color="#f97316" style="padding:4px 8px;background:#ffedd5;border:1px solid#fdba74;border-radius:4px;font-size:10px;cursor:move">🍔 Lunch</div>
+                    <div class="activity-chip" draggable="true" data-activity="dinner" data-duration="90" data-color="#dc2626" style="padding:4px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;font-size:10px;cursor:move">🍽️ Dinner</div>
+                    <div class="activity-chip" draggable="true" data-activity="snacks" data-duration="15" data-color="#84cc16" style="padding:4px 8px;background:#ecfccb;border:1px solid #bef264;border-radius:4px;font-size:10px;cursor:move">🍿 Snacks</div>
+                  </div>
+                </div>
+                
+                <!-- Social -->
+                <div style="margin-bottom:8px">
+                  <div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:600">SOCIAL</div>
+                  <div style="display:flex;gap:3px;flex-wrap:wrap">
+                    <div class="activity-chip" draggable="true" data-activity="meeting" data-duration="60" data-color="#06b6d4" style="padding:4px 8px;background:#cffafe;border:1px solid#67e8f9;border-radius:4px;font-size:10px;cursor:move">💼 Meeting</div>
+                    <div class="activity-chip" draggable="true" data-activity="party" data-duration="180" data-color="#d946ef" style="padding:4px 8px;background:#fae8ff;border:1px solid #f0abfc;border-radius:4px;font-size:10px;cursor:move">🎉 Party</div>
+                  </div>
+                </div>
+                
+                <!-- Places Search -->
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb">
+                  <div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:600">FIND PLACES</div>
+                  <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">
+                    <button class="btn" data-search="hotels" style="padding:3px 6px;font-size:9px">Hotels</button>
+                    <button class="btn" data-search="music stores" style="padding:3px 6px;font-size:9px">Music</button>
+                    <button class="btn" data-search="rehearsal studios" style="padding:3px 6px;font-size:9px">Rehearsal</button>
+                    <button class="btn" data-search="recording studios" style="padding:3px 6px;font-size:9px">Recording</button>
+                    <button class="btn" data-search="radio stations" style="padding:3px 6px;font-size:9px">Radio</button>
+                    <button class="btn" data-search="tv stations" style="padding:3px 6px;font-size:9px">TV</button>
+                    <button class="btn" data-search="bars" style="padding:3px 6px;font-size:9px">Bars</button>
+                    <button class="btn" data-search="restaurants" style="padding:3px 6px;font-size:9px">Food</button>
+                    <button class="btn" data-search="cafes" style="padding:3px 6px;font-size:9px">Cafes</button>
+                    <button class="btn" data-search="gas stations" style="padding:3px 6px;font-size:9px">Gas</button>
+                    <button class="btn" data-search="print shops" style="padding:3px 6px;font-size:9px">Print</button>
+                    <button class="btn" data-search="instrument repair" style="padding:3px 6px;font-size:9px">Repair</button>
+                    <button class="btn" data-search="pa rentals" style="padding:3px 6px;font-size:9px">PA Rental</button>
+                    <button class="btn" data-search="pharmacies" style="padding:3px 6px;font-size:9px">Pharmacy</button>
+                  </div>
+                  <div style="display:flex;gap:3px;margin-bottom:6px">
+                    <input type="text" id="tourSearchLocation" placeholder="Search..." style="flex:1;padding:4px;border:1px solid #d1d5db;border-radius:4px;font-size:10px" />
+                    <button id="tourSearchBtn" class="btn" style="padding:4px 12px;font-size:10px;font-weight:600">Search</button>
+                    <button id="tourAddCustomBtn" class="btn" style="padding:4px 8px;font-size:14px;font-weight:600" title="Add custom search button">+</button>
+                  </div>
+                  <div id="customSearchButtons" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">
+                    <!-- Custom search buttons -->
+                  </div>
+                  <div id="tourSearchResults" style="display:flex;flex-direction:column;gap:3px;max-height:100px;overflow-y:auto">
+                    <!-- Search results chips -->
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 5 & 6. Stage Plot + Setlist Preview (side by side) -->
+              <div class="card" style="padding:12px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <!-- Stage Plot -->
+                  <div style="cursor:pointer" title="Double-click to edit">
+                    <div style="font-size:12px;font-weight:600;margin-bottom:6px">🎸 Stage</div>
+                    <div id="tourStagePreview" style="display:flex;justify-content:center;align-items:center;min-height:100px;max-height:120px;overflow:hidden;border:1px solid #e5e7eb;border-radius:4px;padding:4px">
+                      <div style="color:#64748b;font-size:10px">No stage plot</div>
+                    </div>
+                  </div>
+                  
+                  <!-- Setlist -->
+                  <div style="cursor:pointer" title="Double-click to edit">
+                    <div style="font-size:12px;font-weight:600;margin-bottom:6px">🎵 Setlist</div>
+                    <div id="tourSetlistPreview" style="max-height:120px;overflow-y:auto;font-size:10px;line-height:1.4;border:1px solid #e5e7eb;border-radius:4px;padding:4px">
+                      <div style="color:#64748b">No setlist</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          
+          <!-- Calendar Tools Row -->
+          <div class="card" style="padding:12px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px">
+                <input type="checkbox" id="tourLockCalendar" />
+                🔒 Lock Calendar (prevent edits)
+              </label>
+              <button id="tourClearCalendar" class="btn danger" style="margin-left:auto;padding:6px 12px;font-size:12px">🗑️ Clear Calendar</button>
+            </div>
+          </div>
+          
+          <!-- OLD CONTENT HIDDEN BELOW -->
+          <div style="display:none">
+            <div class="card" style="width:100%">
+              <h3 style="margin:0 0 12px 0">Find Nearby Services (OLD)</h3>
+              
+              <!-- Default Search Buttons -->
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+                <button class="btn" data-search="hotels">🏨 Hotels</button>
+                <button class="btn" data-search="music stores">🎸 Music Stores</button>
+                <button class="btn" data-search="rehearsal studios">🎵 Rehearsal</button>
+                <button class="btn" data-search="bars">🍺 Bars</button>
+                <button class="btn" data-search="restaurants">🍽️ Food</button>
+                <button class="btn" data-search="cafes">☕ Cafes</button>
+                <button class="btn" data-search="gas stations">⛽ Gas</button>
+                <button class="btn" data-search="print shops">🖨️ Print</button>
+                <button class="btn" data-search="guitar repair">🔧 Repairs</button>
+                <button class="btn" data-search="pharmacies">💊 Pharmacy</button>
+              </div>
+              
+              <!-- Custom Search -->
+              <div style="margin-bottom:12px">
+                <label class="muted" style="font-size:12px;margin-bottom:4px;display:block">Custom Search (e.g., "Vegan", "BBQ", "Bike Repair")</label>
+                <div style="display:flex;gap:6px">
+                  <input type="text" id="tourCustomSearch" placeholder="Enter custom search term" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px" />
+                  <button id="tourCustomSearchBtn" class="btn primary" style="white-space:nowrap">🔍 Search</button>
+                </div>
+              </div>
+              
+              <!-- Inline Map -->
+              <div id="tourMapEmbed" style="width:100%;height:300px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:12px;overflow:hidden;background:#f9fafb;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:13px">
+                Click a search button to view map and find businesses
+              </div>
+              
+              <!-- Search Results Chips -->
+              <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Drag chips to itinerary or saved places:</div>
+              <div id="tourSearchResults" style="display:flex;flex-wrap:wrap;gap:8px;padding:12px;border:1px solid #e5e7eb;border-radius:6px;min-height:120px;max-height:300px;overflow-y:auto;align-content:flex-start;background:#ffffff">
+                <div style="width:100%;text-align:center;color:#64748b;padding:20px;font-size:13px">
+                  Search results will appear here
+                </div>
+              </div>
+            </div>
+            
+            <!-- Saved Interests / Places -->
+            <div class="card" style="width:100%" id="tourSavedInterests">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <h3 style="margin:0">Saved Places & Interests</h3>
+                <button id="tourClearInterests" class="btn danger" style="padding:4px 8px;font-size:12px">Clear All</button>
+              </div>
+              <div id="tourInterestsDropZone" style="min-height:100px;border:2px dashed #d1d5db;border-radius:8px;padding:12px;background:#f9fafb;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;align-content:flex-start">
+                <div style="width:100%;text-align:center;color:#64748b;font-size:13px;padding:20px" id="tourInterestsPlaceholder">
+                  Drag search result chips here to save places of interest for this tour date
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+      
+
+
       <!-- Live Mode: full-screen, touch-first setlist + lyrics viewer -->
       <div id="live" style="display:none;grid-column:1 / -1;width:100%;margin-top:12px">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -564,6 +1268,7 @@
         <li><strong>Lyrics / Chords</strong>: Paste lyrics or chords into the song, or hit “Search Lyrics / Chords” to open a web search and copy from the site you trust.</li>
         <li><strong>Setlist</strong>: Enter gig details (band, venue, date, notes) and click Generate, or drag songs in manually from the Song Pool. Reorder with the handle (⋮⋮) and type notes inline – notes appear under the title in the print-friendly sheet.</li>
         <li><strong>Breaks & Events</strong>: Drag Break, Encore, and custom event chips into the set to mark intermissions, announcements, raffles and more. The preview always shows your real running order and total time.</li>
+        <li><strong>Tour Manager</strong>: Plan your tour dates with the scalable timeline (week/month/year view). Add gigs, manage itineraries, set load-in/show times, and search for nearby hotels, music stores, rehearsal spaces, and more. Custom search terms let you always find your favorite spots on the road.</li>
         <li><strong>Live Mode</strong>: On show night, switch to the Live tab. Tap a song to see big, high-contrast lyrics. On phone/tablet, tap again for fullscreen; the Play button gently auto-scrolls based on song length so you reach the bottom of the page about 75% through the song.</li>
         <li><strong>Tech / Stage</strong>: Use the Toolbox icons to build a clean, black-and-white stage plot. Drag to move, double‑click labels to rename, assign channels in the legend, and use Clear Stage (at the bottom of the toolbox) only when you really want to start over.</li>
         <li><strong>Lighting / FX</strong>: Switch to “Lighting / FX” from Tech / Stage to type per‑song notes (e.g., “Blue wash, delay on chorus”). These print alongside the stage plot in the tech rider.</li>
@@ -619,14 +1324,12 @@
           <button class="tool" id="newIconBtn">New Icon</button>
           <div id="customImages" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
-        <div style="margin-top:14px;display:flex;justify-content:flex-end;align-items:center">
+        <div style="margin-top:14px;display:flex;justify-content:flex-end;align-items:center;gap:8px">
+          <button class="btn" id="stagePresetBtn" style="padding:4px 10px;font-size:12px;background:#065f46;color:#f9fafb;border:1px solid #064e3b">PRESET</button>
           <button class="btn danger" id="clearStage" type="button" title="Clear stage plot (keeps background & title)">Clear Stage</button>
         </div>
       </div>
       <div class="stage-canvas">
-        <div style="position:absolute;top:8px;right:8px;z-index:50;display:flex;gap:6px;align-items:center;pointer-events:none">
-          <button class="btn" id="stagePresetBtn" style="padding:4px 10px;font-size:12px;background:#065f46;color:#f9fafb;border:1px solid #064e3b;pointer-events:auto">PRESET</button>
-        </div>
         <div class="stage-inspector" id="stageInspector" style="margin-bottom:8px">
           <span class="muted" id="selLabel">Selected:</span>
           <input id="selName" placeholder="Label (double‑click item to rename)" style="min-width:220px" />
@@ -802,6 +1505,13 @@
   let gearSummary = '';
   // Tech notes persist independently of the current set (keyed by song id)
   let techNotes = {};
+  // Tour dates: array of {id, date, venue, address, loadIn, showTime, band, setlist:[], stage:string, gig:{}, itinerary:[], tourType:'gig'|'hotel'|'travel'|'home', city:''}
+  let tourDates = [];
+  let selectedTourDateId = null; // Currently selected date in tour manager
+  let tourViewMode = 'month'; // 'week' | 'month' | 'year'
+  let tourViewDate = new Date(); // Current view period anchor
+  let tourCustomSearchTerms = ''; // User-defined search terms
+  let currentDateDirty = false; // Track unsaved changes for current date
   // Setlist display column preferences
   let setlistColumns = {artist:true, capo:false, key:false, notes:true, bpm:false, lyrics:false};
   // Page layout preferences
@@ -900,9 +1610,32 @@
           Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=> small.appendChild(g.cloneNode(true)));
         }
       }
+      
+      // Save stage, setlist, gearSummary, and techNotes to current tour date if one is selected
+      // SAFETY: Only save stage if it has content - never overwrite existing data with blank
+      if(typeof selectedTourDateId !== 'undefined' && selectedTourDateId && typeof tourDates !== 'undefined'){
+        const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+        if(tourDate){
+          // Only save stage if it has actual content OR if there was no previous stage
+          if(stageHTML && stageHTML.length > 0){
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = stageHTML;
+            const svg = tempDiv.querySelector('svg');
+            const hasItems = svg ? svg.querySelectorAll('g[data-draggable]').length > 0 : false;
+            if(hasItems || !tourDate.stage){
+              tourDate.stage = stageHTML;
+            }
+          }
+          tourDate.setlist = [...setlist];
+          tourDate.gig = {...gig};
+          if(typeof gearSummary !== 'undefined') tourDate.gearSummary = gearSummary;
+          if(typeof techNotes !== 'undefined') tourDate.techNotes = techNotes;
+        }
+      }
+      
       // Strip any embedded audioData before persisting to storage
       const dbOut = db.map(s=>{ const { audioData, ...rest } = s || {}; return rest; });
-      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout};
+      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,selectedTourDateId,activeTab:previousTab};
       localStorage.setItem(STORE_KEY, JSON.stringify(payload));
     }catch(e){ console.error('saveAll failed', e); }
   }
@@ -986,6 +1719,11 @@
       _savePending=true;
       requestAnimationFrame(()=>{
         _savePending=false; _lastSaveTs=Date.now(); saveAll();
+        // Update calendar preview if we're in a tour date
+        if(typeof selectedTourDateId !== 'undefined' && selectedTourDateId && typeof tourDates !== 'undefined' && typeof renderTourPreviews === 'function'){
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          if(tourDate) renderTourPreviews(tourDate);
+        }
       });
     }
   }
@@ -1146,7 +1884,7 @@
   function loadAll(){
     try{
       const raw=localStorage.getItem(STORE_KEY); if(!raw) return;
-    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn}=JSON.parse(raw);
+    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn}=JSON.parse(raw);
       if(Array.isArray(dbIn)) db.push(...dbIn);
       if(Array.isArray(setIn)) setlist=setIn;
       if(gigIn) gig=Object.assign(gig,gigIn);
@@ -1154,6 +1892,10 @@
   if(tnIn && typeof tnIn==='object') { techNotes = tnIn; }
   if(setColIn && typeof setColIn==='object') { setlistColumns = Object.assign(setlistColumns, setColIn); }
   if(pageLayoutIn && typeof pageLayoutIn==='object') { pageLayout = Object.assign(pageLayout, pageLayoutIn); }
+  if(Array.isArray(tourIn)) { tourDates = tourIn; }
+  if(typeof tourSearchIn === 'string') { tourCustomSearchTerms = tourSearchIn; }
+  if(selectedIdIn) { selectedTourDateId = selectedIdIn; }
+  if(activeTabIn) { previousTab = activeTabIn; }
       // Gig info now edited directly on sheet header
       const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value = gearSummary || '';
       renderDB(); buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool();
@@ -1180,11 +1922,41 @@
     function minutes(sum){ return `${sum.toFixed(1)}m`; }
 
     // Tabs
+    let previousTab = 'tour'; // Track previous tab
     document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',e=>{
+      // Save Calendar data when leaving Calendar tab
+      if(previousTab === 'tour' && btn.dataset.tab !== 'tour'){
+        try { if(typeof saveTourDateData === 'function') saveTourDateData(); } catch(err) { console.log('Save tour data:', err); }
+      }
+      
+      // Save Tech/Stage data when leaving Tech/Stage tab
+      if(previousTab === 'adv' && btn.dataset.tab !== 'adv'){
+        if(selectedTourDateId){
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          if(tourDate){
+            tourDate.stage = getStageHTML();
+            tourDate.gearSummary = gearSummary;
+            tourDate.techNotes = techNotes;
+          }
+        }
+        const stageModal = document.getElementById('stageModal');
+        if(stageModal && stageModal.classList.contains('open')){
+          try{ closeStageModal(); }catch(_){ stageModal.classList.remove('open'); }
+        }
+        saveAll();
+      }
+      
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      ['db','set','adv','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+      ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
       document.getElementById(btn.dataset.tab).style.display='block';
+      
+      // Reload Calendar data when entering Calendar tab
+      if(btn.dataset.tab === 'tour'){
+        try { if(typeof reloadCalendarData === 'function') reloadCalendarData(); } catch(err) { console.log('Reload calendar data:', err); }
+      }
+      
+      previousTab = btn.dataset.tab;
       // Only Tech/Stage tab should show stage or lighting sections
       const stageModal=document.getElementById('stageModal');
       const notesModal=document.getElementById('notesModal');
@@ -1223,6 +1995,77 @@
       try{ renderLive(); }catch(_){ }
       // Apply saved live theme
       if(gig && gig.liveDark){ document.body.classList.add('live-dark'); }
+      
+      // Restore last active tab and selected tour date
+      const restoreTab = previousTab || 'tour';
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      const tabToActivate = document.querySelector(`.tab[data-tab="${restoreTab}"]`);
+      if(tabToActivate) {
+        tabToActivate.classList.add('active');
+        ['db','set','adv','tour','live'].forEach(id => {
+          const el = document.getElementById(id);
+          if(el) el.style.display = 'none';
+        });
+        const tabContent = document.getElementById(restoreTab);
+        if(tabContent) tabContent.style.display = 'block';
+      }
+      
+      // Smart date selection on load: prioritize today or future dates, never load past dates
+      if(restoreTab === 'tour') {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const todayStr = today.toISOString().split('T')[0];
+        
+        let dateToSelect = null;
+        
+        // First, check if there's a date for today
+        const todayDate = tourDates.find(td => td.date === todayStr);
+        if(todayDate) {
+          dateToSelect = todayDate;
+        } else if(selectedTourDateId) {
+          // Check if last selected date is today or in the future
+          const lastTourDate = tourDates.find(td => td.id === selectedTourDateId);
+          if(lastTourDate) {
+            const lastDate = new Date(lastTourDate.date);
+            lastDate.setHours(0,0,0,0);
+            if(lastDate >= today) {
+              dateToSelect = lastTourDate;
+            }
+          }
+        }
+        
+        // If no valid date yet, find the next incomplete future date
+        if(!dateToSelect) {
+          const futureDates = tourDates
+            .filter(td => {
+              const tdDate = new Date(td.date);
+              tdDate.setHours(0,0,0,0);
+              return tdDate >= today;
+            })
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+          
+          // Find first incomplete date (missing venue or setlist/stage)
+          const incompleteDate = futureDates.find(td => {
+            const hasVenue = td.venue && td.venue.trim() !== '';
+            const hasSetlist = td.setlist && td.setlist.length > 0;
+            const hasStagePlot = td.stage && td.stage.trim() !== '';
+            return !hasVenue || (!hasSetlist && !hasStagePlot);
+          });
+          
+          dateToSelect = incompleteDate || futureDates[0];
+        }
+        
+        // Select the determined date
+        if(dateToSelect) {
+          try {
+            if(typeof selectTourDate === 'function') {
+              selectTourDate(dateToSelect);
+            }
+          } catch(e) {
+            console.log('Could not restore tour date:', e);
+          }
+        }
+      }
     })();
 
     // Add new song inline at top of database
@@ -1876,6 +2719,7 @@
             return; 
           } 
           setlist.push({...s,type:'song',notes:''}); 
+          currentDateDirty = true;
           saveAll(); 
           buildSheet('sheetInline'); 
           attachPreviewInteractions();
@@ -2966,6 +3810,3006 @@
       updateTitles();
     })();
 
+    // ============================================================================
+    // TOUR MANAGER
+    // ============================================================================
+    (function initTourManager(){
+      const tourViewModeSelect = document.getElementById('tourViewMode');
+      const tourTodayBtn = document.getElementById('tourToday');
+      const tourPrevBtn = document.getElementById('tourPrev');
+      const tourNextBtn = document.getElementById('tourNext');
+      const tourAddDateBtn = document.getElementById('tourAddDate');
+      const tourPeriodLabel = document.getElementById('tourPeriodLabel');
+      const tourTimeline = document.getElementById('tourTimeline');
+      const tourNoSelection = document.getElementById('tourNoSelection');
+      const tourDateDetails = document.getElementById('tourDateDetails');
+      const tourItineraryContent = document.getElementById('tourItineraryContent');
+      
+      // Date form fields
+      const tourDateInput = document.getElementById('tourDate');
+      const tourVenueInput = document.getElementById('tourVenue');
+      const tourAddressInput = document.getElementById('tourAddress');
+      const tourLoadInInput = document.getElementById('tourLoadIn');
+      const tourShowTimeInput = document.getElementById('tourShowTime');
+      const tourBandInput = document.getElementById('tourBand');
+      const tourSetlistSelect = document.getElementById('tourSetlistSelect');
+      const tourStagePlotSelect = document.getElementById('tourStagePlotSelect');
+      const tourSaveDateBtn = document.getElementById('tourSaveDate');
+      const tourDeleteDateBtn = document.getElementById('tourDeleteDate');
+      
+      // Map & services
+      const tourSearchLocationBtn = document.getElementById('tourSearchLocation');
+      const tourMapPlaceholder = document.getElementById('tourMapPlaceholder');
+      const tourMapContainer = document.getElementById('tourMapContainer');
+      const tourCustomSearchInput = document.getElementById('tourCustomSearch');
+      const tourExpediaLink = document.getElementById('tourExpediaLink');
+      const tourGoogleMapsLink = document.getElementById('tourGoogleMapsLink');
+      const tourGoogleTrafficLink = document.getElementById('tourGoogleTrafficLink');
+      
+      // Itinerary
+      const tourAddItineraryBtn = document.getElementById('tourAddItineraryItem');
+      const tourItineraryTimeline = document.getElementById('tourItineraryTimeline');
+      
+      // Global date header
+      const dateBoxesContainer = document.getElementById('dateBoxesContainer');
+      let currentDateView = 90; // Number of days to display
+      
+      // Utility: Generate unique ID
+      function generateId(){ return 'tour_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
+      
+      // Helper: Prompt for time in 30-minute increments
+      function promptForTime(defaultTime){
+        const timeStr = prompt('Enter time (e.g., 2:30pm, 14:30, or just 230)\nUses 30-minute increments:', defaultTime || '');
+        if(!timeStr) return null;
+        
+        // Parse various time formats
+        let hours, minutes;
+        const cleaned = timeStr.toLowerCase().replace(/\s/g, '');
+        
+        // Handle formats like "2:30pm", "14:30", "230", "2pm"
+        const match1 = cleaned.match(/^(\d{1,2}):(\d{2})(am|pm)?$/);
+        const match2 = cleaned.match(/^(\d{1,4})(am|pm)?$/);
+        
+        if(match1){
+          hours = parseInt(match1[1]);
+          minutes = parseInt(match1[2]);
+          if(match1[3] === 'pm' && hours < 12) hours += 12;
+          if(match1[3] === 'am' && hours === 12) hours = 0;
+        } else if(match2){
+          const num = match2[1];
+          if(num.length <= 2){
+            hours = parseInt(num);
+            minutes = 0;
+          } else {
+            hours = parseInt(num.slice(0, -2));
+            minutes = parseInt(num.slice(-2));
+          }
+          if(match2[2] === 'pm' && hours < 12) hours += 12;
+          if(match2[2] === 'am' && hours === 12) hours = 0;
+        } else {
+          alert('Invalid time format. Try: 2:30pm, 14:30, or 230');
+          return null;
+        }
+        
+        // Round to nearest 30 minutes
+        if(minutes < 15) minutes = 0;
+        else if(minutes < 45) minutes = 30;
+        else { minutes = 0; hours += 1; }
+        
+        if(hours >= 24) hours = hours % 24;
+        
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
+      
+      // Helper: Estimate drive time between two locations using coordinates
+      function estimateDriveTime(fromLat, fromLon, toLat, toLon){
+        if(!fromLat || !fromLon || !toLat || !toLon) return null;
+        
+        // Calculate straight-line distance (Haversine formula)
+        const R = 6371; // Earth's radius in km
+        const dLat = (toLat - fromLat) * Math.PI / 180;
+        const dLon = (toLon - fromLon) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(fromLat * Math.PI / 180) * Math.cos(toLat * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distanceKm = R * c;
+        
+        // Estimate driving time: assume 1.4x straight-line distance for roads, average 80 km/h
+        const drivingDistanceKm = distanceKm * 1.4;
+        const hours = drivingDistanceKm / 80;
+        
+        // Round to nearest 30 minutes
+        const roundedHours = Math.round(hours * 2) / 2;
+        return roundedHours;
+      }
+      
+      // Helper: Add hours to a time string
+      function addHoursToTime(timeStr, hoursToAdd){
+        if(!timeStr) return null;
+        const [h, m] = timeStr.split(':').map(Number);
+        let newHours = h + Math.floor(hoursToAdd);
+        let newMinutes = m + ((hoursToAdd % 1) * 60);
+        
+        if(newMinutes >= 60){
+          newHours += 1;
+          newMinutes -= 60;
+        }
+        
+        newHours = newHours % 24;
+        return `${String(newHours).padStart(2, '0')}:${String(Math.round(newMinutes)).padStart(2, '0')}`;
+      }
+      
+      // Save current date data before switching
+      function saveCurrentDateData(){
+        if(!selectedTourDateId) return;
+        const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+        if(!tourDate) return;
+        
+        // Save current setlist, stage, gig, gear, and tech notes to tour date
+        tourDate.setlist = [...setlist];
+        // Get stage from full editor if open, otherwise from stored SVG
+        // SAFETY: Only save if has content - never overwrite existing data with blank
+        const stageHTML = getStageHTML();
+        if(stageHTML && stageHTML.length > 0){
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = stageHTML;
+          const svg = tempDiv.querySelector('svg');
+          const hasItems = svg ? svg.querySelectorAll('g[data-draggable]').length > 0 : false;
+          if(hasItems || !tourDate.stage){
+            tourDate.stage = stageHTML;
+          }
+        }
+        tourDate.gig = {...gig};
+        tourDate.venue = gig.venue || '';
+        tourDate.address = gig.address || '';
+        tourDate.band = gig.band || '';
+        tourDate.gearSummary = gearSummary;
+        tourDate.techNotes = techNotes;
+        currentDateDirty = false;
+      }
+      
+      // Load date data into current context
+      function loadDateData(tourDate){
+        if(!tourDate) return;
+        
+        // Restore setlist
+        if(tourDate.setlist && Array.isArray(tourDate.setlist)){
+          setlist = [...tourDate.setlist];
+        } else {
+          setlist = [];
+        }
+        
+        // Restore stage
+        const container = document.getElementById('stageStore');
+        if(container){
+          if(tourDate.stage && tourDate.stage.length > 0){
+            container.innerHTML = tourDate.stage;
+            const svg = container.querySelector('svg');
+            if(svg){
+              svg.id = 'stageSvg';
+              svg.classList.add('bw');
+              try{ refreshCables(svg); }catch(e){}
+            }
+          }
+          // Note: If no stage data, we keep existing stage in container
+          // This prevents accidental data loss when switching dates
+        }
+        
+        // Restore gig data
+        if(tourDate.gig){
+          gig = {...tourDate.gig};
+        } else {
+          gig.venue = tourDate.venue || '';
+          gig.address = tourDate.address || '';
+          gig.band = tourDate.band || '';
+          gig.date = tourDate.date || '';
+        }
+        
+        // Restore gear and tech notes
+        if(tourDate.gearSummary !== undefined){
+          gearSummary = tourDate.gearSummary;
+          const gearEl = document.getElementById('gear');
+          if(gearEl) gearEl.value = gearSummary;
+        } else {
+          gearSummary = '';
+          const gearEl = document.getElementById('gear');
+          if(gearEl) gearEl.value = '';
+        }
+        
+        if(tourDate.techNotes !== undefined){
+          techNotes = typeof tourDate.techNotes === 'object' ? tourDate.techNotes : {};
+        } else {
+          techNotes = {};
+        }
+        
+        // Update displays
+        try{ renderDB(); buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); }catch(e){}
+      }
+      
+      // Prompt for new tour date details
+      function promptNewTourDate(dateStr){
+        const typePrompt = 'What kind of day?\n\n1. Gig\n2. Drive\n3. Rest\n4. Home\n5. Rehearse\n6. Party\n7. Record\n8. Radio\n9. TV\n10. DJ\n11. Audition\n12. Dress Rehearsal\n13. Custom\n\nEnter number or name:';
+        const typeInput = prompt(typePrompt, '1');
+        if(!typeInput) return null;
+        
+        const typeMap = {
+          '1': 'gig', 'gig': 'gig',
+          '2': 'drive', 'drive': 'drive',
+          '3': 'rest', 'rest': 'rest',
+          '4': 'home', 'home': 'home',
+          '5': 'rehearse', 'rehearse': 'rehearse',
+          '6': 'party', 'party': 'party',
+          '7': 'record', 'record': 'record',
+          '8': 'radio', 'radio': 'radio',
+          '9': 'tv', 'tv': 'tv',
+          '10': 'dj', 'dj': 'dj',
+          '11': 'audition', 'audition': 'audition',
+          '12': 'dressrehearsal', 'dress rehearsal': 'dressrehearsal',
+          '13': 'custom', 'custom': 'custom'
+        };
+        
+        let finalType = typeMap[typeInput.toLowerCase()] || 'custom';
+        let customLabel = '';
+        
+        if(finalType === 'custom'){
+          customLabel = prompt('Enter custom day type:', '');
+          if(!customLabel) return null;
+        }
+        
+        let venue = '';
+        let address = '';
+        
+        if(finalType === 'gig'){
+          venue = prompt('Enter venue name:', '');
+          if(!venue) return null;
+          address = prompt('Enter venue address/city:', '');
+        } else if(finalType === 'drive'){
+          venue = 'Travel Day';
+          address = prompt('Destination city:', '');
+        } else if(finalType === 'rest'){
+          venue = 'Rest Day';
+          address = prompt('Hotel/Location:', '');
+        } else if(finalType === 'home'){
+          venue = 'Home';
+          address = 'Home';
+        } else {
+          venue = customLabel || finalType.charAt(0).toUpperCase() + finalType.slice(1);
+          address = prompt('Location:', '') || '';
+        }
+        
+        const copyData = confirm('Copy current setlist and stage plot?\n\nOK = Copy current data\nCancel = Start fresh');
+        
+        const newDate = {
+          id: generateId(),
+          date: dateStr,
+          venue: venue,
+          address: address,
+          city: address.split(',')[0].trim(), // Extract city from address
+          loadIn: '',
+          showTime: '',
+          band: gig.band || '',
+          setlist: copyData ? [...setlist] : [],
+          stage: copyData ? getStageHTML() : '',
+          gig: copyData ? {...gig, venue, address, date:dateStr} : {band:gig.band||'', venue, address, date:dateStr, contact:'', notes:'', breaks:0, breakLen:15, encore:false, font:'default', logo:'', headerFlags:{band:true,venue:true,sub:true,notes:true}, customMoods:[], customImages:[], hiddenIcons:[], liveDark:false},
+          itinerary: [],
+          tourType: finalType
+        };
+        
+        return newDate;
+      }
+      
+      // Drag state for date boxes
+      let dragSourceBox = null;
+      let dragSourceDate = null;
+      let dragStartTime = 0;
+      let dragHoldTimer = null;
+      let isDragCopy = false;
+      
+      // Render global date header strip
+      function renderDateHeader(){
+        if(!dateBoxesContainer) return;
+        
+        dateBoxesContainer.innerHTML = '';
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        // Get current gig date or use today
+        let anchorDate = gig.date ? new Date(gig.date) : new Date();
+        anchorDate.setHours(0,0,0,0);
+        
+        // Generate fixed date range starting from today (scroll to see past/future)
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - Math.floor(currentDateView / 3));
+        
+        for(let i = 0; i < currentDateView; i++){
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + i);
+          
+          const dateStr = date.toISOString().split('T')[0];
+          const tourDate = tourDates.find(td => td.date === dateStr);
+          
+          const box = document.createElement('div');
+          box.className = `date-box view-${currentDateView}`;
+          box.draggable = true;
+          box.dataset.date = dateStr;
+          
+          // Mark active if matches gig.date
+          if(gig.date && dateStr === gig.date){
+            box.classList.add('active');
+          }
+          
+          // Check if this is today
+          const isToday = dateStr === today.toISOString().split('T')[0];
+          const isPast = date < today && !isToday;
+          
+          // Apply status-based coloring for dates with data
+          if(tourDate){
+            if(tourDate.tourType === 'cancelled'){
+              box.classList.add('status-cancelled');
+            } else if(isToday){
+              box.classList.add('status-today');
+            } else if(isPast){
+              box.classList.add('status-past');
+            } else {
+              // Check completion: has venue AND (has setlist OR has stage plot)
+              const hasVenue = tourDate.venue && tourDate.venue.trim() !== '';
+              const hasSetlist = tourDate.setlist && tourDate.setlist.length > 0;
+              const hasStagePlot = tourDate.stage && tourDate.stage.trim() !== '';
+              
+              if(hasVenue && (hasSetlist || hasStagePlot)){
+                box.classList.add('status-complete');
+              } else if(hasVenue || hasSetlist || hasStagePlot){
+                box.classList.add('status-incomplete');
+              }
+            }
+            
+            // Apply tour type styling (for non-gig types)
+            if(tourDate.tourType && tourDate.tourType !== 'gig'){
+              box.classList.add(`tour-${tourDate.tourType}`);
+            }
+          }
+          
+          const dayNum = date.getDate();
+          const monthAbbr = date.toLocaleDateString('en-US', {month:'short'});
+          
+          let contentHtml = '';
+          if(tourDate && tourDate.tourType){
+            const tourType = tourDate.tourType;
+            const iconMap = {
+              'gig': '',
+              'drive': '🚚',
+              'rest': '🛏️',
+              'home': '🏠',
+              'rehearse': '🎵',
+              'party': '🎉',
+              'record': '🎙️',
+              'radio': '📻',
+              'tv': '📺',
+              'dj': '🎧',
+              'audition': '🎭',
+              'dressrehearsal': '👔',
+              'custom': '⭐'
+            };
+            
+            const icon = iconMap[tourType] || '';
+            
+            if(tourType === 'gig' && tourDate.venue){
+              contentHtml = `<span class="date-num">${dayNum}</span><span class="date-city">${tourDate.venue.substring(0, 8)}</span>`;
+            } else if(tourType === 'drive' || tourType === 'rest' || tourType === 'home'){
+              contentHtml = `<span class="date-num">${dayNum}</span><span class="date-icon">${icon}</span>`;
+            } else {
+              contentHtml = `<span class="date-num">${dayNum}</span><span class="date-city">${tourDate.venue || tourType}</span>`;
+            }
+          } else {
+            contentHtml = `<span class="date-num">${dayNum}</span><span class="date-month">${monthAbbr}</span>`;
+          }
+          
+          box.innerHTML = contentHtml;
+          
+          // Single click: preview only (no scroll jump) and switch to Tour tab
+          box.addEventListener('click', (e) => {
+            if(e.defaultPrevented) return;
+            
+            const td = tourDates.find(t => t.date === dateStr);
+            
+            if(td){
+              // Preview existing date (load but don't scroll)
+              if(currentDateDirty && selectedTourDateId){
+                if(confirm('You have unsaved changes. Save before switching dates?')){
+                  saveCurrentDateData();
+                  saveAll();
+                }
+              }
+              
+              if(selectedTourDateId){
+                saveCurrentDateData();
+              }
+              
+              gig.date = dateStr;
+              selectedTourDateId = td.id;
+              loadDateData(td);
+              selectTourDate(td);
+              
+              // Update boxes without scrolling
+              renderDateHeader();
+              saveAll();
+            } else {
+              // Show "FREE" - blank date, clear all gig data
+              gig.date = dateStr;
+              selectedTourDateId = null;
+              setlist = [];
+              gig.venue = '';
+              gig.address = '';
+              gig.band = '';
+              gig.loadIn = '';
+              gig.showTime = '';
+              gig.notes = '';
+              
+              try{ renderDB(); buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); }catch(e){}
+              renderDateHeader();
+            }
+            
+            // Switch to Tour tab
+            document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+            const tourTab = document.querySelector('.tab[data-tab="tour"]');
+            if(tourTab) tourTab.classList.add('active');
+            ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+            const tourEl = document.getElementById('tour');
+            if(tourEl) tourEl.style.display='block';
+          });
+          
+          // Double click: create/edit date
+          box.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            
+            let td = tourDates.find(t => t.date === dateStr);
+            
+            if(!td){
+              // Create new date
+              td = promptNewTourDate(dateStr);
+              if(!td) return;
+              
+              tourDates.push(td);
+              tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+            }
+            
+            gig.date = dateStr;
+            selectedTourDateId = td.id;
+            loadDateData(td);
+            selectTourDate(td);
+            renderDateHeader();
+            saveAll();
+          });
+          
+          // Long press for context menu
+          let longPressTimer = null;
+          let longPressTriggered = false;
+          
+          box.addEventListener('mousedown', (e) => {
+            if(e.button !== 0) return; // Only left click
+            longPressTriggered = false;
+            longPressTimer = setTimeout(() => {
+              longPressTriggered = true;
+              showDateContextMenu(e.clientX, e.clientY, dateStr, box);
+            }, 600); // 600ms hold
+          });
+          
+          box.addEventListener('mouseup', () => {
+            if(longPressTimer){
+              clearTimeout(longPressTimer);
+              longPressTimer = null;
+            }
+          });
+          
+          box.addEventListener('mouseleave', () => {
+            if(longPressTimer){
+              clearTimeout(longPressTimer);
+              longPressTimer = null;
+            }
+          });
+          
+          box.addEventListener('touchstart', (e) => {
+            longPressTriggered = false;
+            longPressTimer = setTimeout(() => {
+              longPressTriggered = true;
+              const touch = e.touches[0];
+              showDateContextMenu(touch.clientX, touch.clientY, dateStr, box);
+            }, 600);
+          });
+          
+          box.addEventListener('touchend', () => {
+            if(longPressTimer){
+              clearTimeout(longPressTimer);
+              longPressTimer = null;
+            }
+          });
+          
+          box.addEventListener('touchmove', () => {
+            if(longPressTimer){
+              clearTimeout(longPressTimer);
+              longPressTimer = null;
+            }
+          });
+          
+          dateBoxesContainer.appendChild(box);
+        }
+      }
+      
+      // Context menu for date boxes
+      function showDateContextMenu(x, y, dateStr, box){
+        // Remove any existing menu
+        const existing = document.querySelector('.date-context-menu');
+        if(existing) existing.remove();
+        
+        const menu = document.createElement('div');
+        menu.className = 'date-context-menu';
+        
+        const td = tourDates.find(t => t.date === dateStr);
+        const [year, month, day] = dateStr.split('-');
+        const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        const displayDate = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+        
+        // Create/Edit Event
+        const createBtn = document.createElement('button');
+        createBtn.innerHTML = td ? '✏️ Edit Event' : '➕ Create Event';
+        createBtn.onclick = () => {
+          menu.remove();
+          if(!td){
+            const newTd = promptNewTourDate(dateStr);
+            if(!newTd) return;
+            tourDates.push(newTd);
+            tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+          }
+          const tourDate = tourDates.find(t => t.date === dateStr);
+          if(tourDate){
+            gig.date = dateStr;
+            selectedTourDateId = tourDate.id;
+            loadDateData(tourDate);
+            selectTourDate(tourDate);
+            renderDateHeader();
+            saveAll();
+          }
+        };
+        menu.appendChild(createBtn);
+        
+        if(td){
+          // Duplicate
+          const dupBtn = document.createElement('button');
+          dupBtn.innerHTML = '📋 Duplicate to...';
+          dupBtn.onclick = () => {
+            menu.remove();
+            const targetDate = prompt('Enter target date (YYYY-MM-DD):');
+            if(!targetDate) return;
+            
+            const copiedDate = {
+              id: generateId(),
+              date: targetDate,
+              venue: td.venue,
+              address: td.address,
+              city: td.city || '',
+              tourType: td.tourType || 'gig',
+              loadIn: td.loadIn || '',
+              showTime: td.showTime || '',
+              band: td.band || '',
+              setlistType: td.setlistType || 'current',
+              stagePlotType: td.stagePlotType || 'current',
+              setlist: td.setlist ? JSON.parse(JSON.stringify(td.setlist)) : [],
+              stage: td.stage || '',
+              gig: td.gig ? JSON.parse(JSON.stringify(td.gig)) : null,
+              itinerary: td.itinerary ? JSON.parse(JSON.stringify(td.itinerary)) : [],
+              interests: td.interests ? JSON.parse(JSON.stringify(td.interests)) : [],
+              chipData: td.chipData || null
+            };
+            
+            if(copiedDate.gig) copiedDate.gig.date = targetDate;
+            tourDates.push(copiedDate);
+            tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+            renderDateHeader();
+            saveAll();
+            alert(`Duplicated to ${targetDate}`);
+          };
+          menu.appendChild(dupBtn);
+          
+          // Cancel (mark as cancelled)
+          const cancelBtn = document.createElement('button');
+          const isCancelled = td.tourType === 'cancelled';
+          cancelBtn.innerHTML = isCancelled ? '✅ Restore Show' : '❌ Cancel Show';
+          cancelBtn.onclick = () => {
+            menu.remove();
+            if(isCancelled){
+              td.tourType = 'gig';
+            } else {
+              if(confirm(`Mark ${displayDate} as CANCELLED?\n\nThe date will remain in your calendar but marked as cancelled.`)){
+                td.tourType = 'cancelled';
+              }
+            }
+            renderDateHeader();
+            saveAll();
+          };
+          menu.appendChild(cancelBtn);
+          
+          // Print
+          const printBtn = document.createElement('button');
+          printBtn.innerHTML = '🖨️ Print';
+          printBtn.onclick = () => {
+            menu.remove();
+            // Load this date's data and trigger print
+            gig.date = dateStr;
+            selectedTourDateId = td.id;
+            loadDateData(td);
+            selectTourDate(td);
+            renderDateHeader();
+            saveAll();
+            // Trigger print after a brief delay to ensure rendering
+            setTimeout(() => {
+              window.print();
+            }, 100);
+          };
+          menu.appendChild(printBtn);
+          
+          // Delete
+          const delBtn = document.createElement('button');
+          delBtn.className = 'danger';
+          delBtn.innerHTML = '🗑️ Delete';
+          delBtn.onclick = () => {
+            menu.remove();
+            if(confirm(`Delete tour date ${displayDate}?`)){
+              const idx = tourDates.findIndex(t => t.date === dateStr);
+              if(idx !== -1){
+                tourDates.splice(idx, 1);
+                if(selectedTourDateId === td.id){
+                  selectedTourDateId = null;
+                  selectTourDate(null);
+                }
+                saveAll();
+                renderDateHeader();
+                renderTimeline();
+              }
+            }
+          };
+          menu.appendChild(delBtn);
+        }
+        
+        // Cancel button
+        const cancelMenuBtn = document.createElement('button');
+        cancelMenuBtn.innerHTML = '❌ Cancel';
+        cancelMenuBtn.onclick = () => menu.remove();
+        menu.appendChild(cancelMenuBtn);
+        
+        // Position menu
+        document.body.appendChild(menu);
+        const rect = menu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        let left = x;
+        let top = y;
+        
+        // Adjust if menu goes off-screen
+        if(left + rect.width > viewportWidth) left = viewportWidth - rect.width - 10;
+        if(top + rect.height > viewportHeight) top = viewportHeight - rect.height - 10;
+        if(left < 10) left = 10;
+        if(top < 10) top = 10;
+        
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
+        
+        // Close menu when clicking outside (after 3s delay so users can tap)
+        setTimeout(() => {
+          const closeHandler = (e) => {
+            if(!menu.contains(e.target)){
+              menu.remove();
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }, 3000);
+      }
+      
+
+      
+      // Date view selector buttons
+      document.querySelectorAll('.date-view-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.date-view-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentDateView = parseInt(btn.dataset.days);
+          renderDateHeader();
+        });
+      });
+      
+      // Context menu for date boxes
+      function showDateContextMenu(x, y, dateStr, box){
+        // Remove any existing menu
+        const existing = document.querySelector('.date-context-menu');
+        if(existing) existing.remove();
+        
+        const menu = document.createElement('div');
+        menu.className = 'date-context-menu';
+        
+        const td = tourDates.find(t => t.date === dateStr);
+        const [year, month, day] = dateStr.split('-');
+        const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        const displayDate = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+        
+        // Create/Edit Event
+        const createBtn = document.createElement('button');
+        createBtn.innerHTML = td ? '✏️ Edit Event' : '➕ Create Event';
+        createBtn.onclick = () => {
+          menu.remove();
+          if(!td){
+            const newTd = promptNewTourDate(dateStr);
+            if(!newTd) return;
+            tourDates.push(newTd);
+            tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+          }
+          const tourDate = tourDates.find(t => t.date === dateStr);
+          if(tourDate){
+            gig.date = dateStr;
+            selectedTourDateId = tourDate.id;
+            loadDateData(tourDate);
+            selectTourDate(tourDate);
+            renderDateHeader();
+            saveAll();
+          }
+        };
+        menu.appendChild(createBtn);
+        
+        if(td){
+          // Duplicate
+          const dupBtn = document.createElement('button');
+          dupBtn.innerHTML = '📋 Duplicate to...';
+          dupBtn.onclick = () => {
+            menu.remove();
+            const targetDate = prompt('Enter target date (YYYY-MM-DD):');
+            if(!targetDate) return;
+            
+            const copiedDate = {
+              id: generateId(),
+              date: targetDate,
+              venue: td.venue,
+              address: td.address,
+              city: td.city || '',
+              tourType: td.tourType || 'gig',
+              loadIn: td.loadIn || '',
+              showTime: td.showTime || '',
+              band: td.band || '',
+              setlistType: td.setlistType || 'current',
+              stagePlotType: td.stagePlotType || 'current',
+              setlist: td.setlist ? JSON.parse(JSON.stringify(td.setlist)) : [],
+              stage: td.stage || '',
+              gig: td.gig ? JSON.parse(JSON.stringify(td.gig)) : null,
+              itinerary: td.itinerary ? JSON.parse(JSON.stringify(td.itinerary)) : [],
+              interests: td.interests ? JSON.parse(JSON.stringify(td.interests)) : [],
+              chipData: td.chipData || null
+            };
+            
+            if(copiedDate.gig) copiedDate.gig.date = targetDate;
+            tourDates.push(copiedDate);
+            tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+            renderDateHeader();
+            saveAll();
+            alert(`Duplicated to ${targetDate}`);
+          };
+          menu.appendChild(dupBtn);
+          
+          // Cancel (mark as cancelled)
+          const cancelBtn = document.createElement('button');
+          const isCancelled = td.tourType === 'cancelled';
+          cancelBtn.innerHTML = isCancelled ? '✅ Restore Show' : '❌ Cancel Show';
+          cancelBtn.onclick = () => {
+            menu.remove();
+            if(isCancelled){
+              td.tourType = 'gig';
+            } else {
+              if(confirm(`Mark ${displayDate} as CANCELLED?\n\nThe date will remain in your calendar but marked as cancelled.`)){
+                td.tourType = 'cancelled';
+              }
+            }
+            renderDateHeader();
+            saveAll();
+          };
+          menu.appendChild(cancelBtn);
+          
+          // Print
+          const printBtn = document.createElement('button');
+          printBtn.innerHTML = '🖨️ Print';
+          printBtn.onclick = () => {
+            menu.remove();
+            // Load this date's data and trigger print
+            gig.date = dateStr;
+            selectedTourDateId = td.id;
+            loadDateData(td);
+            selectTourDate(td);
+            renderDateHeader();
+            saveAll();
+            // Trigger print after a brief delay to ensure rendering
+            setTimeout(() => {
+              window.print();
+            }, 100);
+          };
+          menu.appendChild(printBtn);
+          
+          // Delete
+          const delBtn = document.createElement('button');
+          delBtn.className = 'danger';
+          delBtn.innerHTML = '🗑️ Delete';
+          delBtn.onclick = () => {
+            menu.remove();
+            if(confirm(`Delete tour date ${displayDate}?`)){
+              const idx = tourDates.findIndex(t => t.date === dateStr);
+              if(idx !== -1){
+                tourDates.splice(idx, 1);
+                if(selectedTourDateId === td.id){
+                  selectedTourDateId = null;
+                  selectTourDate(null);
+                }
+                saveAll();
+                renderDateHeader();
+                renderTimeline();
+              }
+            }
+          };
+          menu.appendChild(delBtn);
+        }
+        
+        // Cancel button
+        const cancelMenuBtn = document.createElement('button');
+        cancelMenuBtn.innerHTML = '❌ Cancel';
+        cancelMenuBtn.onclick = () => menu.remove();
+        menu.appendChild(cancelMenuBtn);
+        
+        // Position menu
+        document.body.appendChild(menu);
+        const rect = menu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        let left = x;
+        let top = y;
+        
+        // Adjust if menu goes off-screen
+        if(left + rect.width > viewportWidth) left = viewportWidth - rect.width - 10;
+        if(top + rect.height > viewportHeight) top = viewportHeight - rect.height - 10;
+        if(left < 10) left = 10;
+        if(top < 10) top = 10;
+        
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
+        
+        // Close menu when clicking outside (after 3s delay so users can tap)
+        setTimeout(() => {
+          const closeHandler = (e) => {
+            if(!menu.contains(e.target)){
+              menu.remove();
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        }, 3000);
+      }
+      
+      // Render timeline based on view mode
+      function renderTimeline(){
+        if(!tourTimeline) return;
+        tourTimeline.innerHTML = '';
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        let dates = [];
+        const anchor = new Date(tourViewDate);
+        anchor.setHours(0,0,0,0);
+        
+        if(tourViewMode === 'week'){
+          // Show 7 days starting from anchor (Monday-Sunday)
+          const dayOfWeek = anchor.getDay();
+          const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+          anchor.setDate(anchor.getDate() + mondayOffset);
+          
+          for(let i=0; i<7; i++){
+            const d = new Date(anchor);
+            d.setDate(d.getDate() + i);
+            dates.push(d);
+          }
+          
+          const weekStart = dates[0].toLocaleDateString('en-US', {month:'short', day:'numeric'});
+          const weekEnd = dates[6].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+          if(tourPeriodLabel) tourPeriodLabel.textContent = `${weekStart} - ${weekEnd}`;
+          
+        } else if(tourViewMode === 'month'){
+          // Show all days in month
+          const year = anchor.getFullYear();
+          const month = anchor.getMonth();
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          
+          for(let i=1; i<=daysInMonth; i++){
+            dates.push(new Date(year, month, i));
+          }
+          
+          if(tourPeriodLabel) tourPeriodLabel.textContent = anchor.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+          
+        } else if(tourViewMode === 'year'){
+          // Show 12 months
+          const year = anchor.getFullYear();
+          for(let m=0; m<12; m++){
+            dates.push(new Date(year, m, 1));
+          }
+          
+          if(tourPeriodLabel) tourPeriodLabel.textContent = year.toString();
+        }
+        
+        // Render date tabs
+        dates.forEach(date => {
+          const dateStr = date.toISOString().split('T')[0];
+          const hasGig = tourDates.some(td => td.date === dateStr);
+          const isSelected = selectedTourDateId && tourDates.find(td => td.id === selectedTourDateId && td.date === dateStr);
+          const isToday = date.getTime() === today.getTime();
+          
+          const tab = document.createElement('button');
+          tab.className = 'tour-date-tab';
+          tab.style.cssText = 'min-width:60px;padding:8px 12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;transition:all 0.2s';
+          
+          if(isSelected){
+            tab.style.background = '#0ea5e9';
+            tab.style.color = '#fff';
+            tab.style.borderColor = '#0284c7';
+          } else if(hasGig){
+            tab.style.background = '#f0f9ff';
+            tab.style.borderColor = '#0ea5e9';
+          }
+          
+          if(isToday){
+            tab.style.fontWeight = 'bold';
+            tab.style.boxShadow = '0 0 0 2px #fbbf24';
+          }
+          
+          const dayName = tourViewMode === 'year' ? date.toLocaleDateString('en-US', {month:'short'}) : date.toLocaleDateString('en-US', {weekday:'short'});
+          const dayNum = tourViewMode === 'year' ? '' : date.getDate();
+          
+          tab.innerHTML = `<span style="font-size:10px;color:${isSelected?'#fff':'#64748b'}">${dayName}</span>${dayNum ? `<span style="font-size:14px;font-weight:600">${dayNum}</span>` : ''}${hasGig ? '<span style="font-size:16px">🎵</span>' : ''}`;
+          
+          tab.addEventListener('click', () => {
+            const existing = tourDates.find(td => td.date === dateStr);
+            if(existing){
+              selectTourDate(existing);
+            } else {
+              // Save current date before creating new one
+              if(selectedTourDateId){
+                saveCurrentDateData();
+              }
+              
+              // Create new BLANK date - user will fill in details
+              const newDate = {
+                id: generateId(),
+                date: dateStr,
+                venue: '',
+                address: '',
+                loadIn: '',
+                showTime: '',
+                band: '',
+                setlistType: 'current',
+                stagePlotType: 'current',
+                itinerary: [],
+                interests: [],
+                setlist: [],
+                stage: '',
+                gearSummary: '',
+                techNotes: {},
+                gig: {venue:'', address:'', band:'', date:dateStr}
+              };
+              
+              tourDates.push(newDate);
+              selectTourDate(newDate);
+              saveAll();
+              renderTimeline();
+            }
+          });
+          
+          tourTimeline.appendChild(tab);
+        });
+      }
+      
+      // Select a tour date
+      function selectTourDate(tourDate){
+        // Save current date data before switching
+        if(selectedTourDateId){
+          saveCurrentDateData();
+        }
+        
+        if(!tourDate || !tourDate.id){
+          selectedTourDateId = null;
+          if(tourNoSelection) tourNoSelection.style.display = '';
+          if(tourDateDetails) tourDateDetails.style.display = 'none';
+          if(tourItineraryContent) tourItineraryContent.style.display = 'none';
+          return;
+        }
+        
+        selectedTourDateId = tourDate.id;
+        
+        // Load the new date's data
+        loadDateData(tourDate);
+        
+        if(tourNoSelection) tourNoSelection.style.display = 'none';
+        if(tourDateDetails) tourDateDetails.style.display = '';
+        if(tourItineraryContent) tourItineraryContent.style.display = '';
+        
+        // Populate form
+        if(tourDateInput) tourDateInput.value = tourDate.date || '';
+        if(tourVenueInput) tourVenueInput.value = tourDate.venue || '';
+        if(tourAddressInput) tourAddressInput.value = tourDate.address || '';
+        if(tourLoadInInput) tourLoadInInput.value = tourDate.loadIn || '';
+        if(tourShowTimeInput) tourShowTimeInput.value = tourDate.showTime || '';
+        if(tourBandInput) tourBandInput.value = tourDate.band || '';
+        if(tourSetlistSelect) tourSetlistSelect.value = tourDate.setlistType || 'current';
+        if(tourStagePlotSelect) tourStagePlotSelect.value = tourDate.stagePlotType || 'current';
+        
+        renderItinerary(tourDate);
+        renderTimeline();
+        renderDateHeader();
+        renderTourPreviews(tourDate);
+        renderAdjacentDays(tourDate);
+        
+        // Update large header display
+        const headerDate = document.getElementById('tourHeaderDate');
+        const headerVenue = document.getElementById('tourHeaderVenue');
+        if(headerDate && tourDate.date){
+          const dateObj = new Date(tourDate.date + 'T12:00:00');
+          headerDate.textContent = dateObj.toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+        }
+        if(headerVenue){
+          headerVenue.textContent = tourDate.venue || 'No venue set';
+        }
+        
+        // Reload map from venue address (prefer tourDate.address, fallback to gig.address)
+        const addressToUse = tourDate.address || gig.address || '';
+        if(addressToUse && addressToUse.trim()){
+          loadMap(addressToUse);
+        }
+      }
+      
+      // Render setlist and stage previews - shows tour date specific data
+      function renderTourPreviews(tourDate){
+        const setlistPreview = document.getElementById('tourSetlistPreview');
+        const stagePreview = document.getElementById('tourStagePreview');
+        
+        // Setlist preview - show tour date's setlist (or current if selected)
+        if(setlistPreview){
+          const dateSetlist = (tourDate && tourDate.id === selectedTourDateId) ? setlist : (tourDate?.setlist || []);
+          if(dateSetlist && dateSetlist.length){
+            setlistPreview.innerHTML = dateSetlist.map((song, idx) => 
+              `<div style="padding:4px 0;border-bottom:1px solid #f3f4f6">${idx + 1}. <strong>${song.title || 'Untitled'}</strong> ${song.band ? `<span style="color:#64748b;font-size:10px">— ${song.band}</span>` : ''}</div>`
+            ).join('');
+          } else {
+            setlistPreview.innerHTML = '<div style="color:#64748b;font-size:11px">No setlist</div>';
+          }
+          
+          // Double-click to edit
+          setlistPreview.parentElement.ondblclick = () => {
+            document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+            const setTab = document.querySelector('.tab[data-tab="set"]');
+            if(setTab) setTab.classList.add('active');
+            ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+            const setEl = document.getElementById('set');
+            if(setEl) setEl.style.display='block';
+          };
+        }
+        
+        // Stage preview - show tour date's stage plot
+        if(stagePreview){
+          // Get stage from tour date or current DOM if selected
+          let stageHTML = null;
+          if(tourDate && tourDate.id === selectedTourDateId){
+            const storedSvg = document.getElementById('stageSvg') || document.getElementById('stageSvgFull');
+            stageHTML = storedSvg ? storedSvg.outerHTML : tourDate.stage;
+          } else {
+            stageHTML = tourDate?.stage;
+          }
+          
+          if(stageHTML){
+            // Parse and scale it down for preview
+            try {
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = stageHTML;
+              const svg = tempDiv.querySelector('svg');
+              if(svg){
+                svg.style.width = '100%';
+                svg.style.maxWidth = '100%';
+                svg.style.height = 'auto';
+                svg.removeAttribute('id');
+                stagePreview.innerHTML = svg.outerHTML;
+              } else {
+                stagePreview.innerHTML = '<div style="color:#64748b;font-size:10px">No stage plot</div>';
+              }
+            } catch(err) {
+              console.error('Error rendering stage:', err);
+              stagePreview.innerHTML = '<div style="color:#64748b;font-size:10px">No stage plot</div>';
+            }
+          } else {
+            stagePreview.innerHTML = '<div style="color:#64748b;font-size:10px">No stage plot</div>';
+          }
+          
+          // Double-click to edit
+          stagePreview.parentElement.ondblclick = () => {
+            document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+            const stageTab = document.querySelector('.tab[data-tab="adv"]');
+            if(stageTab) stageTab.classList.add('active');
+            ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+            const advEl = document.getElementById('adv');
+            if(advEl) advEl.style.display='block';
+            // Open stage modal
+            const stageModal = document.getElementById('stageModal');
+            if(stageModal && !stageModal.classList.contains('open')){
+              toggleStageAndNotes();
+            }
+          };
+        }
+      }
+      
+      // Render yesterday and tomorrow cards
+      function renderAdjacentDays(tourDate){
+        if(!tourDate) return;
+        
+        const yesterdayDiv = document.getElementById('tourYesterday');
+        const tomorrowDiv = document.getElementById('tourTomorrow');
+        
+        if(!yesterdayDiv || !tomorrowDiv) return;
+        
+        const currentDate = new Date(tourDate.date + 'T12:00:00');
+        
+        // Yesterday
+        const yesterday = new Date(currentDate);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        const yesterdayTour = tourDates.find(td => td.date === yesterdayStr);
+        
+        const yesterdayDateEl = document.getElementById('tourYesterdayDate');
+        const yesterdayVenueEl = document.getElementById('tourYesterdayVenue');
+        if(yesterdayDateEl) yesterdayDateEl.textContent = yesterday.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+        if(yesterdayVenueEl) yesterdayVenueEl.textContent = yesterdayTour ? (yesterdayTour.venue || 'No venue') : 'No event';
+        
+        yesterdayDiv.onclick = () => {
+          if(yesterdayTour){
+            // Save current before switching
+            if(selectedTourDateId && selectedTourDateId !== yesterdayTour.id){
+              saveCurrentDateData();
+            }
+            selectTourDate(yesterdayTour);
+            gig.date = yesterdayStr;
+            renderDateHeader();
+            renderTourPreviews(yesterdayTour);
+          }
+        };
+        
+        // Tomorrow
+        const tomorrow = new Date(currentDate);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        const tomorrowTour = tourDates.find(td => td.date === tomorrowStr);
+        
+        const tomorrowDateEl = document.getElementById('tourTomorrowDate');
+        const tomorrowVenueEl = document.getElementById('tourTomorrowVenue');
+        if(tomorrowDateEl) tomorrowDateEl.textContent = tomorrow.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+        if(tomorrowVenueEl) tomorrowVenueEl.textContent = tomorrowTour ? (tomorrowTour.venue || 'No venue') : 'No event';
+        
+        tomorrowDiv.onclick = () => {
+          if(tomorrowTour){
+            // Save current before switching
+            if(selectedTourDateId && selectedTourDateId !== tomorrowTour.id){
+              saveCurrentDateData();
+            }
+            selectTourDate(tomorrowTour);
+            gig.date = tomorrowStr;
+            renderDateHeader();
+            renderTourPreviews(tomorrowTour);
+          }
+        };
+      }
+      
+      // Mark form inputs as dirty on change and update map with delay
+      let mapLoadTimer = null;
+      let autoSaveTimer = null;
+      [tourVenueInput, tourAddressInput, tourLoadInInput, tourShowTimeInput, tourBandInput].forEach(input => {
+        if(input){
+          input.addEventListener('input', () => {
+            currentDateDirty = true;
+            
+            // Auto-save after 1 second of inactivity
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+              if(selectedTourDateId && typeof saveTourDateData === 'function'){
+                saveTourDateData();
+              }
+            }, 1000);
+            
+            // Update map when address changes with 500ms delay
+            if(input === tourAddressInput && input.value.trim()){
+              clearTimeout(mapLoadTimer);
+              mapLoadTimer = setTimeout(() => {
+                loadMap(input.value);
+              }, 500);
+            }
+          });
+        }
+      });
+      
+      // Map loading function using OpenStreetMap for better search results
+      function loadMap(address){
+        const mapContainer = document.getElementById('tourMapPlaceholder');
+        if(!mapContainer || !address) return;
+        
+        // Show loading state
+        mapContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:12px">Loading map...</div>';
+        
+        // Check if viewing today's gig
+        const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+        const now = new Date();
+        const isToday = tourDate && tourDate.date === now.toISOString().split('T')[0];
+        
+        // Use OpenStreetMap Nominatim to search for address (includes AirBnB, rehearsal spaces, hideouts)
+        const encodedAddress = encodeURIComponent(address);
+        
+        // Fetch coordinates from Nominatim (OpenStreetMap)
+        fetch(`https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1&addressdetails=1`)
+          .then(res => res.json())
+          .then(data => {
+            if(data && data.length > 0){
+              const location = data[0];
+              const lat = location.lat;
+              const lon = location.lon;
+              
+              // If today, use Google Maps with traffic layer, otherwise OpenStreetMap
+              if(isToday){
+                mapContainer.innerHTML = `<iframe 
+                  width="100%" 
+                  height="100%" 
+                  style="border:0;border-radius:4px" 
+                  loading="lazy" 
+                  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}&zoom=14&maptype=roadmap"
+                ></iframe>
+                <div style="position:absolute;top:4px;right:4px;background:#dc2626;color:white;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600;pointer-events:none">LIVE TRAFFIC</div>`;
+              } else {
+                // Embed OpenStreetMap with marker
+                mapContainer.innerHTML = `<iframe 
+                  width="100%" 
+                  height="100%" 
+                  style="border:0;border-radius:4px" 
+                  loading="lazy" 
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lon)-0.01},${parseFloat(lat)-0.01},${parseFloat(lon)+0.01},${parseFloat(lat)+0.01}&layer=mapnik&marker=${lat},${lon}"
+                ></iframe>`;
+              }
+            } else {
+              // Fallback to text search if no coordinates found
+              mapContainer.innerHTML = `<iframe 
+                width="100%" 
+                height="100%" 
+                style="border:0;border-radius:4px" 
+                loading="lazy" 
+                src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}"
+              ></iframe>`;
+            }
+          })
+          .catch(err => {
+            console.error('Map loading error:', err);
+            // Fallback to Google Maps on error
+            mapContainer.innerHTML = `<iframe 
+              width="100%" 
+              height="100%" 
+              style="border:0;border-radius:4px" 
+              loading="lazy" 
+              src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}"
+            ></iframe>`;
+          });
+      }
+      
+      // Save current tour date data (make globally accessible)
+      window.saveTourDateData = function(){
+        const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+        if(!tourDate) return;
+        
+        tourDate.venue = tourVenueInput?.value || '';
+        tourDate.address = tourAddressInput?.value || '';
+        tourDate.loadIn = tourLoadInInput?.value || '';
+        tourDate.showTime = tourShowTimeInput?.value || '';
+        tourDate.band = tourBandInput?.value || '';
+        tourDate.setlistType = tourSetlistSelect?.value || 'current';
+        tourDate.stagePlotType = tourStagePlotSelect?.value || 'current';
+        tourDate.gearSummary = gearSummary;
+        tourDate.techNotes = techNotes;
+        
+        // Also update gig object to maintain consistency
+        gig.venue = tourDate.venue;
+        gig.address = tourDate.address;
+        
+        saveAll();
+      };
+      
+      // Reload calendar data (map, stage, setlist) when tab is opened (make globally accessible)
+      window.reloadCalendarData = function(){
+        const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+        if(!tourDate) return;
+        
+        // Reload map from venue address
+        const addressToUse = tourDate.address || gig.address || '';
+        if(addressToUse && addressToUse.trim()){
+          loadMap(addressToUse);
+        }
+        
+        // Refresh stage and setlist previews (force reload from global data)
+        renderTourPreviews(tourDate);
+      };
+      
+      // Track setlist modifications
+      const originalAddToSet = window.addToSet;
+      if(originalAddToSet){
+        window.addToSet = function(){
+          currentDateDirty = true;
+          return originalAddToSet.apply(this, arguments);
+        };
+      }
+      
+      // Render itinerary as 24-hour timeline (5am to 5am next day) with 15-minute slots
+      function renderItinerary(tourDate){
+        if(!tourItineraryTimeline) return;
+        tourItineraryTimeline.innerHTML = '';
+        
+        // Create 24-hour grid (5am to 5am next day = 96 slots × 15min = 24h)
+        const gridContainer = document.createElement('div');
+        gridContainer.style.cssText = 'display:grid;grid-template-columns:50px 1fr;gap:0;position:relative';
+        
+        // 5am to 5am next day (24 hours)
+        const startHour = 5;
+        const endHour = 29; // 5am next day = hour 29
+        
+        // Generate time slots for 24-hour window (5am to 5am)
+        for(let h = startHour; h < endHour; h++){
+          for(let m = 0; m < 60; m += 15){
+            const displayHour = h >= 24 ? h - 24 : h;
+            const timeStr = `${String(displayHour).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+            const slotIdx = (h - startHour) * 4 + m / 15;
+            
+            // Time label (every hour)
+            const labelEl = document.createElement('div');
+            labelEl.style.cssText = `
+              grid-column:1;
+              grid-row:${slotIdx + 1};
+              font-size:10px;
+              color:${m === 0 ? '#374151' : '#9ca3af'};
+              font-weight:${m === 0 ? '600' : '400'};
+              padding:2px 4px;
+              text-align:right;
+              border-right:1px solid #e5e7eb;
+              background:${m === 0 ? '#f9fafb' : 'transparent'};
+            `;
+            labelEl.textContent = m === 0 ? timeStr : '';
+            
+            // Check if this is the current time slot (for highlighting)
+            const now = new Date();
+            const isToday = tourDate && tourDate.date === now.toISOString().split('T')[0];
+            const currentHourNow = now.getHours();
+            const currentMinNow = now.getMinutes();
+            const isCurrentSlot = isToday && h === currentHourNow && m <= currentMinNow && (m + 15) > currentMinNow;
+            
+            // Time slot (drop zone)
+            const slotEl = document.createElement('div');
+            slotEl.className = 'timeline-slot';
+            slotEl.dataset.time = timeStr;
+            slotEl.style.cssText = `
+              grid-column:2;
+              grid-row:${slotIdx + 1};
+              min-height:20px;
+              border-bottom:1px solid ${m === 0 ? '#d1d5db' : '#f3f4f6'};
+              background:${isCurrentSlot ? '#fef3c7' : 'white'};
+              position:relative;
+              cursor:pointer;
+              ${isCurrentSlot ? 'box-shadow: inset 0 0 0 2px #fbbf24;' : ''}
+            `;
+            
+            // Drop handlers for activity chips
+            slotEl.addEventListener('dragover', (e) => {
+              e.preventDefault();
+              slotEl.style.background = '#eff6ff';
+            });
+            slotEl.addEventListener('dragleave', () => {
+              slotEl.style.background = 'white';
+            });
+            slotEl.addEventListener('drop', (e) => {
+              e.preventDefault();
+              slotEl.style.background = 'white';
+              
+              const activity = e.dataTransfer.getData('activity');
+              const duration = parseInt(e.dataTransfer.getData('duration')) || 30; // Default 30 minutes
+              const color = e.dataTransfer.getData('color') || '#3b82f6';
+              const draggedIdx = e.dataTransfer.getData('itemIndex');
+              const jsonData = e.dataTransfer.getData('application/json');
+              
+              if(activity){
+                // Activity chip dropped - add to itinerary at this time (30 min default)
+                const newTime = timeStr;
+                let title = activity.charAt(0).toUpperCase() + activity.slice(1);
+                
+                if(!tourDate.itinerary) tourDate.itinerary = [];
+                tourDate.itinerary.push({
+                  time: newTime,
+                  title: title,
+                  activity: activity,
+                  duration: 30, // 30 minutes default
+                  chipData: { color: color },
+                  notes: ''
+                });
+                
+                saveAll();
+                renderItinerary(tourDate);
+                renderDateHeader();
+              } else if(jsonData){
+                // Place chip dropped (hotel, restaurant, etc.) - 30 min default
+                try {
+                  const chipData = JSON.parse(jsonData);
+                  if(!tourDate.itinerary) tourDate.itinerary = [];
+                  tourDate.itinerary.push({
+                    time: timeStr,
+                    title: chipData.name,
+                    duration: 30, // 30 minutes default
+                    notes: '',
+                    chipData: chipData
+                  });
+                  
+                  saveAll();
+                  renderItinerary(tourDate);
+                  renderDateHeader();
+                } catch(err) {
+                  console.error('Error parsing place chip data:', err);
+                }
+              } else if(draggedIdx !== ''){
+                // Existing item dragged to new time
+                const idx = parseInt(draggedIdx);
+                if(tourDate.itinerary[idx]){
+                  tourDate.itinerary[idx].time = timeStr;
+                  saveAll();
+                  renderItinerary(tourDate);
+                  renderDateHeader();
+                }
+              }
+            });
+            
+            // Click empty slot to add note/item directly (inline editing)
+            slotEl.addEventListener('click', () => {
+              // Create inline input for quick note entry
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.placeholder = 'Type note or event...';
+              input.style.cssText = 'width:100%;padding:4px;border:2px solid #3b82f6;border-radius:4px;font-size:11px;box-sizing:border-box';
+              
+              slotEl.innerHTML = '';
+              slotEl.appendChild(input);
+              input.focus();
+              
+              const saveNote = () => {
+                const text = input.value.trim();
+                if(text){
+                  if(!tourDate.itinerary) tourDate.itinerary = [];
+                  tourDate.itinerary.push({
+                    time: timeStr,
+                    title: text,
+                    duration: 30,
+                    notes: ''
+                  });
+                  saveAll();
+                }
+                renderItinerary(tourDate);
+              };
+              
+              input.addEventListener('blur', saveNote);
+              input.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') saveNote();
+                if(e.key === 'Escape') renderItinerary(tourDate);
+              });
+            });
+            
+            gridContainer.appendChild(labelEl);
+            gridContainer.appendChild(slotEl);
+          }
+        }
+        
+        // Overlay itinerary items on timeline
+        if(tourDate.itinerary && tourDate.itinerary.length > 0){
+          tourDate.itinerary.forEach((item, idx) => {
+            const itemTime = item.time || '00:00';
+            let [h, m] = itemTime.split(':').map(Number);
+            
+            // Adjust for 5am start (if hour < 5, it's next day)
+            if(h < 5) h += 24;
+            
+            // Only show items within the 24-hour window (5am to 5am)
+            if(h < startHour || h >= endHour) return;
+            
+            const slotIdx = (h - startHour) * 4 + Math.floor(m / 15);
+            const duration = item.duration || 30;
+            const numSlots = Math.ceil(duration / 15);
+            
+            const borderColor = item.chipData?.color || '#3b82f6';
+            
+            const itemEl = document.createElement('div');
+            itemEl.className = 'itinerary-item';
+            itemEl.dataset.idx = idx;
+            itemEl.draggable = true;
+            itemEl.style.cssText = `
+              grid-column:2;
+              grid-row:${slotIdx + 1} / span ${numSlots};
+              border:2px solid ${borderColor};
+              border-radius:6px;
+              padding:6px;
+              background:linear-gradient(to bottom, ${borderColor}15, ${borderColor}05);
+              margin:2px;
+              cursor:move;
+              position:relative;
+              z-index:10;
+              box-shadow:0 1px 3px rgba(0,0,0,0.1);
+              transition:all 0.2s;
+            `;
+            
+            // Drag handlers for moving items
+            itemEl.addEventListener('dragstart', (e) => {
+              e.dataTransfer.setData('itemIndex', idx.toString());
+              e.dataTransfer.effectAllowed = 'move';
+              itemEl.style.opacity = '0.5';
+            });
+            
+            itemEl.addEventListener('dragend', (e) => {
+              itemEl.style.opacity = '1';
+            });
+            
+            // Resize handles
+            const topHandle = document.createElement('div');
+            topHandle.className = 'resize-handle-top';
+            topHandle.style.cssText = 'position:absolute;top:0;left:0;right:0;height:6px;cursor:ns-resize;background:rgba(0,0,0,0.1);opacity:0;transition:opacity 0.2s';
+            
+            const bottomHandle = document.createElement('div');
+            bottomHandle.className = 'resize-handle-bottom';
+            bottomHandle.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:6px;cursor:ns-resize;background:rgba(0,0,0,0.1);opacity:0;transition:opacity 0.2s';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'item-content';
+            contentDiv.style.cssText = 'height:100%;overflow:hidden;padding:2px';
+            contentDiv.innerHTML = `
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+                <div class="item-title" style="font-weight:600;font-size:11px;color:#111827;flex:1">${itemTime} - ${item.title}</div>
+                <button class="itinerary-delete" style="padding:2px 6px;font-size:10px;background:#ef4444;color:white;border:none;border-radius:3px;cursor:pointer">×</button>
+              </div>
+              ${item.chipData?.address ? `<div style="font-size:10px;color:#64748b">${item.chipData.address}</div>` : ''}
+              <div class="item-notes" style="font-size:10px;color:#64748b;margin-top:2px;min-height:14px;cursor:text">${item.notes || ''}</div>
+            `;
+            
+            itemEl.appendChild(topHandle);
+            itemEl.appendChild(contentDiv);
+            itemEl.appendChild(bottomHandle);
+            
+            // Show resize handles on hover
+            itemEl.addEventListener('mouseenter', () => {
+              itemEl.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+              itemEl.style.zIndex = '20';
+              topHandle.style.opacity = '1';
+              bottomHandle.style.opacity = '1';
+            });
+            itemEl.addEventListener('mouseleave', () => {
+              itemEl.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+              itemEl.style.zIndex = '10';
+              topHandle.style.opacity = '0';
+              bottomHandle.style.opacity = '0';
+            });
+            
+            // Resize from top handle
+            let resizing = false;
+            topHandle.addEventListener('mousedown', (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              resizing = true;
+              const startY = e.clientY;
+              const startDuration = item.duration || 30;
+              const startTime = item.time;
+              const [startH, startM] = startTime.split(':').map(Number);
+              
+              const onMouseMove = (e2) => {
+                if(!resizing) return;
+                const deltaY = e2.clientY - startY;
+                const deltaSlots = Math.round(deltaY / 20); // ~20px per slot
+                const deltaMinutes = deltaSlots * 15;
+                
+                // When dragging top DOWN (positive deltaY): start time moves forward, duration decreases
+                // When dragging top UP (negative deltaY): start time moves backward, duration increases
+                const newStartMinutes = (startH * 60 + startM) + deltaMinutes;
+                const newDuration = Math.max(15, startDuration - deltaMinutes);
+                const newH = Math.floor(newStartMinutes / 60);
+                const newM = newStartMinutes % 60;
+                
+                item.time = `${String(newH).padStart(2,'0')}:${String(Math.max(0, newM)).padStart(2,'0')}`;
+                item.duration = newDuration;
+                saveAll();
+                renderItinerary(tourDate);
+              };
+              
+              const onMouseUp = () => {
+                resizing = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+              };
+              
+              document.addEventListener('mousemove', onMouseMove);
+              document.addEventListener('mouseup', onMouseUp);
+            });
+            
+            // Resize from bottom handle
+            bottomHandle.addEventListener('mousedown', (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              resizing = true;
+              const startY = e.clientY;
+              const startDuration = item.duration || 30;
+              
+              const onMouseMove = (e2) => {
+                if(!resizing) return;
+                const deltaY = e2.clientY - startY;
+                const deltaSlots = Math.round(deltaY / 20); // ~20px per slot
+                const deltaMinutes = deltaSlots * 15;
+                
+                item.duration = Math.max(15, startDuration + deltaMinutes);
+                saveAll();
+                renderItinerary(tourDate);
+              };
+              
+              const onMouseUp = () => {
+                resizing = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+              };
+              
+              document.addEventListener('mousemove', onMouseMove);
+              document.addEventListener('mouseup', onMouseUp);
+            });
+            
+            // Double-click title to edit
+            const titleEl = contentDiv.querySelector('.item-title');
+            titleEl.addEventListener('dblclick', (e) => {
+              e.stopPropagation();
+              
+              const currentText = item.title;
+              titleEl.innerHTML = `<input type="text" value="${currentText}" style="width:100%;padding:2px;border:1px solid #3b82f6;border-radius:3px;font-size:11px;font-weight:600" />`;
+              const input = titleEl.querySelector('input');
+              input.focus();
+              input.select();
+              
+              const saveEdit = () => {
+                item.title = input.value.trim() || currentText;
+                saveAll();
+                renderItinerary(tourDate);
+              };
+              
+              input.addEventListener('blur', saveEdit);
+              input.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') saveEdit();
+                if(e.key === 'Escape') renderItinerary(tourDate);
+              });
+            });
+            
+            // Double-click notes area to edit
+            const notesEl = contentDiv.querySelector('.item-notes');
+            notesEl.addEventListener('dblclick', (e) => {
+              e.stopPropagation();
+              
+              const currentNotes = item.notes || '';
+              notesEl.innerHTML = `<input type="text" placeholder="Add notes..." value="${currentNotes}" style="width:100%;padding:2px;border:1px solid #3b82f6;border-radius:3px;font-size:10px;box-sizing:border-box" />`;
+              const input = notesEl.querySelector('input');
+              input.focus();
+              input.select();
+              
+              const saveNotes = () => {
+                item.notes = input.value.trim();
+                saveAll();
+                renderItinerary(tourDate);
+              };
+              
+              input.addEventListener('blur', saveNotes);
+              input.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') saveNotes();
+                if(e.key === 'Escape') renderItinerary(tourDate);
+              });
+            });
+            
+            // Delete handler
+            contentDiv.querySelector('.itinerary-delete').addEventListener('click', (e) => {
+              e.stopPropagation();
+              if(confirm('Delete this itinerary item?')){
+                tourDate.itinerary.splice(idx, 1);
+                saveAll();
+                renderItinerary(tourDate);
+                renderDateHeader();
+              }
+            });
+            
+            gridContainer.appendChild(itemEl);
+          });
+        }
+        
+        tourItineraryTimeline.appendChild(gridContainer);
+      }
+      
+      // Show itinerary item details modal
+      function showItineraryDetails(tourDate, idx){
+        const item = tourDate.itinerary[idx];
+        if(!item) return;
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal open';
+        modal.innerHTML = `
+          <div class="modalbox" style="max-width:500px;width:90%">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <h3 style="margin:0">${item.title || 'Itinerary Item'}</h3>
+              <button class="close-modal" style="border:none;background:none;font-size:24px;cursor:pointer;color:#64748b">×</button>
+            </div>
+            
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div>
+                <label style="font-size:12px;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Time (30-min increments)</label>
+                <input type="text" value="${item.time||''}" class="modal-time" placeholder="e.g., 2:30pm, 14:30, 230" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px" />
+                <button class="btn modal-time-helper" style="margin-top:4px;padding:4px 8px;font-size:11px">Change Time</button>
+              </div>
+              
+              <div>
+                <label style="font-size:12px;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Title</label>
+                <input type="text" value="${item.title||''}" class="modal-title" placeholder="Event title" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px" />
+              </div>
+              
+              ${item.chipData ? `
+                <div style="padding:12px;background:#f9fafb;border-radius:6px;border-left:3px solid ${item.chipData.color || '#3b82f6'}">
+                  <div style="font-weight:600;margin-bottom:4px">${item.chipData.name}</div>
+                  <div style="font-size:12px;color:#64748b">${item.chipData.address || ''}</div>
+                  ${item.chipData.phone ? `<div style="font-size:12px;color:#0ea5e9;margin-top:4px">📞 ${item.chipData.phone}</div>` : ''}
+                  ${item.chipData.website ? `<a href="${item.chipData.website}" target="_blank" style="font-size:12px;color:#3b82f6;margin-top:4px;display:inline-block">🌐 Website</a>` : ''}
+                </div>
+              ` : ''}
+              
+              <div>
+                <label style="font-size:12px;font-weight:600;color:#64748b;display:block;margin-bottom:4px">Notes</label>
+                <textarea class="modal-notes" placeholder="Additional notes, directions, contact info..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;min-height:80px;resize:vertical">${item.notes||''}</textarea>
+              </div>
+              
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="btn primary save-modal" style="flex:1">Save Changes</button>
+                <button class="btn cancel-modal" style="flex:1">Cancel</button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close handlers
+        modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+        modal.querySelector('.cancel-modal').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+          if(e.target === modal) modal.remove();
+        });
+        
+        // Time helper button
+        modal.querySelector('.modal-time-helper').addEventListener('click', (e) => {
+          e.preventDefault();
+          const currentTime = modal.querySelector('.modal-time').value;
+          const newTime = promptForTime(currentTime);
+          if(newTime){
+            modal.querySelector('.modal-time').value = newTime;
+          }
+        });
+        
+        // Save handler
+        modal.querySelector('.save-modal').addEventListener('click', () => {
+          item.time = modal.querySelector('.modal-time').value;
+          item.title = modal.querySelector('.modal-title').value;
+          item.notes = modal.querySelector('.modal-notes').value;
+          saveAll();
+          renderItinerary(tourDate);
+          renderDateHeader();
+          modal.remove();
+        });
+      }
+      
+      // Timeline drop handlers are now in renderItinerary() function
+      // Each time slot handles its own drops without prompting for time
+      
+      // View mode change
+      if(tourViewModeSelect){
+        tourViewModeSelect.addEventListener('change', () => {
+          tourViewMode = tourViewModeSelect.value;
+          renderTimeline();
+        });
+      }
+      
+      // Navigation
+      if(tourTodayBtn){
+        tourTodayBtn.addEventListener('click', () => {
+          tourViewDate = new Date();
+          renderTimeline();
+        });
+      }
+      
+      // Yesterday/Tomorrow button handlers with long-press for week jumps
+      const tourYesterdayBtn = document.getElementById('tourYesterdayBtn');
+      const tourTomorrowBtn = document.getElementById('tourTomorrowBtn');
+      
+      let longPressTimer = null;
+      let isLongPress = false;
+      
+      if(tourYesterdayBtn){
+        tourYesterdayBtn.addEventListener('mousedown', () => {
+          isLongPress = false;
+          longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            // Save current date data before navigating
+            if(typeof saveTourDateData === 'function') saveTourDateData();
+            
+            // Jump back one week
+            const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(currentTourDate){
+              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
+              currentDate.setDate(currentDate.getDate() - 7);
+              const weekAgoStr = currentDate.toISOString().split('T')[0];
+              const weekAgoTour = tourDates.find(td => td.date === weekAgoStr);
+              if(weekAgoTour){
+                selectTourDate(weekAgoTour);
+                gig.date = weekAgoStr;
+                selectedTourDateId = weekAgoTour.id;
+                loadDateData(weekAgoTour);
+                renderDateHeader();
+                saveAll();
+              }
+            }
+          }, 600);
+        });
+        
+        tourYesterdayBtn.addEventListener('mouseup', () => {
+          clearTimeout(longPressTimer);
+          if(!isLongPress){
+            // Save current date data before navigating
+            if(typeof saveTourDateData === 'function') saveTourDateData();
+            
+            // Normal click: go to yesterday
+            const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(currentTourDate){
+              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
+              currentDate.setDate(currentDate.getDate() - 1);
+              const yesterdayStr = currentDate.toISOString().split('T')[0];
+              const yesterdayTour = tourDates.find(td => td.date === yesterdayStr);
+              if(yesterdayTour){
+                selectTourDate(yesterdayTour);
+                gig.date = yesterdayStr;
+                selectedTourDateId = yesterdayTour.id;
+                loadDateData(yesterdayTour);
+                renderDateHeader();
+                saveAll();
+              }
+            }
+          }
+        });
+        
+        tourYesterdayBtn.addEventListener('mouseleave', () => {
+          clearTimeout(longPressTimer);
+        });
+        
+        // Touch support
+        tourYesterdayBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          isLongPress = false;
+          longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            // Save current date data before navigating
+            if(typeof saveTourDateData === 'function') saveTourDateData();
+            
+            const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(currentTourDate){
+              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
+              currentDate.setDate(currentDate.getDate() - 7);
+              const weekAgoStr = currentDate.toISOString().split('T')[0];
+              const weekAgoTour = tourDates.find(td => td.date === weekAgoStr);
+              if(weekAgoTour){
+                selectTourDate(weekAgoTour);
+                gig.date = weekAgoStr;
+                selectedTourDateId = weekAgoTour.id;
+                loadDateData(weekAgoTour);
+                renderDateHeader();
+                saveAll();
+              }
+            }
+          }, 600);
+        });
+        
+        tourYesterdayBtn.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          clearTimeout(longPressTimer);
+          if(!isLongPress){
+            // Save current date data before navigating
+            if(typeof saveTourDateData === 'function') saveTourDateData();
+            
+            const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(currentTourDate){
+              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
+              currentDate.setDate(currentDate.getDate() - 1);
+              const yesterdayStr = currentDate.toISOString().split('T')[0];
+              const yesterdayTour = tourDates.find(td => td.date === yesterdayStr);
+              if(yesterdayTour){
+                selectTourDate(yesterdayTour);
+                gig.date = yesterdayStr;
+                selectedTourDateId = yesterdayTour.id;
+                loadDateData(yesterdayTour);
+                renderDateHeader();
+                saveAll();
+              }
+            }
+          }
+        });
+      }
+      
+      if(tourTomorrowBtn){
+        tourTomorrowBtn.addEventListener('mousedown', () => {
+          isLongPress = false;
+          longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            // Save current date data before navigating
+            if(typeof saveTourDateData === 'function') saveTourDateData();
+            
+            // Jump forward one week
+            const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(currentTourDate){
+              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
+              currentDate.setDate(currentDate.getDate() + 7);
+              const weekAheadStr = currentDate.toISOString().split('T')[0];
+              const weekAheadTour = tourDates.find(td => td.date === weekAheadStr);
+              if(weekAheadTour){
+                selectTourDate(weekAheadTour);
+                gig.date = weekAheadStr;
+                selectedTourDateId = weekAheadTour.id;
+                loadDateData(weekAheadTour);
+                renderDateHeader();
+                saveAll();
+              }
+            }
+          }, 600);
+        });
+        
+        tourTomorrowBtn.addEventListener('mouseup', () => {
+          clearTimeout(longPressTimer);
+          if(!isLongPress){
+            // Save current date data before navigating
+            if(typeof saveTourDateData === 'function') saveTourDateData();
+            
+            // Normal click: go to tomorrow
+            const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(currentTourDate){
+              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
+              currentDate.setDate(currentDate.getDate() + 1);
+              const tomorrowStr = currentDate.toISOString().split('T')[0];
+              const tomorrowTour = tourDates.find(td => td.date === tomorrowStr);
+              if(tomorrowTour){
+                selectTourDate(tomorrowTour);
+                gig.date = tomorrowStr;
+                selectedTourDateId = tomorrowTour.id;
+                loadDateData(tomorrowTour);
+                renderDateHeader();
+                saveAll();
+              }
+            }
+          }
+        });
+        
+        tourTomorrowBtn.addEventListener('mouseleave', () => {
+          clearTimeout(longPressTimer);
+        });
+        
+        // Touch support
+        tourTomorrowBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          isLongPress = false;
+          longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            // Save current date data before navigating
+            if(typeof saveTourDateData === 'function') saveTourDateData();
+            
+            const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(currentTourDate){
+              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
+              currentDate.setDate(currentDate.getDate() + 7);
+              const weekAheadStr = currentDate.toISOString().split('T')[0];
+              const weekAheadTour = tourDates.find(td => td.date === weekAheadStr);
+              if(weekAheadTour){
+                selectTourDate(weekAheadTour);
+                gig.date = weekAheadStr;
+                selectedTourDateId = weekAheadTour.id;
+                loadDateData(weekAheadTour);
+                renderDateHeader();
+                saveAll();
+              }
+            }
+          }, 600);
+        });
+        
+        tourTomorrowBtn.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          clearTimeout(longPressTimer);
+          if(!isLongPress){
+            // Save current date data before navigating
+            if(typeof saveTourDateData === 'function') saveTourDateData();
+            
+            const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(currentTourDate){
+              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
+              currentDate.setDate(currentDate.getDate() + 1);
+              const tomorrowStr = currentDate.toISOString().split('T')[0];
+              const tomorrowTour = tourDates.find(td => td.date === tomorrowStr);
+              if(tomorrowTour){
+                selectTourDate(tomorrowTour);
+                gig.date = tomorrowStr;
+                selectedTourDateId = tomorrowTour.id;
+                loadDateData(tomorrowTour);
+                renderDateHeader();
+                saveAll();
+              }
+            }
+          }
+        });
+      }
+      
+      if(tourPrevBtn){
+        tourPrevBtn.addEventListener('click', () => {
+          if(tourViewMode === 'week'){
+            tourViewDate.setDate(tourViewDate.getDate() - 7);
+          } else if(tourViewMode === 'month'){
+            tourViewDate.setMonth(tourViewDate.getMonth() - 1);
+          } else if(tourViewMode === 'year'){
+            tourViewDate.setFullYear(tourViewDate.getFullYear() - 1);
+          }
+          renderTimeline();
+        });
+      }
+      
+      if(tourNextBtn){
+        tourNextBtn.addEventListener('click', () => {
+          if(tourViewMode === 'week'){
+            tourViewDate.setDate(tourViewDate.getDate() + 7);
+          } else if(tourViewMode === 'month'){
+            tourViewDate.setMonth(tourViewDate.getMonth() + 1);
+          } else if(tourViewMode === 'year'){
+            tourViewDate.setFullYear(tourViewDate.getFullYear() + 1);
+          }
+          renderTimeline();
+        });
+      }
+      
+      // Add new date
+      if(tourAddDateBtn){
+        tourAddDateBtn.addEventListener('click', () => {
+          const newDate = {
+            id: generateId(),
+            date: new Date().toISOString().split('T')[0],
+            venue: '',
+            address: '',
+            loadIn: '',
+            showTime: '',
+            band: gig.band || '',
+            setlistType: 'current',
+            stagePlotType: 'current',
+            itinerary: [],
+            interests: []
+          };
+          tourDates.push(newDate);
+          selectTourDate(newDate);
+          saveAll();
+          renderTimeline();
+          renderDateHeader();
+        });
+      }
+      
+      // Save date changes
+      if(tourSaveDateBtn){
+        tourSaveDateBtn.addEventListener('click', () => {
+          saveTourDateData();
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          if(!tourDate) return;
+          
+          tourDate.date = tourDateInput?.value || tourDate.date;
+          tourDate.venue = tourVenueInput?.value || '';
+          tourDate.address = tourAddressInput?.value || '';
+          tourDate.loadIn = tourLoadInInput?.value || '';
+          tourDate.showTime = tourShowTimeInput?.value || '';
+          tourDate.band = tourBandInput?.value || '';
+          tourDate.setlistType = tourSetlistSelect?.value || 'current';
+          tourDate.stagePlotType = tourStagePlotSelect?.value || 'current';
+          
+          saveAll();
+          renderTimeline();
+          renderDateHeader();
+          alert('Date saved!');
+        });
+      }
+      
+      // Delete date
+      if(tourDeleteDateBtn){
+        tourDeleteDateBtn.addEventListener('click', () => {
+          if(!confirm('Delete this tour date and all its details?')) return;
+          const idx = tourDates.findIndex(td => td.id === selectedTourDateId);
+          if(idx !== -1){
+            tourDates.splice(idx, 1);
+            selectedTourDateId = null;
+            selectTourDate(null);
+            saveAll();
+            renderTimeline();
+            renderDateHeader();
+          }
+        });
+      }
+      
+      // Lock Calendar checkbox
+      const tourLockCalendar = document.getElementById('tourLockCalendar');
+      if(tourLockCalendar){
+        tourLockCalendar.addEventListener('change', () => {
+          const isLocked = tourLockCalendar.checked;
+          // Disable all form inputs when locked
+          [tourDateInput, tourVenueInput, tourAddressInput, tourLoadInInput, tourShowTimeInput, tourBandInput, tourSetlistSelect, tourStagePlotSelect].forEach(input => {
+            if(input) input.disabled = isLocked;
+          });
+          if(tourSaveDateBtn) tourSaveDateBtn.disabled = isLocked;
+          if(tourDeleteDateBtn) tourDeleteDateBtn.disabled = isLocked;
+          if(tourAddDateBtn) tourAddDateBtn.disabled = isLocked;
+          if(tourAddItineraryItem) tourAddItineraryItem.disabled = isLocked;
+        });
+      }
+      
+      // Clear Calendar button
+      const tourClearCalendar = document.getElementById('tourClearCalendar');
+      if(tourClearCalendar){
+        tourClearCalendar.addEventListener('click', () => {
+          if(!confirm('Clear ALL tour dates from calendar?\n\nThis will delete all tour dates and their data. You should save a .BAND file first!\n\nProceed?')) return;
+          
+          // Offer to save first
+          if(confirm('Would you like to save a .BAND file before clearing?')){
+            // Trigger save profile
+            const saveProfileBtn = document.getElementById('saveProfile');
+            if(saveProfileBtn) saveProfileBtn.click();
+            
+            // Wait a moment for save dialog
+            setTimeout(() => {
+              if(confirm('Ready to clear calendar now?')){
+                tourDates = [];
+                selectedTourDateId = null;
+                selectTourDate(null);
+                saveAll();
+                renderTimeline();
+                renderDateHeader();
+                alert('Calendar cleared!');
+              }
+            }, 500);
+          } else {
+            // Clear without saving
+            tourDates = [];
+            selectedTourDateId = null;
+            selectTourDate(null);
+            saveAll();
+            renderTimeline();
+            renderDateHeader();
+            alert('Calendar cleared!');
+          }
+        });
+      }
+      
+      // Add itinerary item
+      if(tourAddItineraryBtn){
+        tourAddItineraryBtn.addEventListener('click', () => {
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          if(!tourDate) return;
+          
+          if(!tourDate.itinerary) tourDate.itinerary = [];
+          tourDate.itinerary.push({
+            time: '',
+            title: '',
+            notes: ''
+          });
+          
+          saveAll();
+          renderItinerary(tourDate);
+          renderDateHeader();
+        });
+      }
+      
+      // Custom search button handler
+      if (tourCustomSearchBtn) {
+        tourCustomSearchBtn.addEventListener('click', () => {
+          const searchTerm = tourCustomSearchInput?.value?.trim();
+          if (!searchTerm) {
+            alert('Please enter a search term');
+            return;
+          }
+          
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          let addressToUse = (tourAddressInput && tourAddressInput.value) || (tourDate && tourDate.address) || gig.address || gig.venue || '';
+          
+          if (!addressToUse) {
+            alert('Please enter a venue address in the Tour date details above');
+            return;
+          }
+          
+          loadSearchInline(searchTerm, addressToUse);
+        });
+      }
+      
+      // Allow Enter key in custom search
+      if (tourCustomSearchInput) {
+        tourCustomSearchInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            tourCustomSearchBtn?.click();
+          }
+        });
+      }
+      
+      // ========================================================================
+      // SEARCH POPUP & DRAGGABLE CHIPS SYSTEM
+      // ========================================================================
+      
+      const searchResults = document.getElementById('tourSearchResults');
+      const interestsDropZone = document.getElementById('tourInterestsDropZone');
+      const interestsPlaceholder = document.getElementById('tourInterestsPlaceholder');
+      const clearInterestsBtn = document.getElementById('tourClearInterests');
+      
+      // Chip factory: creates draggable chips with full business info
+      function createInterestChip(data) {
+        const { name, address, phone, url, rating, type, color, distance } = data;
+        
+        const chip = document.createElement('div');
+        chip.className = 'tour-interest-chip';
+        chip.draggable = true;
+        chip.style.borderLeftColor = color || '#0ea5e9';
+        chip.style.borderLeftWidth = '4px';
+        chip.style.borderLeftStyle = 'solid';
+        
+        const ratingStars = rating ? '⭐'.repeat(Math.round(rating)) : '';
+        
+        // Format distance display
+        let distanceText = '';
+        if (distance !== null && distance !== undefined) {
+          if (distance < 1) {
+            distanceText = `<span style="font-size:10px;padding:2px 4px;background:#dcfce7;color:#166534;border-radius:3px;font-weight:600">${Math.round(distance * 1000)}m away</span>`;
+          } else if (distance < 5) {
+            distanceText = `<span style="font-size:10px;padding:2px 4px;background:#fef9c3;color:#854d0e;border-radius:3px;font-weight:600">${distance.toFixed(1)}km away</span>`;
+          } else {
+            distanceText = `<span style="font-size:10px;padding:2px 4px;background:#fed7aa;color:#9a3412;border-radius:3px;font-weight:600">${Math.round(distance)}km away</span>`;
+          }
+        }
+        
+        chip.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="font-weight:600;font-size:14px;color:#111827;flex:1">${name}</div>
+              ${distanceText}
+            </div>
+            ${address ? `<div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${address}</div>` : ''}
+            ${phone ? `<div style="font-size:11px;color:#0ea5e9;font-weight:500">📞 ${phone}</div>` : ''}
+            ${ratingStars ? `<div style="font-size:11px">${ratingStars} ${rating}</div>` : ''}
+          </div>
+          <button class="chip-remove" title="Remove">×</button>
+        `;
+        
+        // Store data on element
+        chip.dataset.chipData = JSON.stringify(data);
+        
+        // Drag handlers
+        chip.addEventListener('dragstart', (e) => {
+          chip.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'copy';
+          e.dataTransfer.setData('application/json', chip.dataset.chipData);
+          e.dataTransfer.setData('text/plain', name); // Fallback
+        });
+        
+        chip.addEventListener('dragend', () => {
+          chip.classList.remove('dragging');
+        });
+        
+        // Click to open URL or remove
+        chip.addEventListener('click', (e) => {
+          if (e.target.closest('.chip-remove')) {
+            chip.remove();
+            const parentIsDropZone = chip.closest('#tourInterestsDropZone');
+            if (parentIsDropZone) {
+              saveInterests();
+              updateInterestsPlaceholder();
+            }
+          } else if (!chip.classList.contains('dragging')) {
+            // Open website - prefer real website over map URL
+            try {
+              const chipData = JSON.parse(chip.dataset.chipData);
+              const targetUrl = chipData.website || chipData.url;
+              console.log('Chip click - website:', chipData.website, 'url:', chipData.url, 'opening:', targetUrl);
+              if (targetUrl && targetUrl !== '#' && targetUrl.startsWith('http')) {
+                window.open(targetUrl, '_blank');
+              }
+            } catch (e) {
+              console.error('Error opening chip URL:', e);
+            }
+          }
+        });
+        
+        return chip;
+      }
+      
+      // Load search results inline (no popup)
+      function loadSearchInline(searchTerm, addressToUse) {
+        const searchResults = document.getElementById('tourSearchResults');
+        if (!searchResults) return;
+        
+        searchResults.innerHTML = '<div style="width:100%;text-align:center;color:#64748b;padding:20px;font-size:13px">🔍 Searching for ' + searchTerm + '...</div>';
+        
+        // Fetch real business data from OpenStreetMap
+        fetchRealBusinessData(searchTerm, addressToUse).then(results => {
+          searchResults.innerHTML = '';
+          
+          if (results.length === 0) {
+            searchResults.innerHTML = '<div style="width:100%;text-align:center;color:#64748b;padding:20px;font-size:13px">No results found for "' + searchTerm + '"</div>';
+            return;
+          }
+          
+          results.forEach(result => {
+            const chip = createInterestChip(result);
+            searchResults.appendChild(chip);
+          });
+        }).catch(error => {
+          console.error('Search error:', error);
+          const errorMsg = error.message.includes('Rate limit') 
+            ? '⏱️ Rate limit reached. Please wait 10 seconds and try again.'
+            : 'Error loading results. Please try again.';
+          searchResults.innerHTML = `<div style="width:100%;text-align:center;color:#dc2626;padding:20px;font-size:13px">${errorMsg}</div>`;
+        });
+      }
+      
+      // Fetch REAL business data using Overpass Turbo (OpenStreetMap)
+      async function fetchRealBusinessData(searchTerm, address) {
+        const colorMap = {
+          'hotels': '#9333ea',
+          'music stores': '#dc2626',
+          'rehearsal studios': '#ea580c',
+          'bars': '#ca8a04',
+          'restaurants': '#16a34a',
+          'cafes': '#0891b2',
+          'gas stations': '#2563eb',
+          'print shops': '#7c3aed',
+          'guitar repair': '#db2777',
+          'pharmacies': '#059669'
+        };
+        
+        const color = colorMap[searchTerm.toLowerCase()] || '#0ea5e9';
+        
+        // Show loading state
+        const mapEmbed = document.getElementById('tourMapEmbed');
+        if (mapEmbed) {
+          mapEmbed.innerHTML = `
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f3f4f6;border-radius:6px">
+              <div style="text-align:center;color:#64748b">
+                <div class="spinner" style="width:24px;height:24px;border:3px solid #e5e7eb;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px"></div>
+                <div style="font-size:13px">Searching REAL ${searchTerm} near ${address}...</div>
+              </div>
+            </div>
+            <style>
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            </style>
+          `;
+        }
+        
+        try {
+          // Geocode the address first
+          const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+          const geoResponse = await fetch(geocodeUrl, {
+            headers: { 'User-Agent': 'FASTFAST-Setlist-App' }
+          });
+          const geoData = await geoResponse.json();
+          
+          if (!geoData || geoData.length === 0) {
+            throw new Error('Location not found');
+          }
+          
+          const lat = parseFloat(geoData[0].lat);
+          const lon = parseFloat(geoData[0].lon);
+          const country = geoData[0].address?.country_code?.toUpperCase() || '';
+          
+          console.log(`Location: ${lat}, ${lon} in ${country}`);
+          
+          // Embed OpenStreetMap instead of Bing for better rendering
+          const osmMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.05},${lat-0.05},${lon+0.05},${lat+0.05}&layer=mapnik&marker=${lat},${lon}`;
+          
+          if (mapEmbed) {
+            mapEmbed.innerHTML = `
+              <iframe 
+                width="100%" 
+                height="100%" 
+                frameborder="0" 
+                scrolling="no" 
+                marginheight="0" 
+                marginwidth="0" 
+                src="${osmMapUrl}" 
+                style="border:none;border-radius:6px">
+              </iframe>
+            `;
+          }
+          
+          // Search query templates for OSM tags with progressive radius
+          const osmQueries = {
+            'hotels': '(node["tourism"="hotel"](around:{radius},{lat},{lon});way["tourism"="hotel"](around:{radius},{lat},{lon});node["tourism"="motel"](around:{radius},{lat},{lon});way["tourism"="motel"](around:{radius},{lat},{lon});node["tourism"="hostel"](around:{radius},{lat},{lon});way["tourism"="hostel"](around:{radius},{lat},{lon});)',
+            'music stores': '(node["shop"="music"](around:{radius},{lat},{lon});way["shop"="music"](around:{radius},{lat},{lon});node["shop"="musical_instrument"](around:{radius},{lat},{lon});way["shop"="musical_instrument"](around:{radius},{lat},{lon});)',
+            'rehearsal studios': '(node["amenity"="studio"](around:{radius},{lat},{lon});way["amenity"="studio"](around:{radius},{lat},{lon});node["amenity"="music_venue"]["rehearsal"="yes"](around:{radius},{lat},{lon});way["amenity"="music_venue"]["rehearsal"="yes"](around:{radius},{lat},{lon});node[~"name"~"[Rr]ehearsal|[Pp]ractice|[Ss]tudio|[Jj]am [Ss]pace|[Ll]ockup|[Mm]usic [Rr]oom",i](around:{radius},{lat},{lon});way[~"name"~"[Rr]ehearsal|[Pp]ractice|[Ss]tudio|[Jj]am [Ss]pace|[Ll]ockup|[Mm]usic [Rr]oom",i](around:{radius},{lat},{lon});)',
+            'bars': '(node["amenity"="bar"](around:{radius},{lat},{lon});way["amenity"="bar"](around:{radius},{lat},{lon});node["amenity"="pub"](around:{radius},{lat},{lon});way["amenity"="pub"](around:{radius},{lat},{lon});)',
+            'restaurants': '(node["amenity"="restaurant"](around:{radius},{lat},{lon});way["amenity"="restaurant"](around:{radius},{lat},{lon});node["amenity"="fast_food"](around:{radius},{lat},{lon});way["amenity"="fast_food"](around:{radius},{lat},{lon});)',
+            'cafes': '(node["amenity"="cafe"](around:{radius},{lat},{lon});way["amenity"="cafe"](around:{radius},{lat},{lon});node["shop"="coffee"](around:{radius},{lat},{lon});)',
+            'gas stations': '(node["amenity"="fuel"](around:{radius},{lat},{lon});way["amenity"="fuel"](around:{radius},{lat},{lon});)',
+            'print shops': '(node["shop"="copyshop"](around:{radius},{lat},{lon});way["shop"="copyshop"](around:{radius},{lat},{lon});node["shop"="printer"](around:{radius},{lat},{lon});node["shop"="print"](around:{radius},{lat},{lon});)',
+            'guitar repair': '(node["craft"="musical_instrument"](around:{radius},{lat},{lon});way["craft"="musical_instrument"](around:{radius},{lat},{lon});node["shop"="music"]["service"="repair"](around:{radius},{lat},{lon});)',
+            'pharmacies': '(node["amenity"="pharmacy"](around:{radius},{lat},{lon});way["amenity"="pharmacy"](around:{radius},{lat},{lon});)'
+          };
+          
+          const queryTemplate = osmQueries[searchTerm.toLowerCase()] || `(node[~"name"~"${searchTerm}",i](around:{radius},{lat},{lon});way[~"name"~"${searchTerm}",i](around:{radius},{lat},{lon});)`;
+          
+          // Single smart search with 10km radius (balance between coverage and API limits)
+          const searchRadius = 10000; // 10km
+          const osmQuery = queryTemplate.replace(/{radius}/g, searchRadius).replace(/{lat}/g, lat).replace(/{lon}/g, lon);
+          const overpassQuery = `[out:json][timeout:30];${osmQuery};out body 50;`;
+          const overpassUrl = 'https://overpass-api.de/api/interpreter';
+          
+          console.log(`Searching within ${searchRadius/1000}km radius...`);
+          
+          // Add delay to avoid rate limiting (wait 1 second between searches)
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const response = await fetch(overpassUrl, {
+            method: 'POST',
+            body: overpassQuery,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          });
+          
+          if (!response.ok) {
+            if (response.status === 429) {
+              throw new Error('Rate limit reached. Please wait a moment and try again.');
+            }
+            throw new Error(`Overpass API error: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          console.log(`Found ${data.elements.length} results within ${searchRadius/1000}km`);
+          
+          // Store elements with their search radius
+          const allBusinesses = data.elements.map(el => {
+            el._searchRadius = searchRadius;
+            return el;
+          });
+          
+          // Calculate distance helper function
+          function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Distance in km
+          }
+          
+          // Convert OSM data to business chips, filtering by country
+          const businesses = allBusinesses
+            .filter(element => {
+              if (!element.tags || !element.tags.name) return false;
+              
+              // Filter by country if available
+              const elemCountry = element.tags['addr:country']?.toUpperCase();
+              if (country && elemCountry && elemCountry !== country) {
+                console.log(`Filtering out ${element.tags.name} - wrong country: ${elemCountry} != ${country}`);
+                return false;
+              }
+              
+              return true;
+            })
+            .map(element => {
+              const tags = element.tags;
+              const name = tags.name;
+              
+              // Build address
+              const parts = [];
+              if (tags['addr:housenumber']) parts.push(tags['addr:housenumber']);
+              if (tags['addr:street']) parts.push(tags['addr:street']);
+              if (tags['addr:city']) parts.push(tags['addr:city']);
+              const addressLine = parts.length > 0 ? parts.join(' ') : 'Address unavailable';
+              
+              // Get contact info
+              const phone = tags.phone || tags['contact:phone'] || tags['contact:mobile'] || '';
+              const website = tags.website || tags['contact:website'] || '';
+              
+              // Build map URL
+              const elLat = element.lat || (element.center && element.center.lat);
+              const elLon = element.lon || (element.center && element.center.lon);
+              const mapUrl = elLat && elLon 
+                ? `https://www.openstreetmap.org/?mlat=${elLat}&mlon=${elLon}#map=19/${elLat}/${elLon}`
+                : '#';
+              
+              // Calculate actual distance from venue
+              const distance = elLat && elLon ? calculateDistance(lat, lon, elLat, elLon) : null;
+              
+              return {
+                name: name,
+                address: addressLine,
+                phone: phone,
+                url: mapUrl,
+                website: website,
+                rating: null,
+                type: searchTerm,
+                color: color,
+                lat: elLat,
+                lon: elLon,
+                distance: distance
+              };
+            });
+          
+          console.log(`Processed ${businesses.length} businesses with names`);
+          
+          if (businesses.length === 0) {
+            // Return empty array instead of throwing error - let UI handle gracefully
+            return [];
+          }
+          
+          // Update map to zoom to first result if available
+          if (businesses.length > 0 && businesses[0].lat && businesses[0].lon && mapEmbed) {
+            const topLat = businesses[0].lat;
+            const topLon = businesses[0].lon;
+            const zoomedMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${topLon-0.01},${topLat-0.01},${topLon+0.01},${topLat+0.01}&layer=mapnik&marker=${topLat},${topLon}`;
+            
+            mapEmbed.innerHTML = `
+              <iframe 
+                width="100%" 
+                height="100%" 
+                frameborder="0" 
+                scrolling="no" 
+                marginheight="0" 
+                marginwidth="0" 
+                src="${zoomedMapUrl}" 
+                style="border:none;border-radius:6px">
+              </iframe>
+            `;
+          }
+          
+          return businesses;
+          
+        } catch (error) {
+          console.error('Error fetching REAL business data:', error);
+          throw error; // Re-throw to show error to user
+        }
+      }
+      
+      // Generate realistic mock search results with business details
+      function generateMockResults(searchTerm, address) {
+        const colorMap = {
+          'hotels': '#9333ea',
+          'music stores': '#dc2626',
+          'rehearsal studios': '#ea580c',
+          'bars': '#ca8a04',
+          'restaurants': '#16a34a',
+          'cafes': '#0891b2',
+          'gas stations': '#2563eb',
+          'print shops': '#7c3aed',
+          'guitar repair': '#db2777',
+          'pharmacies': '#059669'
+        };
+        
+        const businessNames = {
+          'hotels': ['Comfort Inn', 'Holiday Express', 'Hampton Inn', 'Best Western', 'Marriott', 'Hilton Garden', 'La Quinta', 'Courtyard'],
+          'music stores': ['Guitar Center', 'Sam Ash', 'Long & McQuade', 'Music & Arts', 'Sweetwater', 'Local Music Shop', 'The Music Store', 'Sound House'],
+          'rehearsal studios': ['Studio One Rehearsal', 'Band Practice Space', 'The Jam Room', 'Sound Studio', 'Rehearsal Factory', 'Music Lab', 'Practice HQ'],
+          'bars': ['Irish Pub', 'Sports Bar & Grill', 'Craft Beer Hall', 'The Tavern', 'Downtown Bar', 'Ale House', 'Brewery Taproom'],
+          'restaurants': ['Italian Bistro', 'Steakhouse', 'Sushi Bar', 'Mexican Cantina', 'Pizza Kitchen', 'Asian Fusion', 'BBQ Joint'],
+          'cafes': ['Starbucks', 'Local Coffee Co.', 'Espresso Bar', 'The Daily Grind', 'Bean & Brew', 'Coffee House', 'Artisan Café'],
+          'gas stations': ['Shell', 'Chevron', 'BP', 'Exxon', 'Mobil', '7-Eleven', 'Circle K'],
+          'print shops': ['FedEx Office', 'Staples', 'Office Depot', 'UPS Store', 'Kinko\'s', 'Local Print Shop'],
+          'guitar repair': ['Guitar Tech Shop', 'Luthier Workshop', 'String & Fret', 'Guitar Hospital', 'Repair Station'],
+          'pharmacies': ['Walgreens', 'CVS', 'Rite Aid', 'Local Pharmacy', 'HealthMart']
+        };
+        
+        const streetSuffixes = ['Street', 'Avenue', 'Boulevard', 'Drive', 'Lane', 'Road', 'Way'];
+        const streetNames = ['Main', 'Oak', 'Maple', 'Cedar', 'Pine', 'Washington', 'Lincoln', 'Jefferson', 'Madison', 'Park'];
+        
+        const color = colorMap[searchTerm.toLowerCase()] || '#0ea5e9';
+        const names = businessNames[searchTerm.toLowerCase()] || ['Local Business'];
+        
+        // Generate realistic results
+        const results = [];
+        const count = Math.floor(Math.random() * 6) + 5; // 5-10 results
+        
+        for (let i = 0; i < count; i++) {
+          const name = names[Math.floor(Math.random() * names.length)] + (names.length > 1 ? ` #${i + 1}` : ` ${i + 1}`);
+          const streetNum = Math.floor(Math.random() * 9000) + 100;
+          const street = streetNames[Math.floor(Math.random() * streetNames.length)];
+          const suffix = streetSuffixes[Math.floor(Math.random() * streetSuffixes.length)];
+          const addressLine = `${streetNum} ${street} ${suffix}`;
+          
+          // Generate phone number
+          const areaCode = Math.floor(Math.random() * 900) + 100;
+          const prefix = Math.floor(Math.random() * 900) + 100;
+          const lineNum = Math.floor(Math.random() * 9000) + 1000;
+          const phone = `(${areaCode}) ${prefix}-${lineNum}`;
+          
+          // Random rating
+          const rating = (Math.random() * 2 + 3).toFixed(1); // 3.0 - 5.0
+          
+          const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(name + ' ' + addressLine + ' ' + address)}`;
+          
+          results.push({
+            name: name,
+            address: addressLine,
+            phone: phone,
+            url: searchUrl,
+            rating: parseFloat(rating),
+            type: searchTerm,
+            color: color
+          });
+        }
+        
+        return results;
+      }
+      
+      // Drop zone handlers
+      if (interestsDropZone) {
+        interestsDropZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+          interestsDropZone.classList.add('drag-over');
+        });
+        
+        interestsDropZone.addEventListener('dragleave', () => {
+          interestsDropZone.classList.remove('drag-over');
+        });
+        
+        interestsDropZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          interestsDropZone.classList.remove('drag-over');
+          
+          try {
+            // Try to get JSON data first
+            let data = null;
+            const jsonData = e.dataTransfer.getData('application/json');
+            if (jsonData) {
+              data = JSON.parse(jsonData);
+            } else {
+              // Fallback to text/plain
+              const textData = e.dataTransfer.getData('text/plain');
+              if (textData) {
+                try {
+                  data = JSON.parse(textData);
+                } catch (e) {
+                  console.log('Could not parse text data as JSON');
+                  return;
+                }
+              }
+            }
+            
+            if (data && data.name) {
+              // Check for duplicates
+              const existing = Array.from(interestsDropZone.querySelectorAll('.tour-interest-chip'));
+              const isDuplicate = existing.some(chip => {
+                try {
+                  const chipData = JSON.parse(chip.dataset.chipData);
+                  return chipData.name === data.name && chipData.address === data.address;
+                } catch (e) {
+                  return false;
+                }
+              });
+              
+              if (!isDuplicate) {
+                const chip = createInterestChip(data);
+                if (interestsPlaceholder) interestsPlaceholder.style.display = 'none';
+                interestsDropZone.appendChild(chip);
+                saveInterests();
+                updateInterestsPlaceholder();
+              }
+            }
+          } catch (err) {
+            console.error('Drop error:', err);
+          }
+        });
+      }
+      
+      // Save interests to tour date
+      function saveInterests() {
+        const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+        if (!tourDate) return;
+        
+        const chips = Array.from(interestsDropZone.querySelectorAll('.tour-interest-chip'));
+        tourDate.interests = chips.map(chip => {
+          try {
+            return JSON.parse(chip.dataset.chipData);
+          } catch (e) {
+            return null;
+          }
+        }).filter(x => x !== null);
+        
+        saveAll();
+      }
+      
+      // Load interests for selected tour date
+      function loadInterests() {
+        if (!interestsDropZone) return;
+        
+        // Clear existing chips (except placeholder)
+        Array.from(interestsDropZone.querySelectorAll('.tour-interest-chip')).forEach(chip => chip.remove());
+        
+        const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+        if (!tourDate || !tourDate.interests || tourDate.interests.length === 0) {
+          updateInterestsPlaceholder();
+          return;
+        }
+        
+        tourDate.interests.forEach(interestData => {
+          const chip = createInterestChip(interestData);
+          interestsDropZone.appendChild(chip);
+        });
+        
+        updateInterestsPlaceholder();
+      }
+      
+      // Update placeholder visibility
+      function updateInterestsPlaceholder() {
+        if (!interestsPlaceholder) return;
+        const hasChips = interestsDropZone.querySelectorAll('.tour-interest-chip').length > 0;
+        interestsPlaceholder.style.display = hasChips ? 'none' : '';
+      }
+      
+      // Clear all interests
+      if (clearInterestsBtn) {
+        clearInterestsBtn.addEventListener('click', () => {
+          if (!confirm('Clear all saved places for this date?')) return;
+          
+          Array.from(interestsDropZone.querySelectorAll('.tour-interest-chip')).forEach(chip => chip.remove());
+          saveInterests();
+          updateInterestsPlaceholder();
+        });
+      }
+      
+      // Custom search buttons storage
+      let customSearchButtons = [];
+      try {
+        const stored = localStorage.getItem(STORE_KEY);
+        if(stored){
+          const data = JSON.parse(stored);
+          customSearchButtons = Array.isArray(data.customSearchButtons) ? data.customSearchButtons : [];
+        }
+      } catch(e) {
+        customSearchButtons = [];
+      }
+      
+      // Ensure it's always an array before rendering
+      if(!Array.isArray(customSearchButtons)) customSearchButtons = [];
+      
+      // Render custom search buttons
+      function renderCustomSearchButtons() {
+        const container = document.getElementById('customSearchButtons');
+        if(!container) return;
+        
+        container.innerHTML = '';
+        if(!Array.isArray(customSearchButtons)) customSearchButtons = [];
+        customSearchButtons.forEach((term, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.style.cssText = 'padding:3px 6px;font-size:9px;position:relative;padding-right:18px';
+          btn.textContent = term;
+          btn.dataset.search = term;
+          
+          // Remove button
+          const removeBtn = document.createElement('span');
+          removeBtn.textContent = '×';
+          removeBtn.style.cssText = 'position:absolute;right:4px;top:50%;transform:translateY(-50%);cursor:pointer;font-weight:bold;color:#ef4444';
+          removeBtn.onclick = (e) => {
+            e.stopPropagation();
+            if(confirm(`Remove "${term}" button?`)){
+              customSearchButtons.splice(idx, 1);
+              saveAll();
+              renderCustomSearchButtons();
+            }
+          };
+          
+          btn.appendChild(removeBtn);
+          container.appendChild(btn);
+          
+          // Add click handler
+          btn.addEventListener('click', () => {
+            const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+            let addressToUse = (tourAddressInput && tourAddressInput.value) || (tourDate && tourDate.address) || gig.address || gig.venue || '';
+            
+            if (!addressToUse) {
+              alert('Please enter a venue address in the Tour date details above');
+              return;
+            }
+            
+            loadSearchInline(term, addressToUse);
+          });
+        });
+      }
+      
+      // Add custom search button
+      const tourAddCustomBtn = document.getElementById('tourAddCustomBtn');
+      if(tourAddCustomBtn){
+        tourAddCustomBtn.addEventListener('click', () => {
+          const term = prompt('Enter search term (e.g., "Laundromat", "Bike Shops", etc.):');
+          if(term && term.trim()){
+            customSearchButtons.push(term.trim());
+            saveAll();
+            renderCustomSearchButtons();
+          }
+        });
+      }
+      
+      // Custom search from input field
+      const tourSearchBtn = document.getElementById('tourSearchBtn');
+      const tourSearchInput = document.getElementById('tourSearchLocation');
+      if(tourSearchBtn && tourSearchInput){
+        tourSearchBtn.addEventListener('click', () => {
+          const searchTerm = tourSearchInput.value.trim();
+          if(!searchTerm){
+            alert('Please enter a search term');
+            return;
+          }
+          
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          let addressToUse = (tourAddressInput && tourAddressInput.value) || (tourDate && tourDate.address) || gig.address || gig.venue || '';
+          
+          if (!addressToUse) {
+            alert('Please enter a venue address in the Tour date details above');
+            return;
+          }
+          
+          loadSearchInline(searchTerm, addressToUse);
+        });
+        
+        // Enter key to search
+        tourSearchInput.addEventListener('keydown', (e) => {
+          if(e.key === 'Enter'){
+            tourSearchBtn.click();
+          }
+        });
+      }
+      
+      // Quick service search buttons
+      document.querySelectorAll('[data-search]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const searchTerm = btn.dataset.search;
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          
+          // Get address from: 1) current form input, 2) tour date, 3) main gig
+          let addressToUse = (tourAddressInput && tourAddressInput.value) || (tourDate && tourDate.address) || gig.address || gig.venue || '';
+          
+          if (!addressToUse) {
+            alert('Please enter a venue address in the Tour date details above');
+            return;
+          }
+          
+          loadSearchInline(searchTerm, addressToUse);
+        });
+      });
+      
+      // Initialize custom buttons
+      renderCustomSearchButtons();
+      
+
+      
+      // Update selectTourDate to load interests
+      const originalSelectTourDate = selectTourDate;
+      selectTourDate = function(tourDate) {
+        originalSelectTourDate(tourDate);
+        loadInterests();
+      };
+      
+      // Auto-sync: when gig.date changes, switch to matching tour date
+      let lastGigDate = gig.date || '';
+      function checkGigDateChange(){
+        const currentGigDate = gig.date || '';
+        if(currentGigDate && currentGigDate !== lastGigDate){
+          lastGigDate = currentGigDate;
+          console.log(`Gig date changed to ${currentGigDate}, checking for matching tour date...`);
+          
+          // Find or create matching tour date
+          let matchingTourDate = tourDates.find(td => td.date === currentGigDate);
+          
+          if(!matchingTourDate){
+            // Create new tour date for this gig date
+            console.log(`Creating new tour date for ${currentGigDate}`);
+            matchingTourDate = {
+              id: generateId(),
+              date: currentGigDate,
+              venue: gig.venue || '',
+              address: gig.address || '',
+              loadIn: '',
+              showTime: '',
+              band: gig.band || '',
+              setlistType: 'current',
+              stagePlotType: 'current',
+              itinerary: [],
+              interests: []
+            };
+            tourDates.push(matchingTourDate);
+            saveAll();
+          }
+          
+          // Switch to this tour date
+          console.log(`Switching to tour date: ${matchingTourDate.id}`);
+          selectTourDate(matchingTourDate);
+          renderTimeline();
+        }
+      }
+      
+      // Check for gig date changes periodically
+      setInterval(checkGigDateChange, 2000);
+      
+      // Initialize
+      renderTimeline();
+      renderDateHeader(); // Render global date strip
+      checkGigDateChange(); // Initial check
+      
+      // Load first tour date or today on startup
+      if(tourDates && tourDates.length > 0){
+        // Find first upcoming or current tour date
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const upcomingDate = tourDates.find(td => {
+          const d = new Date(td.date);
+          d.setHours(0,0,0,0);
+          return d >= today;
+        });
+        const firstDate = upcomingDate || tourDates[0];
+        if(firstDate){
+          gig.date = firstDate.date;
+          selectedTourDateId = firstDate.id;
+          loadDateData(firstDate);
+          selectTourDate(firstDate);
+          renderDateHeader();
+        }
+      }
+      
+      // Show Calendar tab on load
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      const calTab = document.querySelector('.tab[data-tab="tour"]');
+      if(calTab) calTab.classList.add('active');
+      ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+      const tourEl = document.getElementById('tour');
+      if(tourEl) tourEl.style.display='block';
+      
+      // Activity chip drag handlers
+      function initActivityChips(){
+        const chips = document.querySelectorAll('.activity-chip');
+        chips.forEach(chip => {
+          chip.addEventListener('dragstart', (e) => {
+            const activity = chip.dataset.activity;
+            const duration = chip.dataset.duration;
+            const color = chip.dataset.color;
+            
+            e.dataTransfer.setData('activity', activity);
+            e.dataTransfer.setData('duration', duration);
+            e.dataTransfer.setData('color', color);
+            e.dataTransfer.effectAllowed = 'copy';
+            
+            chip.style.opacity = '0.5';
+          });
+          
+          chip.addEventListener('dragend', (e) => {
+            chip.style.opacity = '1';
+          });
+        });
+      }
+      
+      // Initialize chip drag handlers
+      initActivityChips();
+      
+    })();
+
     function buildSheet(target='sheet'){
       const isInline = (target!=='sheet');
       const sheet = document.getElementById(target);
@@ -3083,6 +6927,18 @@
       
       hdr.appendChild(b);
       hdr.appendChild(v);
+      
+      // Add date display if exists
+      if(gig.date){
+        // Parse YYYY-MM-DD as local date (not UTC) to avoid timezone shift
+        const [y, m, d] = gig.date.split('-').map(Number);
+        const localDate = new Date(y, m - 1, d);
+        const dateEl = el('div','sub', localDate.toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'}));
+        dateEl.style.fontWeight = '700';
+        dateEl.style.color = '#111';
+        hdr.appendChild(dateEl);
+      }
+      
       hdr.appendChild(sub);
       hdr.appendChild(n);
 
@@ -3734,6 +7590,7 @@
         const idx=act.idx; 
         if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){ 
           setlist.splice(idx,1); 
+          currentDateDirty = true;
           rebuildPreview(); 
           saveAll(); 
         } 
@@ -5003,8 +8860,116 @@
     lbl.setAttribute('font-size',String(size));
   }
 
-    // selection + inspector
-    let selectedNode=null;
+    // selection + inspector (selectedNode declared at top level before openStageModal)
+    function selectNode(g){
+      // Remove any existing selection highlight across both SVGs
+      document.querySelectorAll('#stageSvgFull g[data-draggable].selected, #stageSvg g[data-draggable].selected').forEach(el=> el.classList.remove('selected'));
+      selectedNode=g||null;
+      const nameInp=document.getElementById('selName');
+      const sizeInp=document.getElementById('selSize');
+      const showLabelChk=document.getElementById('selShowLabel');
+      const inspector=document.getElementById('stageInspector');
+      const delBtn=document.getElementById('delSel');
+      const dupBtn=document.getElementById('dupSel');
+      const rotInp=document.getElementById('selRotation');
+      const rotVal=document.getElementById('selRotationValue');
+      const labelSizeInp=document.getElementById('selLabelSize');
+      const labelSizeControls=document.getElementById('labelSizeControls');
+      if(!g){
+        if(inspector)inspector.style.display='none';
+        return;
+      }
+      if(inspector)inspector.style.display='flex';
+      g.classList.add('selected');
+      const lbl=g.querySelector('[data-role="label"]');
+      if(nameInp)nameInp.value=(lbl?lbl.textContent:'')||g.dataset.key||'';
+      if(sizeInp)sizeInp.value=g.dataset.scale||'1';
+      if(showLabelChk)showLabelChk.checked=(g.dataset.showLabel==='1');
+      if(labelSizeControls)labelSizeControls.style.display=(g.dataset.showLabel==='1')?'flex':'none';
+      if(labelSizeInp&&lbl)labelSizeInp.value=lbl.getAttribute('font-size')||'16';
+      if(rotInp)rotInp.value=g.dataset.rotation||'0';
+      if(rotVal)rotVal.textContent=(g.dataset.rotation||'0')+'°';
+      
+      // Build and show signal chain display
+      buildConnectionChain(g, inspector);
+      if(delBtn){
+        delBtn.onclick=()=>{
+          if(!selectedNode)return;
+          const confirmed=confirm('Delete this item?');
+          if(confirmed){selectedNode.remove();selectNode(null);refreshStageLegend();refreshCables(selectedNode.closest('svg'));saveAll();}
+        };
+      }
+      if(dupBtn){
+        dupBtn.onclick=()=>{
+          if(!selectedNode)return;
+          const svg=selectedNode.closest('svg');
+          const clone=selectedNode.cloneNode(true);
+          const x=parseFloat(clone.dataset.x||'0');
+          const y=parseFloat(clone.dataset.y||'0');
+          clone.dataset.x=String(x+30);
+          clone.dataset.y=String(y+30);
+          applyTransform(clone);
+          svg.appendChild(clone);
+          enableSvgDrag(clone);
+          selectNode(clone);
+          refreshStageLegend();
+          refreshCables(svg);
+          saveAll();
+        };
+      }
+      if(nameInp){
+        nameInp.oninput=()=>{
+          if(!selectedNode)return;
+          const val=nameInp.value;
+          const lbl=selectedNode.querySelector('[data-role="label"]');
+          if(lbl)lbl.textContent=val;
+          refreshStageLegend();
+          saveAll();
+        };
+      }
+      if(sizeInp){
+        sizeInp.oninput=()=>{
+          if(!selectedNode)return;
+          selectedNode.dataset.scale=sizeInp.value;
+          applyTransform(selectedNode);
+          const svg=selectedNode.closest('svg');
+          refreshCables(svg);
+          saveAll();
+        };
+      }
+      if(showLabelChk){
+        showLabelChk.onchange=()=>{
+          if(!selectedNode)return;
+          selectedNode.dataset.showLabel=showLabelChk.checked?'1':'0';
+          updateLabelVisibility(selectedNode);
+          if(labelSizeControls)labelSizeControls.style.display=showLabelChk.checked?'flex':'none';
+          saveAll();
+        };
+      }
+      if(labelSizeInp){
+        labelSizeInp.oninput=()=>{
+          if(!selectedNode)return;
+          const lbl=selectedNode.querySelector('[data-role="label"]');
+          if(lbl){
+            selectedNode.dataset.labelSize=labelSizeInp.value;
+            updateLabelSize(selectedNode);
+            saveAll();
+          }
+        };
+      }
+      if(rotInp){
+        rotInp.oninput=()=>{
+          if(!selectedNode)return;
+          selectedNode.dataset.rotation=rotInp.value;
+          applyTransform(selectedNode);
+          if(rotVal)rotVal.textContent=rotInp.value+'°';
+          const svg=selectedNode.closest('svg');
+          refreshCables(svg);
+          saveAll();
+        };
+      }
+    }
+    
     function bindSelection(svg){
         svg.addEventListener('click',ev=>{
           const g=ev.target.closest && ev.target.closest('g[data-draggable]');
@@ -5027,44 +8992,8 @@
         });
     }
   function ensureSelectionBindings(){ const svg=document.getElementById('stageSvgFull'); if(svg && !svg._boundSel){ bindSelection(svg); svg._boundSel=true; } }
-    function selectNode(g){
-      // Remove any existing selection highlight across both SVGs
-      document.querySelectorAll('#stageSvgFull g[data-draggable].selected, #stageSvg g[data-draggable].selected').forEach(el=> el.classList.remove('selected'));
-      selectedNode=g||null;
-      const nameInp=document.getElementById('selName');
-      const sizeInp=document.getElementById('selSize');
-      const showLabelChk=document.getElementById('selShowLabel');
-      const inspector=document.getElementById('stageInspector');
-      if(!nameInp||!sizeInp||!inspector) return;
-      
-      // Clear any existing connection chain display
-      const existingChain=inspector.querySelector('.connection-chain');
-      if(existingChain) existingChain.remove();
-      
-      if(!g){ 
-        nameInp.value=''; 
-        sizeInp.value='1'; 
-        if(showLabelChk) showLabelChk.checked=false; 
-        return; 
-      }
-      
-      g.classList.add('selected');
-      initDatasetFromTransform(g);
-      const txt=findText(g); 
-      nameInp.value=txt? (txt.textContent||'') : '';
-      sizeInp.value=g.dataset.scale||'1';
-      if(showLabelChk){ 
-        showLabelChk.checked = g.dataset.showLabel==='1'; 
-        // Show/hide label size controls
-        const labelSizeControls=document.getElementById('labelSizeControls');
-        const labelSizeSlider=document.getElementById('selLabelSize');
-        if(labelSizeControls){ labelSizeControls.style.display= showLabelChk.checked ? 'flex':'none'; }
-        if(labelSizeSlider && showLabelChk.checked){ labelSizeSlider.value=g.dataset.labelSize||'16'; }
-      }
-      
-      // Build connection chain display
-      buildConnectionChain(g, inspector);
-    }
+    
+    // selectNode function already defined above with selectedNode declaration
     
     function buildConnectionChain(selectedItem, inspector){
       const svg=selectedItem.closest('svg');
@@ -5142,6 +9071,9 @@
       // Hide standard name input
       if(nameInp) nameInp.style.display='none';
       if(selLabel) selLabel.style.display='none';
+      
+      // Remove any existing chain displays to prevent duplicates
+      inspector.querySelectorAll('.connection-chain').forEach(el => el.remove());
       
       // Create chain display (single row, no wrap) - ALWAYS shown for consistency
       const chainDiv=document.createElement('div');
@@ -5596,6 +9528,9 @@
   });
   document.getElementById('closeTech').addEventListener('click',()=> document.getElementById('modalTech').classList.remove('open'));
 
+    // Stage selection state (must be declared before openStageModal)
+    let selectedNode = null;
+
     // Fullscreen stage editor open/close (now inline, used for Stage Plot view)
     function openStageModal(){
       // ensure header reflects current gig
@@ -5603,6 +9538,24 @@
         refreshStageHeader();
         // ensure toolbox is populated
         try{ buildTools(); }catch(_){ /* ignore */ }
+        
+        // FIRST: Load stage from tourDate if available
+        if(selectedTourDateId){
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          if(tourDate && tourDate.stage && tourDate.stage.length > 0){
+            const container = document.getElementById('stageStore');
+            if(container){
+              container.innerHTML = tourDate.stage;
+              const svg = container.querySelector('svg');
+              if(svg){
+                svg.id = 'stageSvg';
+                svg.classList.add('bw');
+                try{ refreshCables(svg); }catch(e){}
+              }
+            }
+          }
+        }
+        
         // seed full editor from stored svg
         const store=document.getElementById('stageSvg');
         const full=document.getElementById('stageSvgFull');
@@ -5681,49 +9634,77 @@
     applyLabelTransform(g); // Apply saved label offsets and size
   });
   refreshCables(full);
-        bindSelection(full);
-        const modal=document.getElementById('stageModal'); if(!modal){ throw new Error('Stage modal not found'); }
-        modal.classList.add('open');
-        refreshStageLegend();
-        // Clear any persisted selection so nothing glows by default
-        selectNode(null);
-      }catch(err){
-        if(window && window.alert){ alert('Could not open Stage Plot editor. See console for details.'); }
-        if(console && console.error) console.error(err);
-      }
+  bindSelection(full);
+  const modal=document.getElementById('stageModal');
+  if(!modal){ throw new Error('Stage modal not found'); }
+  modal.classList.add('open');
+  refreshStageLegend();
+  selectNode(null);
+  }catch(err){
+    if(window && window.alert){ alert('Could not open Stage Plot editor. See console for details.'); }
+    if(console && console.error) console.error(err);
+  }
+}
+
+// closeStageModal function
+function closeStageModal(){
+  const full=document.getElementById('stageSvgFull');
+  let small=document.getElementById('stageSvg');
+  if(full){
+    if(!small){
+      const store=document.getElementById('stageStore');
+      if(store){ small=full.cloneNode(true); small.id='stageSvg'; small.classList.add('bw'); store.appendChild(small); }
     }
-    // Extract existing close logic into reusable function for toggle
-    function closeStageModal(){
-      // Sync full editor back to stored compact SVG so reopening reflects latest layout
-      const full=document.getElementById('stageSvgFull');
-      let small=document.getElementById('stageSvg');
-      if(full){
-        if(!small){
-          const store=document.getElementById('stageStore');
-          if(store){ small=full.cloneNode(true); small.id='stageSvg'; small.classList.add('bw'); store.appendChild(small); }
-        }
-        if(small){
-          Array.from(small.querySelectorAll('g[data-draggable]')).forEach(n=> n.remove());
-          Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=> small.appendChild(g.cloneNode(true)));
-          Array.from(small.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
-          Array.from(small.querySelectorAll('g[data-draggable]')).forEach(gr=>{ const lbl=findText(gr); if(lbl){ lbl.style.display = gr.dataset.showLabel==='1' ? 'block':'none'; } });
-          ensureStageMarkers(small); refreshCables(small);
-          const fullTitle=document.getElementById('stageTitleFull');
-          let smallTitle=document.getElementById('stageTitle');
-          if(!smallTitle && small){ smallTitle=small.querySelector('#stageTitle'); }
-          if(fullTitle){
-            if(smallTitle){ smallTitle.textContent=fullTitle.textContent; }
-            else {
-              const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-              t.setAttribute('id','stageTitle'); t.setAttribute('x','500'); t.setAttribute('y','36'); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','22'); t.setAttribute('font-weight','bold'); t.textContent=fullTitle.textContent; small.appendChild(t);
-            }
-          }
-          const bg=small.querySelector('rect.stage-bg'); if(bg){ bg.setAttribute('fill','#fff'); bg.setAttribute('stroke','#000'); bg.setAttribute('stroke-width','2'); }
+    if(small){
+      Array.from(small.querySelectorAll('g[data-draggable]')).forEach(n=> n.remove());
+      Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=> small.appendChild(g.cloneNode(true)));
+      Array.from(small.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
+      Array.from(small.querySelectorAll('g[data-draggable]')).forEach(gr=>{ const lbl=findText(gr); if(lbl){ lbl.style.display = gr.dataset.showLabel==='1' ? 'block':'none'; } });
+      ensureStageMarkers(small); refreshCables(small);
+      const fullTitle=document.getElementById('stageTitleFull');
+      let smallTitle=document.getElementById('stageTitle');
+      if(!smallTitle && small){ smallTitle=small.querySelector('#stageTitle'); }
+      if(fullTitle){
+        if(smallTitle){ smallTitle.textContent=fullTitle.textContent; }
+        else {
+          const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+          t.setAttribute('id','stageTitle'); t.setAttribute('x','500'); t.setAttribute('y','36'); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','22'); t.setAttribute('font-weight','bold'); t.textContent=fullTitle.textContent; small.appendChild(t);
         }
       }
-      saveAll();
-      document.getElementById('stageModal').classList.remove('open');
+      const bg=small.querySelector('rect.stage-bg'); if(bg){ bg.setAttribute('fill','#fff'); bg.setAttribute('stroke','#000'); bg.setAttribute('stroke-width','2'); }
     }
+  }
+  
+  // Save stage to current tour date immediately (use small/stored SVG which was just synced)
+  // SAFETY: Only save if we have actual stage content - never overwrite existing data with blank
+  if(selectedTourDateId){
+    const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+    if(tourDate && small){
+      // Get the synced small SVG (stageSvg) not the editor (stageSvgFull)
+      const hasItems = small.querySelectorAll('g[data-draggable]').length > 0;
+      const stageHTML = small.outerHTML;
+      // Only save if we have items OR if there was no previous stage data
+      if(hasItems || !tourDate.stage){
+        tourDate.stage = stageHTML;
+      }
+      tourDate.gearSummary = gearSummary;
+      tourDate.techNotes = techNotes;
+    }
+  }
+  
+  saveAll();
+  
+  // Update Calendar tab preview after closing stage editor
+  if(selectedTourDateId){
+    const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+    if(tourDate && typeof renderTourPreviews === 'function'){
+      setTimeout(() => renderTourPreviews(tourDate), 100);
+    }
+  }
+  
+  document.getElementById('stageModal').classList.remove('open');
+}
+
     // Unified toggle: Stage Plot <-> Lighting & FX
     function toggleStageAndNotes(){
       const stageModal=document.getElementById('stageModal');
