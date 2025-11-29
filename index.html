@@ -40,6 +40,7 @@
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:24px;z-index:80;overflow:auto;pointer-events:none}
     .modal.open{display:flex}
     .modal .modalbox{pointer-events:auto}
+    .modal .sheet{pointer-events:auto}
     .sheet{width:8.5in;max-width:100%;min-height:11in;background:white;color:var(--paperText);border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0.4in 0.5in;overflow:visible;margin:auto}
   @media (max-width:768px){
     .modal{align-items:flex-start;padding:10px}
@@ -773,6 +774,7 @@
     <div class="global-actions">
       <button class="btn" id="gearBtn" title="Show save/load tools" style="background:#065f46;border-color:#064e3b">⚙️</button>
       <button class="btn" id="openPrintOptionsTop" title="Print…" style="background:#065f46;border-color:#064e3b">Print…</button>
+      <button class="btn" id="shareBtn" title="Share Database" style="background:#065f46;border-color:#064e3b">📤 Share</button>
       <button class="btn" id="helpBtn" title="Help / Tutorial" style="background:#065f46;border-color:#064e3b">?</button>
       <div id="gearPanel" style="display:none;gap:8px;flex-wrap:wrap;margin-left:12px">
         <button class="btn" id="saveProfile" style="background:#065f46;border-color:#064e3b">Save Profile (.BAND)</button>
@@ -1511,7 +1513,15 @@
         <label class="chip"><input type="checkbox" id="pSet"> Setlist</label>
         <label class="chip"><input type="checkbox" id="pStage"> Stage Plot</label>
         <label class="chip"><input type="checkbox" id="pTech"> Lighting / Tech Notes</label>
+        <label class="chip"><input type="checkbox" id="pLyrics"> Lyrics</label>
+        <label class="chip"><input type="checkbox" id="pItinerary"> Itinerary</label>
         <div class="muted">Select one or more. Each prints separately.</div>
+        
+        <!-- Song selector for lyrics (shown when pLyrics is checked) -->
+        <div id="lyricsSongSelector" style="display:none;margin-top:10px;padding:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;max-height:200px;overflow-y:auto">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px">Select songs to print lyrics:</div>
+          <div id="lyricsSongList" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
       </div>
       <div class="tools" style="justify-content:flex-end">
         <button class="btn" id="doPrint">Print Selected</button>
@@ -7268,8 +7278,30 @@
       const moodSel=document.getElementById('poolMood');
       const searchInput=document.getElementById('poolSearch');
       if(!pO || !pC) return;
+      
       // Allow dropping items from set back into the pool to remove them
-      [pO,pC,pB].forEach(el=>{ if(!el) return; el.addEventListener('dragover',e=> e.preventDefault()); el.addEventListener('drop',e=>{ e.preventDefault(); const idxRaw=e.dataTransfer.getData('text/x-set-index'); if(idxRaw){ const idx=parseInt(idxRaw,10); if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){ setlist.splice(idx,1); rebuildPreview(); } } }); });
+      // Only add listeners once per element to prevent duplicate event handlers
+      [pO,pC,pB].forEach(el=>{ 
+        if(!el) return;
+        if(!el.dataset.dropListenerAdded){
+          el.dataset.dropListenerAdded = 'true';
+          el.addEventListener('dragover',e=> e.preventDefault());
+          el.addEventListener('drop',e=>{ 
+            e.preventDefault();
+            e.stopPropagation(); // Prevent event bubbling to parent handlers
+            const idxRaw=e.dataTransfer.getData('text/x-set-index');
+            if(idxRaw){
+              const idx=parseInt(idxRaw,10);
+              if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){
+                setlist.splice(idx,1); // Remove only the one item
+                rebuildPreview();
+                saveAll();
+              }
+            }
+          });
+        }
+      });
+      
       pO.innerHTML=''; pC.innerHTML=''; if(pB) pB.innerHTML='';
       if(!db.length){ pO.textContent='No songs.'; pC.textContent=''; return; }
       const usedIds=new Set(setlist.filter(x=>x.type==='song').map(x=>x.id));
@@ -7911,19 +7943,46 @@
     if(closePoolBtn && poolFly){ closePoolBtn.addEventListener('click',()=> poolFly.classList.remove('open')); }
     window.addEventListener('scroll',()=>{ if(poolFly && poolFly.classList.contains('open')) positionPool(); }, {passive:true});
     window.addEventListener('resize',()=>{ if(poolFly && poolFly.classList.contains('open')) positionPool(); });
-    if(poolFly){
+    if(poolFly && !poolFly.dataset.dropListenerAdded){
+      poolFly.dataset.dropListenerAdded = 'true';
       poolFly.addEventListener('dragover',e=> e.preventDefault());
-      poolFly.addEventListener('drop',e=>{ e.preventDefault(); const idxRaw=e.dataTransfer.getData('text/x-set-index'); if(idxRaw){ const idx=parseInt(idxRaw,10); if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){ setlist.splice(idx,1); // remove ONLY dragged item
-        // If encore header now orphaned (no songs after it) remove header only
-        const encIdx=setlist.findIndex(x=>x.type==='encore'); if(encIdx>-1){ const anyAfter=setlist.slice(encIdx+1).some(x=>x.type==='song'); if(!anyAfter){ setlist.splice(encIdx,1); } }
-        rebuildPreview(); saveAll(); }
+      poolFly.addEventListener('drop',e=>{ 
+        e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
+        const idxRaw=e.dataTransfer.getData('text/x-set-index');
+        if(idxRaw){
+          const idx=parseInt(idxRaw,10);
+          if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){
+            setlist.splice(idx,1); // remove ONLY dragged item
+            // If encore header now orphaned (no songs after it) remove header only
+            const encIdx=setlist.findIndex(x=>x.type==='encore');
+            if(encIdx>-1){
+              const anyAfter=setlist.slice(encIdx+1).some(x=>x.type==='song');
+              if(!anyAfter){ setlist.splice(encIdx,1); }
+            }
+            rebuildPreview();
+            saveAll();
+          }
         }
       });
     }
     // Also allow dropping onto the embedded pool column to remove from set
-    if(poolCol){
+    if(poolCol && !poolCol.dataset.dropListenerAdded){
+      poolCol.dataset.dropListenerAdded = 'true';
       poolCol.addEventListener('dragover',e=> e.preventDefault());
-      poolCol.addEventListener('drop',e=>{ e.preventDefault(); const idxRaw=e.dataTransfer.getData('text/x-set-index'); if(idxRaw){ const idx=parseInt(idxRaw,10); if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){ setlist.splice(idx,1); rebuildPreview(); } } });
+      poolCol.addEventListener('drop',e=>{ 
+        e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
+        const idxRaw=e.dataTransfer.getData('text/x-set-index');
+        if(idxRaw){
+          const idx=parseInt(idxRaw,10);
+          if(Number.isInteger(idx) && idx>=0 && idx<setlist.length){
+            setlist.splice(idx,1); // Remove only the one item
+            rebuildPreview();
+            saveAll();
+          }
+        }
+      });
     }
     // Initial pool render (kept ready; open with button)
     // Hook pool controls if present
@@ -10091,23 +10150,128 @@ function closeStageModal(){
     const iconSave=document.getElementById('iconSave');
     const iconCancel=document.getElementById('iconCancel');
     let iconDrawing=false; let iconStrokes=[]; let currentStroke=null;
-    function openIconModal(){ if(iconModal){ iconModal.style.display='block'; iconModal.classList.add('open'); iconStrokes=[]; redrawIcon(); } }
-    function closeIconModal(){ if(iconModal){ iconModal.classList.remove('open'); iconModal.style.display='none'; } }
+    function openIconModal(){ 
+      if(iconModal){ 
+        iconModal.style.display='flex'; 
+        iconModal.classList.add('open'); 
+        iconStrokes=[]; 
+        redrawIcon();
+      }
+    }
+    function closeIconModal(){ 
+      if(iconModal){ 
+        iconModal.classList.remove('open'); 
+        iconModal.style.display='none';
+        iconStrokes = [];
+        if(iconCanvas){
+          const ctx = iconCanvas.getContext('2d');
+          ctx.clearRect(0, 0, iconCanvas.width, iconCanvas.height);
+        }
+      }
+    }
+    
+    // Close modal when clicking backdrop
+    if(iconModal){
+      iconModal.addEventListener('click', (e) => {
+        if(e.target === iconModal){
+          closeIconModal();
+        }
+      });
+    }
     function redrawIcon(){ if(!iconCanvas) return; const ctx=iconCanvas.getContext('2d'); ctx.clearRect(0,0,iconCanvas.width,iconCanvas.height); ctx.lineJoin='round'; ctx.lineCap='round'; ctx.strokeStyle='#000'; iconStrokes.forEach(st=>{ ctx.lineWidth=st.w; ctx.beginPath(); st.pts.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); }); ctx.stroke(); }); }
-    function classifyStroke(pts){ if(pts.length<4) return 'line'; const first=pts[0], last=pts[pts.length-1]; const minX=Math.min(...pts.map(p=>p.x)), maxX=Math.max(...pts.map(p=>p.x)); const minY=Math.min(...pts.map(p=>p.y)), maxY=Math.max(...pts.map(p=>p.y)); const w=maxX-minX, h=maxY-minY; const closeDist=Math.hypot(last.x-first.x,last.y-first.y); const pathLen=pts.reduce((a,p,i)=> i? a+Math.hypot(p.x-pts[i-1].x,p.y-pts[i-1].y):0,0); if(pts.length<12) return 'line'; if(closeDist < Math.max(6,0.15*Math.max(w,h))){ const aspect=w/h; if(aspect>0.8 && aspect<1.25){ return 'ellipse'; } if(Math.abs(w-h)/Math.max(w,h) < 0.25){ return 'rect'; } }
-      return 'line'; }
+    function classifyStroke(pts){ 
+      if(pts.length<8) return 'line';
+      const first=pts[0], last=pts[pts.length-1];
+      const minX=Math.min(...pts.map(p=>p.x)), maxX=Math.max(...pts.map(p=>p.x));
+      const minY=Math.min(...pts.map(p=>p.y)), maxY=Math.max(...pts.map(p=>p.y));
+      const w=maxX-minX, h=maxY-minY;
+      const closeDist=Math.hypot(last.x-first.x,last.y-first.y);
+      
+      // Must be a closed shape
+      if(closeDist > Math.max(30, 0.2*Math.max(w,h))) return 'line';
+      if(pts.length<12) return 'line';
+      
+      // Look for concentrated direction changes (corners)
+      // Group nearby angle changes together as one corner
+      let cornerRegions = [];
+      const minCornerAngle = Math.PI/4; // 45 degrees
+      
+      for(let i=5; i<pts.length-5; i++){
+        const dx1 = pts[i].x - pts[i-5].x;
+        const dy1 = pts[i].y - pts[i-5].y;
+        const dx2 = pts[i+5].x - pts[i].x;
+        const dy2 = pts[i+5].y - pts[i].y;
+        
+        const len1 = Math.hypot(dx1, dy1);
+        const len2 = Math.hypot(dx2, dx2);
+        if(len1 < 10 || len2 < 10) continue;
+        
+        const angle1 = Math.atan2(dy1, dx1);
+        const angle2 = Math.atan2(dy2, dx2);
+        let diff = Math.abs(angle2 - angle1);
+        if(diff > Math.PI) diff = 2*Math.PI - diff;
+        
+        if(diff > minCornerAngle){
+          // Check if this is near an existing corner region
+          const nearExisting = cornerRegions.some(c => Math.abs(i - c) < 15);
+          if(!nearExisting){
+            cornerRegions.push(i);
+          }
+        }
+      }
+      
+      // 3-5 distinct corner regions = rectangle
+      if(cornerRegions.length >= 3 && cornerRegions.length <= 5){
+        return 'rect';
+      }
+      
+      // Smooth path with 0-2 corners = circle/ellipse
+      if(cornerRegions.length <= 2){
+        const aspect = w/h;
+        if(aspect > 0.5 && aspect < 2.0){
+          return 'ellipse';
+        }
+      }
+      
+      return 'line';
+    }
     function normalizeStrokes(){ // replace rough shapes with ideal forms
       iconStrokes=iconStrokes.map(st=>{ const kind=classifyStroke(st.pts); if(kind==='line'){ return st; } const minX=Math.min(...st.pts.map(p=>p.x)), maxX=Math.max(...st.pts.map(p=>p.x)); const minY=Math.min(...st.pts.map(p=>p.y)), maxY=Math.max(...st.pts.map(p=>p.y)); if(kind==='rect'){ return {w:st.w, pts:[{x:minX,y:minY},{x:maxX,y:minY},{x:maxX,y:maxY},{x:minX,y:maxY},{x:minX,y:minY}]}; } if(kind==='ellipse'){ const cx=(minX+maxX)/2, cy=(minY+maxY)/2; const rx=(maxX-minX)/2, ry=(maxY-minY)/2; const steps=40; const pts=[]; for(let i=0;i<=steps;i++){ const a=(i/steps)*Math.PI*2; pts.push({x:cx+rx*Math.cos(a), y:cy+ry*Math.sin(a)}); } return {w:st.w, pts}; } return st; }); }
     function iconPointerDown(x,y){ iconDrawing=true; currentStroke={w:parseInt(iconLineWidth.value)||4, pts:[{x,y}]}; iconStrokes.push(currentStroke); redrawIcon(); }
     function iconPointerMove(x,y){ if(!iconDrawing || !currentStroke) return; currentStroke.pts.push({x,y}); redrawIcon(); }
     function iconPointerUp(){ if(!iconDrawing) return; iconDrawing=false; currentStroke=null; normalizeStrokes(); redrawIcon(); }
     if(iconCanvas){
-      iconCanvas.addEventListener('mousedown',e=>{ const r=iconCanvas.getBoundingClientRect(); iconPointerDown(e.clientX-r.left,e.clientY-r.top); });
-      window.addEventListener('mousemove',e=>{ if(!iconDrawing) return; const r=iconCanvas.getBoundingClientRect(); iconPointerMove(e.clientX-r.left,e.clientY-r.top); });
+      iconCanvas.addEventListener('mousedown',e=>{ 
+        e.preventDefault();
+        e.stopPropagation();
+        const r=iconCanvas.getBoundingClientRect(); 
+        iconPointerDown(e.clientX-r.left,e.clientY-r.top);
+      });
+      window.addEventListener('mousemove',e=>{ 
+        if(!iconDrawing) return;
+        const r=iconCanvas.getBoundingClientRect();
+        iconPointerMove(e.clientX-r.left,e.clientY-r.top);
+      });
       window.addEventListener('mouseup',()=> iconPointerUp());
-      iconCanvas.addEventListener('touchstart',e=>{ const t=e.touches[0]; if(!t) return; const r=iconCanvas.getBoundingClientRect(); iconPointerDown(t.clientX-r.left,t.clientY-r.top); e.preventDefault(); }, {passive:false});
-      iconCanvas.addEventListener('touchmove',e=>{ const t=e.touches[0]; if(!t) return; const r=iconCanvas.getBoundingClientRect(); iconPointerMove(t.clientX-r.left,t.clientY-r.top); e.preventDefault(); }, {passive:false});
-      iconCanvas.addEventListener('touchend',()=> iconPointerUp());
+      iconCanvas.addEventListener('touchstart',e=>{ 
+        e.preventDefault();
+        e.stopPropagation();
+        const t=e.touches[0];
+        if(!t) return;
+        const r=iconCanvas.getBoundingClientRect();
+        iconPointerDown(t.clientX-r.left,t.clientY-r.top);
+      }, {passive:false});
+      iconCanvas.addEventListener('touchmove',e=>{ 
+        e.preventDefault();
+        const t=e.touches[0];
+        if(!t) return;
+        const r=iconCanvas.getBoundingClientRect();
+        iconPointerMove(t.clientX-r.left,t.clientY-r.top);
+      }, {passive:false});
+      iconCanvas.addEventListener('touchend',e=>{ 
+        e.preventDefault();
+        iconPointerUp();
+      });
     }
     if(newIconBtn) newIconBtn.addEventListener('click', openIconModal);
     if(iconCancel) iconCancel.addEventListener('click', closeIconModal);
@@ -10148,10 +10312,47 @@ function closeStageModal(){
     }
     function validatePrintSelection(){
       const btn=document.getElementById('doPrint');
-      const any= document.getElementById('pSet').checked || document.getElementById('pStage').checked || document.getElementById('pTech').checked;
+      const any= document.getElementById('pSet').checked || document.getElementById('pStage').checked || document.getElementById('pTech').checked || document.getElementById('pLyrics').checked || document.getElementById('pItinerary').checked;
       btn.disabled = !any;
     }
-    ['pSet','pStage','pTech'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.addEventListener('change',validatePrintSelection); }});
+    ['pSet','pStage','pTech','pLyrics','pItinerary'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.addEventListener('change',validatePrintSelection); }});
+    
+    // Lyrics checkbox handler - show song selector when checked
+    const pLyricsCheckbox = document.getElementById('pLyrics');
+    const lyricsSongSelector = document.getElementById('lyricsSongSelector');
+    const lyricsSongList = document.getElementById('lyricsSongList');
+    if(pLyricsCheckbox && lyricsSongSelector && lyricsSongList){
+      pLyricsCheckbox.addEventListener('change', ()=>{
+        if(pLyricsCheckbox.checked){
+          // Populate song list with ALL songs from database that have lyrics
+          lyricsSongList.innerHTML = '';
+          const songsWithLyrics = db.filter(s => s.lyrics && s.lyrics.trim());
+          if(songsWithLyrics.length === 0){
+            lyricsSongList.innerHTML = '<div style="color:#9ca3af;font-size:12px">No songs with lyrics in database.</div>';
+            lyricsSongSelector.style.display = 'block';
+            return;
+          }
+          songsWithLyrics.forEach(s => {
+            const label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.songId = s.id;
+            checkbox.checked = false; // Default none selected
+            label.appendChild(checkbox);
+            const text = document.createElement('span');
+            text.textContent = `${s.title} - ${s.artist || 'Original'}`;
+            text.style.fontSize = '13px';
+            label.appendChild(text);
+            lyricsSongList.appendChild(label);
+          });
+          lyricsSongSelector.style.display = 'block';
+        } else {
+          lyricsSongSelector.style.display = 'none';
+        }
+      });
+    }
+    
     const openPrintFab=document.getElementById('openPrintOptions');
     if(openPrintFab){ openPrintFab.addEventListener('click',()=> openPrintChooser()); }
     const openPrintTop=document.getElementById('openPrintOptionsTop');
@@ -10165,6 +10366,8 @@ function closeStageModal(){
       const wantSet=document.getElementById('pSet').checked;
       const wantStage=document.getElementById('pStage').checked;
       const wantTech=document.getElementById('pTech').checked;
+      const wantLyrics=document.getElementById('pLyrics').checked;
+      const wantItinerary=document.getElementById('pItinerary').checked;
       
       // PRE-BUILD all content BEFORE printing to ensure SVGs are rendered
       try{ 
@@ -10203,6 +10406,8 @@ function closeStageModal(){
       if(wantSet) tasks.push(()=> printSetOnce());
       if(wantStage) tasks.push(()=> printStageOnce());
       if(wantTech) tasks.push(()=> printTechOnlyOnce());
+      if(wantLyrics) tasks.push(()=> printLyricsOnce());
+      if(wantItinerary) tasks.push(()=> printItineraryOnce());
       
       // Close chooser before printing to prevent it from being captured by print
       document.getElementById('printChooser').classList.remove('open');
@@ -10722,7 +10927,239 @@ function closeStageModal(){
         }
       }
     }
+    
+    async function printLyricsOnce(){
+      console.log('🖨️ LYRICS PRINT');
+      
+      // Get selected song IDs from the lyrics selector
+      const selectedSongIds = [];
+      const lyricsSongList = document.getElementById('lyricsSongList');
+      if(lyricsSongList){
+        const checkboxes = lyricsSongList.querySelectorAll('input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => {
+          if(cb.dataset.songId) selectedSongIds.push(cb.dataset.songId);
+        });
+      }
+      
+      if(selectedSongIds.length === 0){
+        alert('No songs selected for lyrics printing.');
+        return;
+      }
+      
+      // Hide all UI elements first
+      const wrap=document.querySelector('.wrap');
+      const brandBar=document.querySelector('.brand-bar');
+      const modals=document.querySelectorAll('.modal');
+      
+      if(wrap) wrap.style.display='none';
+      if(brandBar) brandBar.style.display='none';
+      modals.forEach(m => m.style.display='none');
+      
+      // Create a temporary print container
+      const printContainer = document.createElement('div');
+      printContainer.id = 'lyricsPrintContainer';
+      printContainer.style.cssText = 'width:8.5in;padding:0.25in 0.5in;font-family:system-ui,-apple-system,sans-serif;background:white;margin:0 auto';
+      
+      // Get songs directly from database and print whatever text is in the lyrics field
+      for(const id of selectedSongIds){
+        const dbSong = db.find(ds => ds.id == id);
+        if(!dbSong) continue;
+        
+        const songPage = document.createElement('div');
+        songPage.style.cssText = 'page-break-after:always;page-break-inside:avoid;padding-bottom:1in';
+        
+        const title = document.createElement('h1');
+        title.textContent = dbSong.title || 'Untitled';
+        title.style.cssText = 'font-size:20px;font-weight:bold;margin:0 0 4px 0;color:#111';
+        
+        const artist = document.createElement('h2');
+        artist.textContent = dbSong.artist || 'Original';
+        artist.style.cssText = 'font-size:14px;font-weight:600;margin:0 0 12px 0;color:#666';
+        
+        const lyrics = document.createElement('div');
+        lyrics.textContent = dbSong.lyrics || '(no lyrics)';
+        lyrics.style.cssText = 'white-space:pre-wrap;font-family:system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.5;margin:0;color:#111';
+        
+        songPage.appendChild(title);
+        songPage.appendChild(artist);
+        songPage.appendChild(lyrics);
+        printContainer.appendChild(songPage);
+      }
+      
+      document.body.appendChild(printContainer);
+      
+      await printPromise();
+      console.log('🖨️ Triggering lyrics print dialog...');
+      window.print();
+      await printPromise();
+      
+      // Cleanup
+      document.body.removeChild(printContainer);
+      if(wrap) wrap.style.display='';
+      if(brandBar) brandBar.style.display='';
+      modals.forEach(m => m.style.display='');
+      
+      console.log('✅ Lyrics print complete');
+    }
+    
+    async function printItineraryOnce(){
+      console.log('🖨️ ITINERARY PRINT');
+      
+      // Get current tour date
+      const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+      if(!tourDate){
+        alert('No tour date selected for itinerary printing.');
+        return;
+      }
+      
+      if(!tourDate.itinerary || tourDate.itinerary.length === 0){
+        alert('No itinerary items for this date.');
+        return;
+      }
+      
+      // Create a temporary print container
+      const printContainer = document.createElement('div');
+      printContainer.id = 'itineraryPrintContainer';
+      printContainer.style.cssText = 'position:fixed;top:-10000px;left:-10000px;width:8.5in;padding:0.5in;font-family:system-ui,-apple-system,sans-serif;background:white';
+      
+      // Header
+      const header = document.createElement('div');
+      header.style.cssText = 'margin-bottom:24px;border-bottom:2px solid #111;padding-bottom:12px';
+      
+      const title = document.createElement('h1');
+      title.textContent = 'Daily Itinerary';
+      title.style.cssText = 'font-size:24px;font-weight:bold;margin:0 0 8px 0;color:#111';
+      
+      const dateInfo = document.createElement('div');
+      const dateObj = new Date(tourDate.date + 'T00:00:00');
+      dateInfo.textContent = `${dateObj.toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'})} • ${tourDate.venue || 'No venue'}`;
+      dateInfo.style.cssText = 'font-size:14px;color:#666;margin-bottom:4px';
+      
+      const addressInfo = document.createElement('div');
+      addressInfo.textContent = tourDate.address || '';
+      addressInfo.style.cssText = 'font-size:12px;color:#888';
+      
+      header.appendChild(title);
+      header.appendChild(dateInfo);
+      if(tourDate.address) header.appendChild(addressInfo);
+      printContainer.appendChild(header);
+      
+      // Itinerary items
+      const items = [...tourDate.itinerary].sort((a, b) => {
+        const [aH, aM] = a.time.split(':').map(Number);
+        const [bH, bM] = b.time.split(':').map(Number);
+        return (aH * 60 + aM) - (bH * 60 + bM);
+      });
+      
+      items.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = 'margin-bottom:16px;padding:12px;border-left:4px solid #3b82f6;background:#f9fafb';
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.textContent = item.time;
+        timeDiv.style.cssText = 'font-size:14px;font-weight:bold;color:#111;margin-bottom:4px';
+        
+        const titleDiv = document.createElement('div');
+        titleDiv.textContent = item.title;
+        titleDiv.style.cssText = 'font-size:16px;font-weight:600;color:#111;margin-bottom:4px';
+        
+        const durationDiv = document.createElement('div');
+        durationDiv.textContent = `Duration: ${item.duration || 30} minutes`;
+        durationDiv.style.cssText = 'font-size:12px;color:#666;margin-bottom:4px';
+        
+        itemDiv.appendChild(timeDiv);
+        itemDiv.appendChild(titleDiv);
+        itemDiv.appendChild(durationDiv);
+        
+        if(item.notes){
+          const notesDiv = document.createElement('div');
+          notesDiv.textContent = item.notes;
+          notesDiv.style.cssText = 'font-size:12px;color:#666;margin-top:8px;font-style:italic';
+          itemDiv.appendChild(notesDiv);
+        }
+        
+        printContainer.appendChild(itemDiv);
+      });
+      
+      document.body.appendChild(printContainer);
+      
+      // Hide all UI elements
+      const wrap=document.querySelector('.wrap');
+      const brandBar=document.querySelector('.brand-bar');
+      const modals=document.querySelectorAll('.modal');
+      
+      if(wrap) wrap.style.display='none';
+      if(brandBar) brandBar.style.display='none';
+      modals.forEach(m => m.style.display='none');
+      
+      printContainer.style.position='static';
+      printContainer.style.top='';
+      printContainer.style.left='';
+      
+      await printPromise();
+      console.log('🖨️ Triggering itinerary print dialog...');
+      window.print();
+      await printPromise();
+      
+      // Cleanup
+      document.body.removeChild(printContainer);
+      if(wrap) wrap.style.display='';
+      if(brandBar) brandBar.style.display='';
+      modals.forEach(m => m.style.display='');
+      
+      console.log('✅ Itinerary print complete');
+    }
 
+    // Share Database
+    const shareBtn = document.getElementById('shareBtn');
+    if(shareBtn){ 
+      shareBtn.addEventListener('click', async ()=>{
+        var stageEl=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
+        const stage = stageEl ? stageEl.outerHTML : '';
+        const dbOut = db.map(s=>{ const {audioData, ...rest}=s||{}; return rest; });
+        const data={version:3,type:'fastfast-band', db:dbOut, setlist, gig, gearSummary, techNotes, stage};
+        const jsonStr = JSON.stringify(data,null,2);
+        const blob=new Blob([jsonStr],{type:'application/json'});
+        const filename = ((gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'profile.band');
+        
+        // Try Web Share API first (mobile-friendly)
+        if(navigator.share && navigator.canShare){
+          try{
+            const file = new File([blob], filename, {type:'application/json'});
+            const shareData = {
+              title: 'FASTFAST Setlist Database',
+              text: `Sharing ${gig.band || 'band'} profile with ${db.length} songs`,
+              files: [file]
+            };
+            if(navigator.canShare(shareData)){
+              await navigator.share(shareData);
+              console.log('✅ Shared via Web Share API');
+              return;
+            }
+          }catch(e){
+            console.log('Web Share API failed, falling back to download/email', e);
+          }
+        }
+        
+        // Fallback: Download file + offer email option
+        const url = URL.createObjectURL(blob);
+        const a=document.createElement('a'); 
+        a.href=url; 
+        a.download=filename; 
+        a.click(); 
+        URL.revokeObjectURL(url);
+        
+        // Offer email option
+        setTimeout(()=>{
+          if(confirm('File downloaded. Would you like to open your email client to share it?')){
+            const subject = encodeURIComponent(`FASTFAST Setlist: ${gig.band || 'Band'} Profile`);
+            const body = encodeURIComponent(`Hi,\n\nI'm sharing my FASTFAST Setlist database with you.\n\nDatabase contains ${db.length} songs.\n\nPlease download the attached .BAND file and load it in FASTFAST Setlist using the "Load Profile (.BAND)" button.\n\nCheers!`);
+            window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+          }
+        }, 500);
+      });
+    }
+    
     // Save/Load Profile (.BAND)
     const saveProfileBtn=document.getElementById('saveProfile');
     if(saveProfileBtn){ saveProfileBtn.addEventListener('click',()=>{
