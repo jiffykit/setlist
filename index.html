@@ -159,23 +159,78 @@
   }
 
     @media print{
-      @page { margin: 0.25in 0.35in; size: letter; }
-      body,*{background:transparent!important;overflow:visible!important}
-      .wrap{display:none}
+      /* Universal print settings - works on Windows/Mac/iOS/Android */
+      @page { 
+        margin: 0.25in 0.35in; 
+        size: letter; 
+      }
+      
+      /* Force consistent rendering across platforms */
+      body,*{
+        background:transparent!important;
+        overflow:visible!important;
+        -webkit-print-color-adjust:exact!important;
+        print-color-adjust:exact!important;
+        color-adjust:exact!important;
+      }
+      
+      /* Hide all UI chrome */
+      .wrap{display:none!important}
+      .brand-bar{display:none!important}
+      .global-actions{display:none!important}
+      .tools{display:none!important}
+      #printChooser{display:none!important}
+      #songPoolFlyout{display:none!important}
+      .print-fab{display:none!important}
+      
+      /* Show only modal content */
       .modal{position:static;display:none;background:none;padding:0;margin:0}
-      .modal.open{display:block}
-      .sheet{box-shadow:none;height:10.5in!important;min-height:10.5in!important;overflow:visible!important;padding:0.15in 0.25in!important;margin:0!important;width:100%!important;max-width:100%!important;display:flex!important;flex-direction:column!important}
+      .modal.open{display:block!important}
+      
+      /* Setlist print layout */
+      .sheet{
+        box-shadow:none!important;
+        height:10.5in!important;
+        min-height:10.5in!important;
+        overflow:visible!important;
+        padding:0.15in 0.25in!important;
+        margin:0!important;
+        width:100%!important;
+        max-width:100%!important;
+        display:flex!important;
+        flex-direction:column!important;
+      }
       .sheet.multipage{gap:0!important;height:auto!important}
-      .sheet-page{box-shadow:none!important;padding:0.15in 0.25in!important;margin:0!important;page-break-after:always;page-break-inside:avoid;height:10.5in!important;min-height:10.5in!important;display:flex!important;flex-direction:column!important}
+      .sheet-page{
+        box-shadow:none!important;
+        padding:0.15in 0.25in!important;
+        margin:0!important;
+        page-break-after:always;
+        page-break-inside:avoid;
+        height:10.5in!important;
+        min-height:10.5in!important;
+        display:flex!important;
+        flex-direction:column!important;
+      }
       .sheet-page:last-child{page-break-after:auto}
       .hdr{flex-shrink:0!important}
-      .songs{height:100%!important;min-height:0!important;flex:1!important;display:flex!important;flex-direction:column!important}
+      .songs{
+        height:100%!important;
+        min-height:0!important;
+        flex:1!important;
+        display:flex!important;
+        flex-direction:column!important;
+      }
       .total-time{flex-shrink:0!important;margin-top:auto!important}
-      .tools{display:none}
-      /* Never print the Print Options dialog */
-      #printChooser{display:none!important}
       .break.pagebreak{page-break-after:always}
-      #songPoolFlyout{display:none!important}
+      
+      /* Stage plot and tech table sizing */
+      #stagePrint svg, #stagePrint canvas{
+        max-width:100%!important;
+        height:auto!important;
+        page-break-inside:avoid!important;
+      }
+      
       /* Hide scrollbars in print */
       *::-webkit-scrollbar{display:none!important}
       *{scrollbar-width:none!important}
@@ -1523,7 +1578,7 @@
   const armedAudio = {}; // session-only object URLs keyed by song id
   // App-wide undo/redo history (setlist + stage); max 25
   const appHistory=[]; let appHistoryIndex=-1; let _restoring=false;
-  // Basic platform helpers (do NOT change desktop behavior)
+  // Enhanced platform detection for print optimization
   function isIOS(){
     const ua=(navigator.userAgent||'').toLowerCase();
     return /ipad|iphone|ipod/.test(ua) || (/macintosh/.test(ua) && 'ontouchend' in document);
@@ -1532,7 +1587,22 @@
     const ua=(navigator.userAgent||'').toLowerCase();
     return ua.includes('android');
   }
+  function isWindows(){
+    const ua=(navigator.userAgent||'').toLowerCase();
+    return ua.includes('windows') || ua.includes('win32') || ua.includes('win64');
+  }
+  function isMac(){
+    const ua=(navigator.userAgent||'').toLowerCase();
+    return ua.includes('macintosh') || ua.includes('mac os');
+  }
   function isMobileLike(){ return isIOS() || isAndroid(); }
+  
+  // Detect paper size preference (US = Letter, rest = A4)
+  function getPreferredPaperSize(){
+    const locale = navigator.language || navigator.userLanguage || 'en-US';
+    // US, Canada, Mexico use Letter (8.5x11), rest of world uses A4 (210x297mm)
+    return locale.startsWith('en-US') || locale.startsWith('en-CA') ? 'letter' : 'a4';
+  }
   function getStageHTML(){
     const el=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
     return el ? el.outerHTML : '';
@@ -9941,7 +10011,8 @@ function closeStageModal(){
     // Arrow drawing: drag anywhere in SVG (hold Shift to draw over items)
     (function(){
       let drawing=null; // {x0,y0, preview}
-      const svg=fullSvg;
+      const svg=document.getElementById('stageSvgFull');
+      if(!svg) return; // Exit if stage editor not available
       ensureStageMarkers(svg);
       function svgPointFromClient(x,y){ const pt=svg.createSVGPoint(); pt.x=x; pt.y=y; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
       function startDraw(x,y){ drawing={x0:x,y0:y, preview:document.createElementNS('http://www.w3.org/2000/svg','line')}; const ln=drawing.preview; ln.setAttribute('x1',String(x)); ln.setAttribute('y1',String(y)); ln.setAttribute('x2',String(x)); ln.setAttribute('y2',String(y)); ln.setAttribute('stroke','#000'); ln.setAttribute('stroke-dasharray','4,3'); ln.setAttribute('stroke-width','2'); ln.setAttribute('pointer-events','none'); svg.appendChild(ln); }
@@ -10089,19 +10160,56 @@ function closeStageModal(){
   document.getElementById('printTechModal').addEventListener('click',()=> openPrintChooser('tech'));
 
     async function printSelected(){
-      // Ensure content is built even if user hasn't opened views yet
-      try{ buildSheet('sheetInline'); }catch(_){}
-      try{ prepHdrTech(); }catch(_){}
+      console.log('🖨️ Starting print preparation...');
+      
       const wantSet=document.getElementById('pSet').checked;
       const wantStage=document.getElementById('pStage').checked;
       const wantTech=document.getElementById('pTech').checked;
+      
+      // PRE-BUILD all content BEFORE printing to ensure SVGs are rendered
+      try{ 
+        console.log('Building setlist sheet...');
+        buildSheet('sheetInline'); 
+      }catch(e){ console.error('Failed to build sheet:', e); }
+      
+      try{ 
+        console.log('Building tech header...');
+        prepHdrTech(); 
+      }catch(e){ console.error('Failed to build tech header:', e); }
+      
+      // If stage plot is needed, build it NOW and wait for images to load
+      if(wantStage){
+        try{
+          console.log('Pre-building stage plot...');
+          const stageOut = document.getElementById('stagePrint');
+          if(stageOut){
+            stageOut.innerHTML = '';
+            stageOut.style.display = 'block';
+            buildStageExport(stageOut);
+            
+            // Wait for all stage images to load
+            const stageSvg = stageOut.querySelector('svg');
+            if(stageSvg){
+              console.log('Loading stage images...');
+              await inlineStageImages(stageSvg);
+              console.log('✅ Stage images loaded');
+            }
+          }
+        }catch(e){ console.error('Failed to pre-build stage:', e); }
+      }
+      
+      // Build task queue
       const tasks=[];
       if(wantSet) tasks.push(()=> printSetOnce());
       if(wantStage) tasks.push(()=> printStageOnce());
       if(wantTech) tasks.push(()=> printTechOnlyOnce());
+      
       // Close chooser before printing to prevent it from being captured by print
       document.getElementById('printChooser').classList.remove('open');
+      
+      console.log(`🖨️ Executing ${tasks.length} print tasks...`);
       for(const t of tasks){ await t(); }
+      console.log('✅ All print tasks complete');
     }
     document.getElementById('doPrint').addEventListener('click',printSelected);
 
@@ -10316,51 +10424,126 @@ function closeStageModal(){
     }
 
     function printPromise(){ return new Promise(res=> setTimeout(res, 150)); }
+    
+    // Convert SVG to high-quality canvas for reliable printing across platforms
+    async function svgToCanvas(svgElement, targetWidth, targetHeight) {
+      return new Promise((resolve, reject) => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // High DPI for crisp print output
+          const scale = 2;
+          canvas.width = targetWidth * scale;
+          canvas.height = targetHeight * scale;
+          canvas.style.width = targetWidth + 'px';
+          canvas.style.height = targetHeight + 'px';
+          ctx.scale(scale, scale);
+          
+          // Serialize SVG to data URL
+          const svgData = new XMLSerializer().serializeToString(svgElement);
+          const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(svgBlob);
+          
+          const img = new Image();
+          img.onload = () => {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, targetWidth, targetHeight);
+            ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+            URL.revokeObjectURL(url);
+            resolve(canvas);
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load SVG'));
+          };
+          img.src = url;
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+    
+    // Platform-specific print preparation
+    async function preparePrintContent(modalElement, contentElement) {
+      const paperSize = getPreferredPaperSize();
+      const isLetter = paperSize === 'letter';
+      
+      // Paper dimensions in pixels at 96 DPI (standard screen DPI)
+      const paperWidth = isLetter ? 816 : 794;  // 8.5in or 210mm
+      const paperHeight = isLetter ? 1056 : 1123; // 11in or 297mm
+      
+      // Convert any SVG elements to canvas for reliable printing
+      const svgElements = contentElement.querySelectorAll('svg');
+      for (const svg of svgElements) {
+        if (isAndroid() || isIOS()) {
+          // Mobile: Convert SVG to canvas for consistent rendering
+          const rect = svg.getBoundingClientRect();
+          const canvas = await svgToCanvas(svg, rect.width, rect.height);
+          canvas.className = svg.className;
+          svg.parentNode.replaceChild(canvas, svg);
+        } else {
+          // Desktop: Keep SVG but ensure proper sizing
+          svg.style.maxWidth = '100%';
+          svg.style.height = 'auto';
+        }
+      }
+      
+      return { paperWidth, paperHeight, paperSize };
+    }
+    
     async function printSetOnce(){ 
+      console.log('🖨️ SETLIST PRINT - OS:', isWindows() ? 'Windows' : isIOS() ? 'iOS' : isAndroid() ? 'Android' : 'Other');
+      
       // Build sheet to match preview exactly (not auto-pagination)
       buildSheet('sheet'); 
       const modal=document.getElementById('modal'); 
+      const sheet=document.getElementById('sheet');
       
-      // iOS/iPad fix: Explicitly hide all non-printable content
+      // Hide all non-printable UI elements
       const wrap=document.querySelector('.wrap');
       const brandBar=document.querySelector('.brand-bar');
       const printChooser=document.getElementById('printChooser');
       const stageModal=document.getElementById('stageModal');
       const notesModal=document.getElementById('notesModal');
       
-      if(isIOS() || isMobileLike()){
-        // Hide everything except the modal content
-        if(wrap) wrap.style.display='none';
-        if(brandBar) brandBar.style.display='none';
-        if(printChooser) printChooser.style.display='none';
-        if(stageModal) stageModal.style.display='none';
-        if(notesModal) notesModal.style.display='none';
-      }
+      // Hide everything except modal content for all platforms
+      if(wrap) wrap.style.display='none';
+      if(brandBar) brandBar.style.display='none';
+      if(printChooser) printChooser.style.display='none';
+      if(stageModal) stageModal.style.display='none';
+      if(notesModal) notesModal.style.display='none';
       
       modal.classList.add('open'); 
-      await printPromise(); 
-      // Force layout recalculation on mobile devices
-      const sheet=document.getElementById('sheet');
-      if(sheet){ 
+      await printPromise();
+      
+      // Platform-specific handling
+      if(sheet) {
+        // Prepare content for printing (convert SVGs if needed)
+        await preparePrintContent(modal, sheet);
+        
+        // Force layout recalculation
         sheet.style.display='none'; 
         sheet.offsetHeight; // trigger reflow
-        sheet.style.display='block'; 
+        sheet.style.display='block';
       }
-      await printPromise(); 
+      
+      await printPromise();
+      console.log('🖨️ Triggering print dialog...');
       window.print(); 
       await printPromise();
+      
       modal.classList.remove('open'); 
       
       // Restore visibility
-      if(isIOS() || isMobileLike()){
-        if(wrap) wrap.style.display='';
-        if(brandBar) brandBar.style.display='';
-        if(printChooser) printChooser.style.display='';
-        if(stageModal) stageModal.style.display='';
-        if(notesModal) notesModal.style.display='';
-      }
+      if(wrap) wrap.style.display='';
+      if(brandBar) brandBar.style.display='';
+      if(printChooser) printChooser.style.display='';
+      if(stageModal) stageModal.style.display='';
+      if(notesModal) notesModal.style.display='';
       
-      await printPromise(); 
+      await printPromise();
+      console.log('✅ Setlist print complete');
     }
     function prepHdrTech(){
       const hdr=$('#hdrTech'); hdr.innerHTML='';
@@ -10371,6 +10554,8 @@ function closeStageModal(){
       if(hf.notes && gig.notes) hdr.append(el('div','notes', gig.notes));
     }
     async function printStageOnce(){
+      console.log('🖨️ STAGE PLOT PRINT - OS:', isWindows() ? 'Windows' : isIOS() ? 'iOS' : isAndroid() ? 'Android' : 'Other');
+      
       // Close any open stage/notes modals first to prevent them from being captured
       const stageModal=document.getElementById('stageModal');
       const notesModal=document.getElementById('notesModal');
@@ -10379,59 +10564,72 @@ function closeStageModal(){
       
       prepHdrTech();
       const techOut=$('#techPrint'); techOut.innerHTML=''; techOut.style.display='none';
-      const stageOut=$('#stagePrint'); stageOut.innerHTML=''; stageOut.style.display='block';
-      buildStageExport(stageOut);
-      // Force images to load before printing
-      await inlineStageImages(stageOut.querySelector('svg'));
+      const stageOut=$('#stagePrint');
+      
+      // Check if stage content was already built in printSelected()
+      const hasPrebuiltStage = stageOut && stageOut.querySelector('svg');
+      if(!hasPrebuiltStage){
+        console.log('Stage not pre-built, building now...');
+        stageOut.innerHTML='';
+        buildStageExport(stageOut);
+        // Force images to load before printing
+        await inlineStageImages(stageOut.querySelector('svg'));
+      } else {
+        console.log('Using pre-built stage content');
+      }
+      
+      stageOut.style.display='block';
+      
       // Keep legend with stage plot on same page
-      const legend = stageOut.querySelector('table.tech-table');
-      // Don't move legend, keep it in stageOut to stay on same page
-      // Remove page breaks to fit everything on one page
       techOut.style.breakBefore = 'auto'; techOut.style.pageBreakBefore = 'auto';
       stageOut.style.breakInside = 'avoid'; stageOut.style.pageBreakInside = 'avoid';
       
-      // iOS/iPad fix: Explicitly hide all non-printable content
+      // Hide all non-printable UI elements
       const wrap=document.querySelector('.wrap');
       const brandBar=document.querySelector('.brand-bar');
       const printChooser=document.getElementById('printChooser');
       const setlistModal=document.getElementById('modal');
       
-      if(isIOS() || isMobileLike()){
-        // Hide everything except the tech/stage modal content
-        if(wrap) wrap.style.display='none';
-        if(brandBar) brandBar.style.display='none';
-        if(printChooser) printChooser.style.display='none';
-        if(setlistModal) setlistModal.style.display='none';
-        if(stageModal) stageModal.style.display='none';
-        if(notesModal) notesModal.style.display='none';
-      }
+      // Hide everything except the tech/stage modal content
+      if(wrap) wrap.style.display='none';
+      if(brandBar) brandBar.style.display='none';
+      if(printChooser) printChooser.style.display='none';
+      if(setlistModal) setlistModal.style.display='none';
+      if(stageModal) stageModal.style.display='none';
+      if(notesModal) notesModal.style.display='none';
       
       const modal=document.getElementById('modalTech');
       modal.classList.add('open');
       await printPromise();
-      // Force layout recalculation for mobile reliability
+      
+      // Platform-specific SVG handling
       const sheet=document.getElementById('sheetTech');
       if(sheet){
+        // Prepare content for printing (convert SVGs on mobile)
+        await preparePrintContent(modal, stageOut);
+        
+        // Force layout recalculation
         sheet.style.display='none';
         sheet.offsetHeight; // trigger reflow
         sheet.style.display='block';
       }
+      
       await printPromise();
+      console.log('🖨️ Triggering print dialog for stage plot...');
       window.print();
       await printPromise();
       modal.classList.remove('open');
       
       // Restore visibility
-      if(isIOS() || isMobileLike()){
-        if(wrap) wrap.style.display='';
-        if(brandBar) brandBar.style.display='';
-        if(printChooser) printChooser.style.display='';
-        if(setlistModal) setlistModal.style.display='';
-        if(stageModal) stageModal.style.display='';
-        if(notesModal) notesModal.style.display='';
-      }
+      if(wrap) wrap.style.display='';
+      if(brandBar) brandBar.style.display='';
+      if(printChooser) printChooser.style.display='';
+      if(setlistModal) setlistModal.style.display='';
+      if(stageModal) stageModal.style.display='';
+      if(notesModal) notesModal.style.display='';
       
       await printPromise();
+      console.log('✅ Stage plot print complete');
       
       // Restore Tech/Stage tab view if user is on that tab
       const activeTab = document.querySelector('.tab.active');
@@ -10452,6 +10650,8 @@ function closeStageModal(){
       }
     }
     async function printTechOnlyOnce(){ 
+      console.log('🖨️ TECH NOTES PRINT - OS:', isWindows() ? 'Windows' : isIOS() ? 'iOS' : isAndroid() ? 'Android' : 'Other');
+      
       // Close any open stage/notes modals first to prevent them from being captured
       const stageModal=document.getElementById('stageModal');
       const notesModal=document.getElementById('notesModal');
@@ -10465,48 +10665,48 @@ function closeStageModal(){
       techOut.style.breakBefore = 'auto'; techOut.style.pageBreakBefore = 'auto';
       const tbl=document.createElement('table'); tbl.className='tech-table'; const head=document.createElement('thead'); head.innerHTML='<tr><th>#</th><th>Song</th><th>Lighting/FX Notes</th></tr>'; const body=document.createElement('tbody'); setlist.filter(x=>x.type==='song').forEach((s,i)=>{ const tr=document.createElement('tr'); const note=(techNotes && techNotes[s.id]) || s.tech || ''; tr.innerHTML=`<td>${i+1}</td><td>${s.title}</td><td>${note}</td>`; body.appendChild(tr); }); tbl.append(head,body); techOut.appendChild(tbl); 
       
-      // iOS/iPad fix: Explicitly hide all non-printable content
+      // Hide all non-printable UI elements
       const wrap=document.querySelector('.wrap');
       const brandBar=document.querySelector('.brand-bar');
       const printChooser=document.getElementById('printChooser');
       const setlistModal=document.getElementById('modal');
       
-      if(isIOS() || isMobileLike()){
-        // Hide everything except the tech modal content
-        if(wrap) wrap.style.display='none';
-        if(brandBar) brandBar.style.display='none';
-        if(printChooser) printChooser.style.display='none';
-        if(setlistModal) setlistModal.style.display='none';
-        if(stageModal) stageModal.style.display='none';
-        if(notesModal) notesModal.style.display='none';
-      }
+      // Hide everything except the tech modal content
+      if(wrap) wrap.style.display='none';
+      if(brandBar) brandBar.style.display='none';
+      if(printChooser) printChooser.style.display='none';
+      if(setlistModal) setlistModal.style.display='none';
+      if(stageModal) stageModal.style.display='none';
+      if(notesModal) notesModal.style.display='none';
       
       const modal=document.getElementById('modalTech'); 
       modal.classList.add('open'); 
       await printPromise(); 
-      // Force layout recalculation for mobile reliability
+      
+      // Force layout recalculation
       const sheet=document.getElementById('sheetTech');
       if(sheet){
         sheet.style.display='none';
         sheet.offsetHeight; // trigger reflow
         sheet.style.display='block';
       }
+      
       await printPromise();
+      console.log('🖨️ Triggering print dialog for tech notes...');
       window.print(); 
       await printPromise();
       modal.classList.remove('open'); 
       
       // Restore visibility
-      if(isIOS() || isMobileLike()){
-        if(wrap) wrap.style.display='';
-        if(brandBar) brandBar.style.display='';
-        if(printChooser) printChooser.style.display='';
-        if(setlistModal) setlistModal.style.display='';
-        if(stageModal) stageModal.style.display='';
-        if(notesModal) notesModal.style.display='';
-      }
+      if(wrap) wrap.style.display='';
+      if(brandBar) brandBar.style.display='';
+      if(printChooser) printChooser.style.display='';
+      if(setlistModal) setlistModal.style.display='';
+      if(stageModal) stageModal.style.display='';
+      if(notesModal) notesModal.style.display='';
       
       await printPromise();
+      console.log('✅ Tech notes print complete');
       
       // Restore Tech/Stage tab view if user is on that tab
       const activeTab = document.querySelector('.tab.active');
