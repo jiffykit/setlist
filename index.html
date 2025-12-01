@@ -443,10 +443,25 @@
   .activity-chip{
     user-select:none;
     transition:all 0.2s;
+    touch-action:none;
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
   }
   .activity-chip:active{
     transform:scale(0.95);
     opacity:0.8;
+  }
+  .activity-chip.touch-dragging{
+    position:fixed;
+    z-index:99999;
+    pointer-events:none;
+    opacity:0.9;
+    transform:scale(1.1);
+    box-shadow:0 8px 24px rgba(0,0,0,0.3);
+  }
+  .timeline-slot.touch-drop-target{
+    background:#bfdbfe !important;
+    box-shadow:inset 0 0 0 2px #3b82f6;
   }
   .timeline-slot:hover{
     background:#f9fafb !important;
@@ -2666,19 +2681,19 @@
       modal.className = 'modal open';
       modal.style.zIndex = '9999';
       modal.innerHTML = `
-        <div class="modalbox" style="background:white;border-radius:12px;padding:24px;width:400px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.3);margin-top:60px">
+        <div class="modalbox" style="background:white;border-radius:12px;padding:24px;width:400px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.3);margin-top:60px;touch-action:manipulation">
           <h2 style="margin:0 0 16px;font-size:20px;font-weight:600">🎸 Welcome! Enter Your Band Name</h2>
           <p style="margin:0 0 16px;color:#666;font-size:13px">This will be used on your setlists, stage plots, and calendar dates.</p>
           
           <div style="margin-bottom:16px">
             <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Band/Artist Name</label>
-            <input type="text" id="bandPresetNameInput" placeholder="e.g., The Kildeers" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+            <input type="text" id="bandPresetNameInput" placeholder="e.g., The Kildeers" style="width:100%;padding:12px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;touch-action:manipulation;-webkit-appearance:none" />
           </div>
           
           ${bandPresets.length > 0 ? `
           <div style="margin-bottom:16px">
             <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Or Select Existing Band</label>
-            <select id="bandPresetSelect" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px">
+            <select id="bandPresetSelect" style="width:100%;padding:12px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;touch-action:manipulation;-webkit-appearance:menulist">
               <option value="">-- New Band --</option>
               ${bandPresets.map(bp => `<option value="${bp.id}">${bp.name}</option>`).join('')}
             </select>
@@ -2686,8 +2701,8 @@
           ` : ''}
           
           <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button id="bandPresetSkip" class="btn" style="padding:8px 16px;font-size:13px">Skip for Now</button>
-            <button id="bandPresetSave" class="btn primary" style="padding:8px 16px;font-size:13px">Save & Continue</button>
+            <button id="bandPresetSkip" type="button" class="btn" style="padding:12px 20px;font-size:14px;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0.1)">Skip for Now</button>
+            <button id="bandPresetSave" type="button" class="btn primary" style="padding:12px 20px;font-size:14px;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0.1)">Save & Continue</button>
           </div>
         </div>
       `;
@@ -2738,12 +2753,30 @@
         try{ buildSheet('sheetInline'); attachPreviewInteractions(); }catch(_){}
       }
       
-      // Event listeners
-      document.getElementById('bandPresetSave').addEventListener('click', saveBandPreset);
+      // Event listeners - use both click and touchend for mobile compatibility
+      const saveBtn = document.getElementById('bandPresetSave');
+      const skipBtn = document.getElementById('bandPresetSkip');
       
-      document.getElementById('bandPresetSkip').addEventListener('click', ()=>{
+      function handleSave(e){
+        e.preventDefault();
+        e.stopPropagation();
+        saveBandPreset();
+      }
+      
+      function handleSkip(e){
+        e.preventDefault();
+        e.stopPropagation();
         modal.remove();
-      });
+      }
+      
+      saveBtn.addEventListener('click', handleSave);
+      saveBtn.addEventListener('touchend', handleSave);
+      skipBtn.addEventListener('click', handleSkip);
+      skipBtn.addEventListener('touchend', handleSkip);
+      
+      // Prevent ghost clicks on touch
+      saveBtn.addEventListener('touchstart', (e)=>{ e.stopPropagation(); }, {passive: true});
+      skipBtn.addEventListener('touchstart', (e)=>{ e.stopPropagation(); }, {passive: true});
       
       // Enter key to save
       const nameInput = document.getElementById('bandPresetNameInput');
@@ -2934,6 +2967,14 @@
     function renderDB(){
       const list=$('#dbList'); list.innerHTML='';
       if(!db.length){ list.textContent='No songs yet.'; return; }
+      
+      // Ensure dbColumns exists (may have been lost during date switch)
+      if(!gig.dbColumns){
+        gig.dbColumns={
+          order:['add','cover','title','artist','len','key','capo','bpm','mood','lyrics','audio','rating','actions'],
+          widths:{add:24,cover:18,title:150,artist:150,len:50,key:50,capo:35,bpm:50,mood:28,lyrics:250,audio:250,rating:60,actions:120}
+        };
+      }
       
       // Column headers with resizing and reordering
       const hdrRow=document.createElement('div'); hdrRow.style.cssText='display:flex;gap:4px;align-items:center;padding:4px;background:#f3f4f6;font-weight:600;font-size:11px;border-bottom:2px solid #d1d5db;position:relative';
@@ -5010,8 +5051,20 @@
           }
         }
         
-        // Restore gig data - but PRESERVE the current band from Act selector
+        // Restore gig data - but PRESERVE settings that should persist across all dates
         const currentBandName = currentBandPresetId ? (bandPresets.find(bp => bp.id === currentBandPresetId)?.name || gig.band) : gig.band;
+        // Save settings that should persist across date changes (not per-date)
+        const persistentSettings = {
+          dbColumns: gig.dbColumns,
+          customColumns: gig.customColumns,
+          customMoods: gig.customMoods,
+          customImages: gig.customImages,
+          hiddenIcons: gig.hiddenIcons,
+          font: gig.font,
+          logo: gig.logo,
+          headerFlags: gig.headerFlags,
+          liveDark: gig.liveDark
+        };
         if(tourDate.gig){
           gig = {...tourDate.gig};
         } else {
@@ -5020,6 +5073,10 @@
           gig.band = tourDate.band || '';
           gig.date = tourDate.date || '';
         }
+        // Restore persistent settings that should NOT change per date
+        Object.keys(persistentSettings).forEach(key => {
+          if(persistentSettings[key] !== undefined) gig[key] = persistentSettings[key];
+        });
         // Always use the Act selector band as authoritative source
         if(currentBandName) gig.band = currentBandName;
         
@@ -6766,13 +6823,13 @@
               }
             });
             
-            // Click empty slot to add note/item directly (inline editing)
-            slotEl.addEventListener('click', () => {
+            // Click/tap empty slot to add note/item directly (inline editing)
+            function openSlotEditor(){
               // Create inline input for quick note entry
               const input = document.createElement('input');
               input.type = 'text';
               input.placeholder = 'Type note or event...';
-              input.style.cssText = 'width:100%;padding:4px;border:2px solid #3b82f6;border-radius:4px;font-size:11px;box-sizing:border-box';
+              input.style.cssText = 'width:100%;padding:8px;border:2px solid #3b82f6;border-radius:4px;font-size:16px;box-sizing:border-box;touch-action:manipulation';
               
               slotEl.innerHTML = '';
               slotEl.appendChild(input);
@@ -6798,7 +6855,22 @@
                 if(e.key === 'Enter') saveNote();
                 if(e.key === 'Escape') renderItinerary(tourDate);
               });
+            }
+            
+            slotEl.addEventListener('click', openSlotEditor);
+            
+            // Touch tap support for slots
+            let slotTapTime = 0;
+            slotEl.addEventListener('touchend', (e) => {
+              // Only trigger if it wasn't a drag
+              if(!e.target.closest('.touch-drop-target') && (Date.now() - slotTapTime) < 300){
+                e.preventDefault();
+                openSlotEditor();
+              }
             });
+            slotEl.addEventListener('touchstart', () => {
+              slotTapTime = Date.now();
+            }, {passive: true});
             
             gridContainer.appendChild(labelEl);
             gridContainer.appendChild(slotEl);
@@ -6840,9 +6912,10 @@
               z-index:10;
               box-shadow:0 1px 3px rgba(0,0,0,0.1);
               transition:all 0.2s;
+              touch-action:none;
             `;
             
-            // Drag handlers for moving items
+            // Drag handlers for moving items (mouse)
             itemEl.addEventListener('dragstart', (e) => {
               e.dataTransfer.setData('itemIndex', idx.toString());
               e.dataTransfer.effectAllowed = 'move';
@@ -6851,6 +6924,106 @@
             
             itemEl.addEventListener('dragend', (e) => {
               itemEl.style.opacity = '1';
+            });
+            
+            // Touch drag support for moving itinerary items
+            let itemTouchDrag = false;
+            let itemTouchClone = null;
+            const itemIdx = idx;
+            
+            itemEl.addEventListener('touchstart', (e) => {
+              // Don't interfere with delete button or resize handles
+              if(e.target.closest('.itinerary-delete') || e.target.closest('.resize-handle-top') || e.target.closest('.resize-handle-bottom')) return;
+              
+              const touch = e.touches[0];
+              itemTouchDrag = 'pending';
+              
+              setTimeout(() => {
+                if(itemTouchDrag === 'pending'){
+                  itemTouchDrag = true;
+                  itemEl.style.opacity = '0.3';
+                  
+                  // Create visual clone
+                  itemTouchClone = document.createElement('div');
+                  itemTouchClone.style.cssText = `
+                    position:fixed;
+                    z-index:99999;
+                    pointer-events:none;
+                    opacity:0.9;
+                    padding:8px 12px;
+                    background:${borderColor}30;
+                    border:2px solid ${borderColor};
+                    border-radius:6px;
+                    font-size:11px;
+                    font-weight:600;
+                    color:#111827;
+                    box-shadow:0 8px 24px rgba(0,0,0,0.3);
+                    left:${touch.clientX - 40}px;
+                    top:${touch.clientY - 15}px;
+                  `;
+                  itemTouchClone.textContent = item.title;
+                  document.body.appendChild(itemTouchClone);
+                }
+              }, 200);
+            }, {passive: true});
+            
+            itemEl.addEventListener('touchmove', (e) => {
+              if(itemTouchDrag !== true) return;
+              e.preventDefault();
+              const touch = e.touches[0];
+              
+              if(itemTouchClone){
+                itemTouchClone.style.left = (touch.clientX - 40) + 'px';
+                itemTouchClone.style.top = (touch.clientY - 15) + 'px';
+              }
+              
+              // Highlight drop targets
+              document.querySelectorAll('.timeline-slot').forEach(slot => {
+                const rect = slot.getBoundingClientRect();
+                if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                   touch.clientY >= rect.top && touch.clientY <= rect.bottom){
+                  slot.classList.add('touch-drop-target');
+                } else {
+                  slot.classList.remove('touch-drop-target');
+                }
+              });
+            }, {passive: false});
+            
+            itemEl.addEventListener('touchend', (e) => {
+              const wasDragging = itemTouchDrag === true;
+              const touch = e.changedTouches[0];
+              
+              // Cleanup
+              if(itemTouchClone){
+                itemTouchClone.remove();
+                itemTouchClone = null;
+              }
+              itemEl.style.opacity = '1';
+              document.querySelectorAll('.timeline-slot').forEach(slot => {
+                slot.classList.remove('touch-drop-target');
+              });
+              
+              if(wasDragging){
+                // Find drop target
+                let dropSlot = null;
+                document.querySelectorAll('.timeline-slot').forEach(slot => {
+                  const rect = slot.getBoundingClientRect();
+                  if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                     touch.clientY >= rect.top && touch.clientY <= rect.bottom){
+                    dropSlot = slot;
+                  }
+                });
+                
+                if(dropSlot && tourDate.itinerary[itemIdx]){
+                  const newTime = dropSlot.dataset.time;
+                  tourDate.itinerary[itemIdx].time = newTime;
+                  saveAll();
+                  renderItinerary(tourDate);
+                  renderDateHeader();
+                }
+              }
+              
+              itemTouchDrag = false;
             });
             
             // Resize handles
@@ -6878,19 +7051,28 @@
             itemEl.appendChild(contentDiv);
             itemEl.appendChild(bottomHandle);
             
-            // Show resize handles on hover
-            itemEl.addEventListener('mouseenter', () => {
+            // Show resize handles on hover/touch
+            function showHandles(){
               itemEl.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
               itemEl.style.zIndex = '20';
               topHandle.style.opacity = '1';
               bottomHandle.style.opacity = '1';
-            });
-            itemEl.addEventListener('mouseleave', () => {
+            }
+            function hideHandles(){
               itemEl.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
               itemEl.style.zIndex = '10';
               topHandle.style.opacity = '0';
               bottomHandle.style.opacity = '0';
-            });
+            }
+            itemEl.addEventListener('mouseenter', showHandles);
+            itemEl.addEventListener('mouseleave', hideHandles);
+            // Touch: show handles on touch, hide after 3 seconds or on touchend outside
+            itemEl.addEventListener('touchstart', (e) => {
+              if(!e.target.closest('.resize-handle-top') && !e.target.closest('.resize-handle-bottom')){
+                showHandles();
+                setTimeout(hideHandles, 3000);
+              }
+            }, {passive: true});
             
             // Resize from top handle
             let resizing = false;
@@ -7028,13 +7210,13 @@
               document.addEventListener('touchend', onTouchEnd);
             }, {passive:false});
             
-            // Double-click title to edit
+            // Double-click/double-tap title to edit
             const titleEl = contentDiv.querySelector('.item-title');
-            titleEl.addEventListener('dblclick', (e) => {
-              e.stopPropagation();
-              
+            let titleLastTap = 0;
+            
+            function editTitle(){
               const currentText = item.title;
-              titleEl.innerHTML = `<input type="text" value="${currentText}" style="width:100%;padding:2px;border:1px solid #3b82f6;border-radius:3px;font-size:11px;font-weight:600" />`;
+              titleEl.innerHTML = `<input type="text" value="${currentText}" style="width:100%;padding:4px;border:1px solid #3b82f6;border-radius:3px;font-size:14px;font-weight:600;touch-action:manipulation" />`;
               const input = titleEl.querySelector('input');
               input.focus();
               input.select();
@@ -7050,15 +7232,30 @@
                 if(e.key === 'Enter') saveEdit();
                 if(e.key === 'Escape') renderItinerary(tourDate);
               });
+            }
+            
+            titleEl.addEventListener('dblclick', (e) => {
+              e.stopPropagation();
+              editTitle();
             });
             
-            // Double-click notes area to edit
+            titleEl.addEventListener('touchend', (e) => {
+              const now = Date.now();
+              if(now - titleLastTap < 400){
+                e.preventDefault();
+                e.stopPropagation();
+                editTitle();
+              }
+              titleLastTap = now;
+            });
+            
+            // Double-click/double-tap notes area to edit
             const notesEl = contentDiv.querySelector('.item-notes');
-            notesEl.addEventListener('dblclick', (e) => {
-              e.stopPropagation();
-              
+            let notesLastTap = 0;
+            
+            function editNotes(){
               const currentNotes = item.notes || '';
-              notesEl.innerHTML = `<input type="text" placeholder="Add notes..." value="${currentNotes}" style="width:100%;padding:2px;border:1px solid #3b82f6;border-radius:3px;font-size:10px;box-sizing:border-box" />`;
+              notesEl.innerHTML = `<input type="text" placeholder="Add notes..." value="${currentNotes}" style="width:100%;padding:4px;border:1px solid #3b82f6;border-radius:3px;font-size:14px;box-sizing:border-box;touch-action:manipulation" />`;
               const input = notesEl.querySelector('input');
               input.focus();
               input.select();
@@ -7074,18 +7271,37 @@
                 if(e.key === 'Enter') saveNotes();
                 if(e.key === 'Escape') renderItinerary(tourDate);
               });
+            }
+            
+            notesEl.addEventListener('dblclick', (e) => {
+              e.stopPropagation();
+              editNotes();
             });
             
-            // Delete handler
-            contentDiv.querySelector('.itinerary-delete').addEventListener('click', (e) => {
+            notesEl.addEventListener('touchend', (e) => {
+              const now = Date.now();
+              if(now - notesLastTap < 400){
+                e.preventDefault();
+                e.stopPropagation();
+                editNotes();
+              }
+              notesLastTap = now;
+            });
+            
+            // Delete handler (click + touch)
+            const deleteBtn = contentDiv.querySelector('.itinerary-delete');
+            function handleDelete(e){
               e.stopPropagation();
+              e.preventDefault();
               if(confirm('Delete this itinerary item?')){
                 tourDate.itinerary.splice(idx, 1);
                 saveAll();
                 renderItinerary(tourDate);
                 renderDateHeader();
               }
-            });
+            }
+            deleteBtn.addEventListener('click', handleDelete);
+            deleteBtn.addEventListener('touchend', handleDelete);
             
             gridContainer.appendChild(itemEl);
           });
@@ -7657,8 +7873,9 @@
         
         // Store data on element
         chip.dataset.chipData = JSON.stringify(data);
+        chip.style.touchAction = 'none';
         
-        // Drag handlers
+        // Drag handlers (mouse/desktop)
         chip.addEventListener('dragstart', (e) => {
           chip.classList.add('dragging');
           e.dataTransfer.effectAllowed = 'copy';
@@ -7670,7 +7887,179 @@
           chip.classList.remove('dragging');
         });
         
-        // Click to open URL or remove
+        // Touch drag support for place chips
+        let touchDragActive = false;
+        let touchClone = null;
+        let touchStartTime = 0;
+        
+        chip.addEventListener('touchstart', (e) => {
+          // Don't interfere with remove button
+          if(e.target.closest('.chip-remove')) return;
+          
+          touchStartTime = Date.now();
+          const touch = e.touches[0];
+          
+          // Short delay before starting drag to differentiate from tap
+          setTimeout(() => {
+            if(touchDragActive === 'pending'){
+              touchDragActive = true;
+              chip.classList.add('dragging');
+              
+              // Create visual clone
+              touchClone = document.createElement('div');
+              touchClone.className = 'tour-interest-chip touch-dragging';
+              touchClone.style.cssText = `
+                position:fixed;
+                z-index:99999;
+                pointer-events:none;
+                opacity:0.9;
+                transform:scale(1.05);
+                box-shadow:0 8px 24px rgba(0,0,0,0.3);
+                padding:8px 12px;
+                background:white;
+                border-radius:8px;
+                border-left:4px solid ${color || '#0ea5e9'};
+                max-width:200px;
+                left:${touch.clientX - 50}px;
+                top:${touch.clientY - 20}px;
+              `;
+              touchClone.innerHTML = `<div style="font-weight:600;font-size:12px">${name}</div>`;
+              document.body.appendChild(touchClone);
+              
+              chip.style.opacity = '0.3';
+            }
+          }, 150);
+          
+          touchDragActive = 'pending';
+        }, {passive: true});
+        
+        chip.addEventListener('touchmove', (e) => {
+          if(touchDragActive !== true) return;
+          e.preventDefault();
+          const touch = e.touches[0];
+          
+          if(touchClone){
+            touchClone.style.left = (touch.clientX - 50) + 'px';
+            touchClone.style.top = (touch.clientY - 20) + 'px';
+          }
+          
+          // Highlight timeline drop targets
+          document.querySelectorAll('.timeline-slot').forEach(slot => {
+            const rect = slot.getBoundingClientRect();
+            if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+               touch.clientY >= rect.top && touch.clientY <= rect.bottom){
+              slot.classList.add('touch-drop-target');
+            } else {
+              slot.classList.remove('touch-drop-target');
+            }
+          });
+          
+          // Also highlight interests drop zone
+          const interestsZone = document.getElementById('tourInterestsDropZone');
+          if(interestsZone){
+            const rect = interestsZone.getBoundingClientRect();
+            if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+               touch.clientY >= rect.top && touch.clientY <= rect.bottom){
+              interestsZone.style.background = '#eff6ff';
+              interestsZone.style.borderColor = '#3b82f6';
+            } else {
+              interestsZone.style.background = '';
+              interestsZone.style.borderColor = '';
+            }
+          }
+        }, {passive: false});
+        
+        chip.addEventListener('touchend', (e) => {
+          const wasDragging = touchDragActive === true;
+          const touch = e.changedTouches[0];
+          
+          // Cleanup
+          if(touchClone){
+            touchClone.remove();
+            touchClone = null;
+          }
+          chip.classList.remove('dragging');
+          chip.style.opacity = '1';
+          document.querySelectorAll('.timeline-slot').forEach(slot => {
+            slot.classList.remove('touch-drop-target');
+          });
+          const interestsZone = document.getElementById('tourInterestsDropZone');
+          if(interestsZone){
+            interestsZone.style.background = '';
+            interestsZone.style.borderColor = '';
+          }
+          
+          if(wasDragging){
+            // Find drop target - timeline slot
+            let dropSlot = null;
+            document.querySelectorAll('.timeline-slot').forEach(slot => {
+              const rect = slot.getBoundingClientRect();
+              if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                 touch.clientY >= rect.top && touch.clientY <= rect.bottom){
+                dropSlot = slot;
+              }
+            });
+            
+            if(dropSlot){
+              // Add to itinerary
+              const timeStr = dropSlot.dataset.time;
+              const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+              if(tourDate && timeStr){
+                try {
+                  const chipData = JSON.parse(chip.dataset.chipData);
+                  if(!tourDate.itinerary) tourDate.itinerary = [];
+                  tourDate.itinerary.push({
+                    time: timeStr,
+                    title: chipData.name,
+                    duration: 30,
+                    notes: '',
+                    chipData: chipData
+                  });
+                  saveAll();
+                  renderItinerary(tourDate);
+                  renderDateHeader();
+                } catch(err) {
+                  console.error('Error adding chip to itinerary:', err);
+                }
+              }
+            } else {
+              // Check interests drop zone
+              if(interestsZone){
+                const rect = interestsZone.getBoundingClientRect();
+                if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                   touch.clientY >= rect.top && touch.clientY <= rect.bottom){
+                  // Add to interests
+                  try {
+                    const chipData = JSON.parse(chip.dataset.chipData);
+                    const newChip = createInterestChip(chipData);
+                    interestsZone.appendChild(newChip);
+                    saveInterests();
+                    updateInterestsPlaceholder();
+                  } catch(err) {
+                    console.error('Error adding to interests:', err);
+                  }
+                }
+              }
+            }
+          } else if(touchDragActive === 'pending' && (Date.now() - touchStartTime) < 300){
+            // Was a tap, not a drag - open URL
+            if(!e.target.closest('.chip-remove')){
+              try {
+                const chipData = JSON.parse(chip.dataset.chipData);
+                const targetUrl = chipData.website || chipData.url;
+                if (targetUrl && targetUrl !== '#' && targetUrl.startsWith('http')) {
+                  window.open(targetUrl, '_blank');
+                }
+              } catch (err) {
+                console.error('Error opening chip URL:', err);
+              }
+            }
+          }
+          
+          touchDragActive = false;
+        });
+        
+        // Click to open URL or remove (mouse)
         chip.addEventListener('click', (e) => {
           if (e.target.closest('.chip-remove')) {
             chip.remove();
@@ -8342,10 +8731,15 @@
       const tourEl = document.getElementById('tour');
       if(tourEl) tourEl.style.display='block';
       
-      // Activity chip drag handlers
+      // Activity chip drag handlers - with touch support
+      let touchDragClone = null;
+      let touchDragData = null;
+      let touchStartTarget = null;
+      
       function initActivityChips(){
         const chips = document.querySelectorAll('.activity-chip');
         chips.forEach(chip => {
+          // Mouse/desktop drag
           chip.addEventListener('dragstart', (e) => {
             const activity = chip.dataset.activity;
             const duration = chip.dataset.duration;
@@ -8362,6 +8756,108 @@
           chip.addEventListener('dragend', (e) => {
             chip.style.opacity = '1';
           });
+          
+          // Touch drag - custom implementation since HTML5 drag doesn't work on touch
+          chip.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchStartTarget = chip;
+            
+            // Store drag data
+            touchDragData = {
+              activity: chip.dataset.activity,
+              duration: chip.dataset.duration,
+              color: chip.dataset.color
+            };
+            
+            // Create clone for visual feedback
+            touchDragClone = chip.cloneNode(true);
+            touchDragClone.classList.add('touch-dragging');
+            touchDragClone.style.left = (touch.clientX - 40) + 'px';
+            touchDragClone.style.top = (touch.clientY - 15) + 'px';
+            document.body.appendChild(touchDragClone);
+            
+            chip.style.opacity = '0.3';
+          }, {passive: false});
+          
+          chip.addEventListener('touchmove', (e) => {
+            if(!touchDragClone) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            
+            // Move clone
+            touchDragClone.style.left = (touch.clientX - 40) + 'px';
+            touchDragClone.style.top = (touch.clientY - 15) + 'px';
+            
+            // Highlight drop targets
+            document.querySelectorAll('.timeline-slot').forEach(slot => {
+              const rect = slot.getBoundingClientRect();
+              if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                 touch.clientY >= rect.top && touch.clientY <= rect.bottom){
+                slot.classList.add('touch-drop-target');
+              } else {
+                slot.classList.remove('touch-drop-target');
+              }
+            });
+          }, {passive: false});
+          
+          chip.addEventListener('touchend', (e) => {
+            if(!touchDragClone || !touchDragData) {
+              cleanupTouchDrag();
+              return;
+            }
+            
+            const touch = e.changedTouches[0];
+            
+            // Find drop target
+            let dropTarget = null;
+            document.querySelectorAll('.timeline-slot').forEach(slot => {
+              const rect = slot.getBoundingClientRect();
+              if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                 touch.clientY >= rect.top && touch.clientY <= rect.bottom){
+                dropTarget = slot;
+              }
+              slot.classList.remove('touch-drop-target');
+            });
+            
+            if(dropTarget && touchDragData.activity){
+              // Add to itinerary
+              const timeStr = dropTarget.dataset.time;
+              const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+              if(tourDate && timeStr){
+                let title = touchDragData.activity.charAt(0).toUpperCase() + touchDragData.activity.slice(1);
+                if(!tourDate.itinerary) tourDate.itinerary = [];
+                tourDate.itinerary.push({
+                  time: timeStr,
+                  title: title,
+                  activity: touchDragData.activity,
+                  duration: 30,
+                  chipData: { color: touchDragData.color },
+                  notes: ''
+                });
+                saveAll();
+                renderItinerary(tourDate);
+                renderDateHeader();
+              }
+            }
+            
+            cleanupTouchDrag();
+          });
+        });
+      }
+      
+      function cleanupTouchDrag(){
+        if(touchDragClone){
+          touchDragClone.remove();
+          touchDragClone = null;
+        }
+        if(touchStartTarget){
+          touchStartTarget.style.opacity = '1';
+          touchStartTarget = null;
+        }
+        touchDragData = null;
+        document.querySelectorAll('.timeline-slot').forEach(slot => {
+          slot.classList.remove('touch-drop-target');
         });
       }
       
