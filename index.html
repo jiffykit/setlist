@@ -8,15 +8,15 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;font-size:16px;font-family:Segoe UI,system-ui,-apple-system,Helvetica,Arial,sans-serif;background:#f3f4f6;color:#1f2937}
-  .wrap{max-width:min(1600px,98vw);margin:0 auto;padding:24px}
+    body{margin:0;font-size:16px;font-family:Segoe UI,system-ui,-apple-system,Helvetica,Arial,sans-serif;background:#f3f4f6;color:#1f2937;overflow-x:hidden}
+  .wrap{max-width:min(1600px,98vw);margin:0 auto;padding:24px;overflow-x:hidden}
     .hero{background:linear-gradient(135deg,#e0ecff 0%,#f0f7ff 60%,#e6fbff 100%);border:1px solid #dbeafe;border-radius:16px;padding:28px;text-align:center;color:#111;box-shadow:0 8px 24px rgba(0,0,0,.08)}
     .hero h1{margin:0 0 6px;font-size:32px}
-  .tabs{display:flex;margin:16px 0;border-bottom:1px solid #e5e7eb}
-  .tab{flex:1;padding:12px 16px;background:transparent;border:none;color:#374151;font-weight:700;cursor:pointer}
-    .tab.active{color:#111;border-bottom:3px solid var(--accent)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+  .tabs{display:flex;margin:16px 0;border-bottom:2px solid #e5e7eb;width:100%}
+  .tab{flex:1;padding:14px 8px;background:transparent;border:none;color:#374151;font-weight:700;cursor:pointer;font-size:15px;text-align:center;white-space:nowrap}
+    .tab.active{color:#111;border-bottom:3px solid var(--accent);background:#f0f9ff}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:100%;overflow:visible}
+    .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:16px;max-width:100%;overflow:visible}
     .card h2{margin:0 0 12px;font-size:20px;color:#111}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .row>.field{flex:1;min-width:220px}
@@ -38,7 +38,7 @@
 
     /* Print preview (paper look) */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:24px;z-index:80;overflow:auto;pointer-events:none}
-    .modal.open{display:flex}
+    .modal.open{display:flex;pointer-events:auto}
     .modal .modalbox{pointer-events:auto}
     .modal .sheet{pointer-events:auto}
     .sheet{width:8.5in;max-width:100%;min-height:11in;background:white;color:var(--paperText);border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0.4in 0.5in;overflow:visible;margin:auto}
@@ -96,7 +96,7 @@
   .pool-body{padding:10px;overflow:auto;display:flex;flex-direction:column;gap:12px}
   .pool-sec h4{margin:0 0 6px 0;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px}
   /* Base pill chip styling (used in Song Pool) */
-  .pill{display:inline-flex;align-items:center;gap:6px;border:2px solid #d1d5db;border-radius:999px;padding:4px 10px;background:#fff;font-size:12px;color:#111827}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:2px solid #d1d5db;border-radius:999px;padding:8px 14px;background:#fff;font-size:14px;color:#111827;min-height:36px}
   .pool-sec .pill{cursor:grab}
   .pill.drag-touch{opacity:.55;outline:2px dashed #374151}
   .touch-target-highlight{box-shadow:inset 0 3px 0 #374151,inset 0 -3px 0 #374151}
@@ -341,6 +341,12 @@
   @media (max-width: 768px){
     #dbList{overflow-x:auto;overflow-y:visible}
     .db-row{min-width:900px}
+    /* Setlist page: stack columns vertically on mobile with scroll */
+    #set{overflow:visible !important;max-height:none !important;height:auto !important}
+    #setlistLayout{flex-wrap:wrap !important;overflow:visible !important;height:auto !important;align-items:stretch !important}
+    #poolCol{flex:1 1 100% !important;min-width:100% !important;max-height:40vh !important;overflow-y:auto !important;border:2px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:12px;background:#f9fafb;position:relative !important;top:auto !important;align-self:auto !important}
+    #previewCol{flex:1 1 100% !important;min-width:100% !important;max-width:100% !important;position:relative !important;max-height:none !important;height:auto !important;top:auto !important;align-self:auto !important}
+    #optionsCol{flex:1 1 100% !important;position:relative !important;top:auto !important;align-self:auto !important;margin-top:16px;padding-top:16px;border-top:2px solid #e5e7eb;height:auto !important;max-height:none !important}
   }
   /* Missing songs list */
   .missing{margin:8px 0 6px 0;display:flex;flex-wrap:wrap;gap:6px}
@@ -515,10 +521,13 @@
     box-shadow:0 2px 6px rgba(14,165,233,0.3);
   }
   .date-box.active{
-    background:#0ea5e9;
-    border-color:#0284c7;
-    color:#f0f9ff;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
     font-weight:800;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.has-gig{
     border-color:#22c55e;
@@ -528,6 +537,9 @@
     background:#22c55e;
     border-color:#16a34a;
     color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   /* Status-based coloring */
   .date-box.status-complete{
@@ -538,14 +550,21 @@
     background:#22c55e;
     border-color:#16a34a;
     color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.status-incomplete{
     background:#fed7aa;
     border-color:#fb923c;
   }
   .date-box.status-incomplete.active{
-    background:#fb923c;
-    border-color:#ea580c;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.status-cancelled{
     background:#fee2e2;
@@ -553,9 +572,13 @@
     opacity:0.7;
   }
   .date-box.status-cancelled.active{
-    background:#fecaca;
-    border-color:#dc2626;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
     opacity:1;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.status-today{
     background:#dbeafe;
@@ -563,9 +586,12 @@
     box-shadow:0 0 0 2px #93c5fd;
   }
   .date-box.status-today.active{
-    background:#3b82f6;
-    border-color:#2563eb;
-    color:#fff;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.status-past{
     background:#f1f5f9;
@@ -573,8 +599,13 @@
     opacity:0.6;
   }
   .date-box.status-past.active{
-    background:#e2e8f0;
-    border-color:#94a3b8;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+    opacity:1;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.tour-gig{
     background:#d1fae5;
@@ -583,30 +614,46 @@
   .date-box.tour-gig.active{
     background:#22c55e;
     border-color:#16a34a;
+    color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.tour-drive{
     background:#fef08a;
     border-color:#facc15;
   }
   .date-box.tour-drive.active{
-    background:#facc15;
-    border-color:#eab308;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.tour-rest{
     background:#fed7aa;
     border-color:#fb923c;
   }
   .date-box.tour-rest.active{
-    background:#fb923c;
-    border-color:#ea580c;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.tour-home{
     background:#f8fafc;
     border-color:#cbd5e1;
   }
   .date-box.tour-home.active{
-    background:#e2e8f0;
-    border-color:#94a3b8;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box.tour-rehearse,
   .date-box.tour-party,
@@ -629,8 +676,12 @@
   .date-box.tour-audition.active,
   .date-box.tour-dressrehearsal.active,
   .date-box.tour-custom.active{
-    background:#a855f7;
-    border-color:#7e22ce;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   /* Cancelled shows */
   .date-box.tour-cancelled{
@@ -639,9 +690,13 @@
     opacity:0.7;
   }
   .date-box.tour-cancelled.active{
-    background:#fecaca;
-    border-color:#dc2626;
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#052e16;
     opacity:1;
+    transform:scale(1.1);
+    box-shadow:0 0 12px 4px rgba(34,197,94,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index:10;
   }
   .date-box .date-icon{
     font-size:14px;
@@ -756,16 +811,19 @@
       </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab active" data-tab="tour">Calendar</button>
-      <button class="tab" data-tab="db">Song Database</button>
-      <button class="tab" data-tab="set">Setlist</button>
-      <button class="tab" data-tab="adv">Tech / Stage</button>
-      <button class="tab" data-tab="live">Live</button>
+    <div style="display:flex;align-items:center;gap:8px;margin:16px 0">
+      <div class="tabs" style="margin:0;flex:1">
+        <button class="tab active" data-tab="tour">Calendar</button>
+        <button class="tab" data-tab="db">Song Database</button>
+        <button class="tab" data-tab="set">Setlist</button>
+        <button class="tab" data-tab="adv">Tech / Stage</button>
+        <button class="tab" data-tab="live">Live</button>
+      </div>
+      <button id="globalThemeToggle" type="button" title="Toggle light/dark mode" style="border-radius:999px;border:none;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#0f172a;color:#fbbf24;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15)">🌙</button>
     </div>
 
     <div class="grid">
-      <div class="card" id="db" style="grid-column:1 / -1; width:100%;">
+      <div class="card" id="db" style="grid-column:1 / -1; width:100%; max-width:100%; overflow:hidden;">
         <h2>Song Database</h2>
           <div style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <input type="text" id="dbSearch" placeholder="Search songs..." style="flex:1 1 200px;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px">
@@ -797,7 +855,7 @@
             <span id="customMoodFilters"></span>
           </div>
         <!-- Profile buttons moved to global-actions -->
-        <div class="list" id="dbList" style="width:100%;"></div>
+        <div class="list" id="dbList" style="width:100%; overflow-x:auto; max-width:100%;"></div>
         <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
           <button class="btn" id="addCustomColumn" style="background:#065f46;color:#f9fafb;border:1px solid #064e3b">+ Add Custom Column</button>
           <div style="display:flex;gap:12px;align-items:center">
@@ -821,8 +879,11 @@
       </div>
 
       <!-- Combined Setlist + Generator Tab -->
-      <div class="card" id="set" style="display:none;grid-column:1 / -1;width:100%">
-        <h2>Setlist</h2>
+      <div class="card" id="set" style="display:none;grid-column:1 / -1;width:100%;overflow:auto;max-height:calc(100vh - 140px)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <h2 style="margin:0">Setlist</h2>
+          <button id="saveSetlistPresetBtn" class="btn" style="padding:6px 12px;font-size:13px;background:#c2410c;color:#fff" title="Save current setlist as a reusable preset">⭐ Preset</button>
+        </div>
         <div id="setlistLayout" style="display:flex;flex-wrap:nowrap;gap:24px;align-items:flex-start;margin-top:12px;width:100%">
           <div id="poolCol" style="flex:0 0 260px;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
             <h3 style="margin:0">Song Pool</h3>
@@ -1573,6 +1634,10 @@
   let currentBandPresetId = null;
   // Stage plot presets: array of {name, svg} - persisted globally across all dates
   let stagePresets = [];
+  // Setlist presets: array of {name, setlist:[], date:ISO, thumbnail:string} - persisted globally
+  let setlistPresets = [];
+  // Last used setlist: most recent non-empty setlist for quick reload
+  let lastUsedSetlist = null;
   // Tour dates: array of {id, date, venue, address, loadIn, showTime, band, setlist:[], stage:string, gig:{}, itinerary:[], tourType:'gig'|'hotel'|'travel'|'home', city:'', bandPresetId:null}
   let tourDates = [];
   let selectedTourDateId = null; // Currently selected date in tour manager
@@ -1710,7 +1775,11 @@
       
       // Strip any embedded audioData before persisting to storage
       const dbOut = db.map(s=>{ const { audioData, ...rest } = s || {}; return rest; });
-      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,selectedTourDateId,activeTab:previousTab,bandPresets,currentBandPresetId,stagePresets};
+      // Track last used setlist if current setlist is non-empty
+      if(setlist && setlist.length > 0){
+        lastUsedSetlist = {setlist: JSON.parse(JSON.stringify(setlist)), gig: JSON.parse(JSON.stringify(gig)), date: new Date().toISOString()};
+      }
+      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,selectedTourDateId,activeTab:previousTab,bandPresets,currentBandPresetId,stagePresets,setlistPresets,lastUsedSetlist};
       localStorage.setItem(STORE_KEY, JSON.stringify(payload));
     }catch(e){ console.error('saveAll failed', e); }
   }
@@ -1802,8 +1871,23 @@
       });
     }
   }
-  // Persist on navigation away
-  window.addEventListener('beforeunload', ()=>{ try{ for(const k in armedAudio){ try{ URL.revokeObjectURL(armedAudio[k]); }catch(_){} } }catch(_){} saveAll(); });
+  // Track if there are unsaved changes worth prompting about
+  let hasUnsavedChanges = false;
+  function markUnsaved(){ hasUnsavedChanges = true; }
+  
+  // Persist on navigation away with save prompt
+  window.addEventListener('beforeunload', (e)=>{
+    try{ for(const k in armedAudio){ try{ URL.revokeObjectURL(armedAudio[k]); }catch(_){} } }catch(_){}
+    saveAll();
+    // Only prompt if there's meaningful data
+    const hasData = (db && db.length > 0) || (setlist && setlist.length > 0) || (tourDates && tourDates.length > 0);
+    if(hasData){
+      // Browser will show native "Leave site?" prompt
+      e.preventDefault();
+      e.returnValue = 'You have unsaved work. Make sure to export your BAND or SET file!';
+      return e.returnValue;
+    }
+  });
     
     // Add custom column button
     const addCustomColumnBtn=document.getElementById('addCustomColumn');
@@ -1857,6 +1941,10 @@
     const clearSetBtn=document.getElementById('clearSet');
     if(clearSetBtn){ clearSetBtn.addEventListener('click',()=>{ if(isSetlistLocked()){ alert('Setlist is locked. Uncheck the lock to make changes.'); return; } if(!setlist.length) return; if(!confirm('Clear current setlist?')) return; setlist=[]; buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); saveAll(); }); }
     
+    // Save Setlist as Preset button - now shows menu with Load/Save/Cancel
+    const saveSetlistPresetBtn=document.getElementById('saveSetlistPresetBtn');
+    if(saveSetlistPresetBtn){ saveSetlistPresetBtn.addEventListener('click', showSetlistPresetMenu); }
+    
     // New Setlist button
     const newSetBtn=document.getElementById('newSetBtn');
     if(newSetBtn){ newSetBtn.addEventListener('click',()=>{
@@ -1867,17 +1955,7 @@
       }
       const save = confirm('Save current setlist as a preset before starting fresh?\n\nOK = Save as preset\nCancel = Just clear (lose current setlist)');
       if(save){
-        const name = prompt('Name this setlist preset:', 'Setlist ' + new Date().toLocaleDateString());
-        if(name && name.trim()){
-          if(!gig.setlistPresets) gig.setlistPresets = [];
-          gig.setlistPresets.push({
-            name: name.trim(),
-            setlist: JSON.parse(JSON.stringify(setlist)),
-            date: new Date().toISOString()
-          });
-          saveAll();
-          alert('Setlist saved as preset: ' + name.trim());
-        }
+        saveSetlistAsPreset();
       }
       setlist = [];
       buildSheet('sheetInline');
@@ -1988,7 +2066,7 @@
   function loadAll(){
     try{
       const raw=localStorage.getItem(STORE_KEY); if(!raw) return;
-    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn,bandPresets:bandPresetsIn,currentBandPresetId:currentBandPresetIdIn,stagePresets:stagePresetsIn}=JSON.parse(raw);
+    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn,bandPresets:bandPresetsIn,currentBandPresetId:currentBandPresetIdIn,stagePresets:stagePresetsIn,setlistPresets:setlistPresetsIn,lastUsedSetlist:lastUsedSetlistIn}=JSON.parse(raw);
       if(Array.isArray(dbIn)) db.push(...dbIn);
       if(Array.isArray(setIn)) setlist=setIn;
       if(gigIn) gig=Object.assign(gig,gigIn);
@@ -2003,6 +2081,8 @@
   if(Array.isArray(bandPresetsIn)) { bandPresets = bandPresetsIn; }
   if(currentBandPresetIdIn) { currentBandPresetId = currentBandPresetIdIn; }
   if(Array.isArray(stagePresetsIn)) { stagePresets = stagePresetsIn; }
+  if(Array.isArray(setlistPresetsIn)) { setlistPresets = setlistPresetsIn; }
+  if(lastUsedSetlistIn && lastUsedSetlistIn.setlist) { lastUsedSetlist = lastUsedSetlistIn; }
       // Gig info now edited directly on sheet header
       const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value = gearSummary || '';
       renderDB(); buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool();
@@ -2043,17 +2123,16 @@
             attachPreviewInteractions();
             renderSongPool();
           } else {
-            // No setlist: ask New or Cancel
-            const mode = confirm('Create New Setlist?\n\nNew = Start fresh setlist (draggable to dates)\nCancel = Stay on current tab');
-            if(!mode) {
-              e.preventDefault();
-              return;
-            }
-            window.setlistEditMode = 'new';
+            // No setlist: show 4-option dialog
+            e.preventDefault();
+            showSetlistOptionsDialog(td, btn);
+            return;
           }
         } else {
-          // No date selected: new mode
-          window.setlistEditMode = 'new';
+          // No date selected: show 4-option dialog
+          e.preventDefault();
+          showSetlistOptionsDialog(null, btn);
+          return;
         }
       }
       
@@ -2208,6 +2287,374 @@
       }, 300);
     })();
     
+    // Setlist Options Dialog - shown when clicking Setlist tab with no existing setlist
+    function showSetlistOptionsDialog(tourDate, tabBtn){
+      let modal = document.getElementById('setlistOptionsModal');
+      if(modal) modal.remove();
+      
+      modal = document.createElement('div');
+      modal.id = 'setlistOptionsModal';
+      modal.className = 'modal open';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;pointer-events:auto';
+      
+      const hasLastUsed = lastUsedSetlist && lastUsedSetlist.setlist && lastUsedSetlist.setlist.length > 0;
+      const hasPresets = setlistPresets && setlistPresets.length > 0;
+      
+      modal.innerHTML = `
+        <div style="background:#1f2937;color:#e5e7eb;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">
+          <h3 style="margin:0 0 16px;font-size:20px;color:#fff">Open Setlist</h3>
+          <p style="margin:0 0 20px;color:#9ca3af;font-size:14px">Choose how to start your setlist:</p>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button id="setOptNew" style="padding:14px 16px;background:#065f46;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+              <span style="font-size:20px">📝</span>
+              <div><strong>New</strong><br><span style="font-size:12px;color:#d1fae5">Start fresh setlist with current date/venue</span></div>
+            </button>
+            <button id="setOptLastUsed" style="padding:14px 16px;background:${hasLastUsed ? '#1e40af' : '#374151'};color:${hasLastUsed ? '#fff' : '#6b7280'};border:none;border-radius:8px;font-size:15px;cursor:${hasLastUsed ? 'pointer' : 'not-allowed'};text-align:left;display:flex;align-items:center;gap:12px" ${hasLastUsed ? '' : 'disabled'}>
+              <span style="font-size:20px">🕐</span>
+              <div><strong>Last Used</strong><br><span style="font-size:12px;color:${hasLastUsed ? '#bfdbfe' : '#6b7280'}">${hasLastUsed ? 'Load most recent setlist' : 'No previous setlist saved'}</span></div>
+            </button>
+            <button id="setOptLoad" style="padding:14px 16px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+              <span style="font-size:20px">📂</span>
+              <div><strong>Load</strong><br><span style="font-size:12px;color:#e9d5ff">Import from .SET file</span></div>
+            </button>
+            <button id="setOptPreset" style="padding:14px 16px;background:${hasPresets ? '#c2410c' : '#374151'};color:${hasPresets ? '#fff' : '#6b7280'};border:none;border-radius:8px;font-size:15px;cursor:${hasPresets ? 'pointer' : 'not-allowed'};text-align:left;display:flex;align-items:center;gap:12px" ${hasPresets ? '' : 'disabled'}>
+              <span style="font-size:20px">⭐</span>
+              <div><strong>Preset</strong><br><span style="font-size:12px;color:${hasPresets ? '#fed7aa' : '#6b7280'}">${hasPresets ? setlistPresets.length + ' saved preset(s)' : 'No presets saved yet'}</span></div>
+            </button>
+          </div>
+          <div style="margin-top:20px;text-align:right">
+            <button id="setOptCancel" style="padding:10px 20px;background:#374151;color:#e5e7eb;border:none;border-radius:6px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      function closeModal(){ modal.remove(); }
+      function proceedToTab(){
+        document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+        tabBtn.classList.add('active');
+        ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+        document.getElementById('set').style.display='block';
+        previousTab = 'set';
+        buildSheet('sheetInline');
+        attachPreviewInteractions();
+        renderSongPool();
+      }
+      
+      // New - blank setlist with current date info
+      modal.querySelector('#setOptNew').onclick = ()=>{
+        closeModal();
+        window.setlistEditMode = 'new';
+        setlist = [];
+        if(tourDate){
+          gig.venue = tourDate.venue || '';
+          gig.address = tourDate.address || '';
+          gig.notes = tourDate.notes || '';
+        }
+        proceedToTab();
+      };
+      
+      // Last Used
+      if(hasLastUsed){
+        modal.querySelector('#setOptLastUsed').onclick = ()=>{
+          closeModal();
+          window.setlistEditMode = 'new';
+          setlist = JSON.parse(JSON.stringify(lastUsedSetlist.setlist));
+          if(tourDate){
+            gig.venue = tourDate.venue || gig.venue;
+            gig.address = tourDate.address || gig.address;
+          }
+          proceedToTab();
+        };
+      }
+      
+      // Load from file
+      modal.querySelector('#setOptLoad').onclick = ()=>{
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.set,.json';
+        input.onchange = ev=>{
+          const file = ev.target.files[0];
+          if(!file) return;
+          const reader = new FileReader();
+          reader.onload = re=>{
+            try{
+              const data = JSON.parse(re.target.result);
+              if(data.setlist && Array.isArray(data.setlist)){
+                setlist = data.setlist;
+                if(data.gig) Object.assign(gig, data.gig);
+                window.setlistEditMode = 'new';
+                closeModal();
+                proceedToTab();
+              } else {
+                alert('Invalid .SET file format');
+              }
+            }catch(err){
+              alert('Error reading file: ' + err.message);
+            }
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      };
+      
+      // Preset picker
+      if(hasPresets){
+        modal.querySelector('#setOptPreset').onclick = ()=>{
+          closeModal();
+          showSetlistPresetPicker(tourDate, tabBtn);
+        };
+      }
+      
+      // Cancel
+      modal.querySelector('#setOptCancel').onclick = closeModal;
+      modal.onclick = e=>{ if(e.target === modal) closeModal(); };
+    }
+    
+    // Setlist Preset Picker - shows saved presets with thumbnails
+    function showSetlistPresetPicker(tourDate, tabBtn){
+      let modal = document.getElementById('setlistPresetPicker');
+      if(modal) modal.remove();
+      
+      modal = document.createElement('div');
+      modal.id = 'setlistPresetPicker';
+      modal.className = 'modal open';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;pointer-events:auto';
+      
+      let presetsHTML = setlistPresets.map((p, idx)=>{
+        const songCount = p.setlist ? p.setlist.length : 0;
+        const preview = p.setlist ? p.setlist.slice(0,5).map(s=>s.title || 'Untitled').join(', ') : '';
+        const dateStr = p.date ? new Date(p.date).toLocaleDateString() : '';
+        return `
+          <div class="preset-item" data-idx="${idx}" style="padding:12px;border:1px solid #374151;border-radius:8px;background:#1f2937;cursor:pointer;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="color:#fff">${p.name || 'Unnamed'}</strong>
+              <button class="delete-preset" data-idx="${idx}" style="background:#991b1b;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer">✕</button>
+            </div>
+            <div style="font-size:12px;color:#9ca3af">${songCount} songs • ${dateStr}</div>
+            <div style="font-size:11px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${preview}...</div>
+          </div>
+        `;
+      }).join('');
+      
+      modal.innerHTML = `
+        <div style="background:#111827;color:#e5e7eb;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">
+          <h3 style="margin:0 0 16px;font-size:20px;color:#fff">⭐ Setlist Presets</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">${presetsHTML || '<p style="color:#6b7280">No presets saved</p>'}</div>
+          <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+            <button id="presetPickerBack" style="padding:10px 16px;background:#374151;color:#e5e7eb;border:none;border-radius:6px;cursor:pointer">Back</button>
+            <button id="presetPickerCancel" style="padding:10px 16px;background:#991b1b;color:#fff;border:none;border-radius:6px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      function closeModal(){ modal.remove(); }
+      function proceedToTab(){
+        document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+        tabBtn.classList.add('active');
+        ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+        document.getElementById('set').style.display='block';
+        previousTab = 'set';
+        buildSheet('sheetInline');
+        attachPreviewInteractions();
+        renderSongPool();
+      }
+      
+      // Click on preset item to load
+      modal.querySelectorAll('.preset-item').forEach(item=>{
+        item.onclick = e=>{
+          if(e.target.classList.contains('delete-preset')) return;
+          const idx = parseInt(item.dataset.idx);
+          const preset = setlistPresets[idx];
+          if(preset && preset.setlist){
+            setlist = JSON.parse(JSON.stringify(preset.setlist));
+            window.setlistEditMode = 'new';
+            if(tourDate){
+              gig.venue = tourDate.venue || gig.venue;
+              gig.address = tourDate.address || gig.address;
+            }
+            closeModal();
+            proceedToTab();
+          }
+        };
+      });
+      
+      // Delete preset
+      modal.querySelectorAll('.delete-preset').forEach(btn=>{
+        btn.onclick = e=>{
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx);
+          if(confirm('Delete preset "' + (setlistPresets[idx]?.name || 'Unnamed') + '"?')){
+            setlistPresets.splice(idx, 1);
+            saveAll();
+            closeModal();
+            if(setlistPresets.length > 0){
+              showSetlistPresetPicker(tourDate, tabBtn);
+            } else {
+              showSetlistOptionsDialog(tourDate, tabBtn);
+            }
+          }
+        };
+      });
+      
+      modal.querySelector('#presetPickerBack').onclick = ()=>{ closeModal(); showSetlistOptionsDialog(tourDate, tabBtn); };
+      modal.querySelector('#presetPickerCancel').onclick = closeModal;
+      modal.onclick = e=>{ if(e.target === modal) closeModal(); };
+    }
+    
+    // Show Preset menu with Load/Save/Cancel options
+    function showSetlistPresetMenu(){
+      let modal = document.getElementById('setlistPresetMenu');
+      if(modal) modal.remove();
+      
+      modal = document.createElement('div');
+      modal.id = 'setlistPresetMenu';
+      modal.className = 'modal open';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;pointer-events:auto';
+      
+      const hasPresets = setlistPresets && setlistPresets.length > 0;
+      const hasSetlist = setlist && setlist.length > 0;
+      
+      modal.innerHTML = `
+        <div style="background:#1f2937;color:#e5e7eb;border-radius:12px;padding:24px;max-width:400px;width:90%">
+          <h3 style="margin:0 0 16px;font-size:20px;color:#fff">⭐ Setlist Presets</h3>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button id="presetMenuSave" style="padding:14px 16px;background:${hasSetlist ? '#065f46' : '#374151'};color:${hasSetlist ? '#fff' : '#6b7280'};border:none;border-radius:8px;font-size:15px;cursor:${hasSetlist ? 'pointer' : 'not-allowed'};text-align:left;display:flex;align-items:center;gap:12px" ${hasSetlist ? '' : 'disabled'}>
+              <span style="font-size:20px">💾</span>
+              <div><strong>Save Preset</strong><br><span style="font-size:12px;color:${hasSetlist ? '#d1fae5' : '#6b7280'}">Save current setlist as reusable preset</span></div>
+            </button>
+            <button id="presetMenuLoad" style="padding:14px 16px;background:${hasPresets ? '#c2410c' : '#374151'};color:${hasPresets ? '#fff' : '#6b7280'};border:none;border-radius:8px;font-size:15px;cursor:${hasPresets ? 'pointer' : 'not-allowed'};text-align:left;display:flex;align-items:center;gap:12px" ${hasPresets ? '' : 'disabled'}>
+              <span style="font-size:20px">📂</span>
+              <div><strong>Load Preset</strong><br><span style="font-size:12px;color:${hasPresets ? '#fed7aa' : '#6b7280'}">${hasPresets ? setlistPresets.length + ' preset(s) available' : 'No presets saved yet'}</span></div>
+            </button>
+          </div>
+          <div style="margin-top:20px;text-align:right">
+            <button id="presetMenuCancel" style="padding:10px 20px;background:#374151;color:#e5e7eb;border:none;border-radius:6px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      function closeModal(){ modal.remove(); }
+      
+      if(hasSetlist){
+        modal.querySelector('#presetMenuSave').onclick = ()=>{
+          closeModal();
+          saveSetlistAsPreset();
+        };
+      }
+      
+      if(hasPresets){
+        modal.querySelector('#presetMenuLoad').onclick = ()=>{
+          closeModal();
+          // Get current tab button for preset picker
+          const tabBtn = document.querySelector('.tab[data-tab="set"]');
+          showSetlistPresetPickerInline();
+        };
+      }
+      
+      modal.querySelector('#presetMenuCancel').onclick = closeModal;
+      modal.onclick = e=>{ if(e.target === modal) closeModal(); };
+    }
+    
+    // Inline preset picker (for when already on setlist tab)
+    function showSetlistPresetPickerInline(){
+      let modal = document.getElementById('setlistPresetPicker');
+      if(modal) modal.remove();
+      
+      modal = document.createElement('div');
+      modal.id = 'setlistPresetPicker';
+      modal.className = 'modal open';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;pointer-events:auto';
+      
+      let presetsHTML = setlistPresets.map((p, idx)=>{
+        const songCount = p.setlist ? p.setlist.length : 0;
+        const preview = p.setlist ? p.setlist.slice(0,5).map(s=>s.title || 'Untitled').join(', ') : '';
+        const dateStr = p.date ? new Date(p.date).toLocaleDateString() : '';
+        return `
+          <div class="preset-item" data-idx="${idx}" style="padding:12px;border:1px solid #374151;border-radius:8px;background:#1f2937;cursor:pointer;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="color:#fff">${p.name || 'Unnamed'}</strong>
+              <button class="delete-preset" data-idx="${idx}" style="background:#991b1b;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer">✕</button>
+            </div>
+            <div style="font-size:12px;color:#9ca3af">${songCount} songs • ${dateStr}</div>
+            <div style="font-size:11px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${preview}...</div>
+          </div>
+        `;
+      }).join('');
+      
+      modal.innerHTML = `
+        <div style="background:#111827;color:#e5e7eb;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">
+          <h3 style="margin:0 0 16px;font-size:20px;color:#fff">⭐ Load Setlist Preset</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">${presetsHTML || '<p style="color:#6b7280">No presets saved</p>'}</div>
+          <div style="margin-top:20px;text-align:right">
+            <button id="presetPickerCancelInline" style="padding:10px 16px;background:#374151;color:#e5e7eb;border:none;border-radius:6px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      function closeModal(){ modal.remove(); }
+      
+      // Click on preset item to load
+      modal.querySelectorAll('.preset-item').forEach(item=>{
+        item.onclick = e=>{
+          if(e.target.classList.contains('delete-preset')) return;
+          const idx = parseInt(item.dataset.idx);
+          const preset = setlistPresets[idx];
+          if(preset && preset.setlist){
+            if(setlist && setlist.length > 0){
+              if(!confirm('Replace current setlist with preset "' + preset.name + '"?')) return;
+            }
+            setlist = JSON.parse(JSON.stringify(preset.setlist));
+            buildSheet('sheetInline');
+            attachPreviewInteractions();
+            renderSongPool();
+            saveAll();
+            closeModal();
+          }
+        };
+      });
+      
+      // Delete preset
+      modal.querySelectorAll('.delete-preset').forEach(btn=>{
+        btn.onclick = e=>{
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx);
+          if(confirm('Delete preset "' + (setlistPresets[idx]?.name || 'Unnamed') + '"?')){
+            setlistPresets.splice(idx, 1);
+            saveAll();
+            closeModal();
+            if(setlistPresets.length > 0){
+              showSetlistPresetPickerInline();
+            }
+          }
+        };
+      });
+      
+      modal.querySelector('#presetPickerCancelInline').onclick = closeModal;
+      modal.onclick = e=>{ if(e.target === modal) closeModal(); };
+    }
+    
+    // Save current setlist as preset
+    function saveSetlistAsPreset(){
+      if(!setlist || setlist.length === 0){
+        alert('Cannot save empty setlist as preset');
+        return;
+      }
+      const name = prompt('Name this setlist preset:', gig.venue || 'Setlist ' + new Date().toLocaleDateString());
+      if(name && name.trim()){
+        setlistPresets.push({
+          name: name.trim(),
+          setlist: JSON.parse(JSON.stringify(setlist)),
+          date: new Date().toISOString()
+        });
+        saveAll();
+        alert('Setlist saved as preset: ' + name.trim());
+      }
+    }
+    
     // Band Preset Modal - shows on first launch or when no band name is set
     function showBandPresetModal(){
       // Always remove and rebuild to ensure fresh event listeners
@@ -2216,10 +2663,11 @@
       
       modal = document.createElement('div');
       modal.id = 'bandPresetModal';
-      modal.className = 'modal';
+      modal.className = 'modal open';
+      modal.style.zIndex = '9999';
       modal.innerHTML = `
-        <div style="background:white;border-radius:12px;padding:24px;width:400px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.3)">
-          <h2 style="margin:0 0 16px;font-size:18px;font-weight:600">🎸 Welcome! Enter Your Band Name</h2>
+        <div class="modalbox" style="background:white;border-radius:12px;padding:24px;width:400px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.3);margin-top:60px">
+          <h2 style="margin:0 0 16px;font-size:20px;font-weight:600">🎸 Welcome! Enter Your Band Name</h2>
           <p style="margin:0 0 16px;color:#666;font-size:13px">This will be used on your setlists, stage plots, and calendar dates.</p>
           
           <div style="margin-bottom:16px">
@@ -2320,8 +2768,9 @@
       }
       
       // Show modal and focus input
-      modal.classList.add('open');
-      setTimeout(()=> nameInput.focus(), 100);
+      setTimeout(()=>{ 
+        if(nameInput) nameInput.focus(); 
+      }, 150);
     }
     
     // Function to add/manage band presets (can be called from UI)
@@ -2336,9 +2785,10 @@
       
       modal = document.createElement('div');
       modal.id = 'bandPresetManagerModal';
-      modal.className = 'modal';
+      modal.className = 'modal open';
+      modal.style.zIndex = '9999';
       modal.innerHTML = `
-        <div style="background:white;border-radius:12px;padding:24px;width:450px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height:80vh;overflow-y:auto">
+        <div class="modalbox" style="background:white;border-radius:12px;padding:24px;width:450px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height:80vh;overflow-y:auto;margin-top:60px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
             <h2 style="margin:0;font-size:18px;font-weight:600">🎸 Manage Band Presets</h2>
             <button id="bandPresetManagerClose" style="background:none;border:none;font-size:18px;cursor:pointer">✕</button>
@@ -3645,6 +4095,37 @@
       }
     }
 
+    // Global theme toggle wiring (next to tabs, visible on all pages)
+    (function wireGlobalThemeToggle(){
+      const btn=document.getElementById('globalThemeToggle');
+      if(!btn) return;
+      
+      // Initialize button state from saved preference
+      const dark=!!gig.liveDark;
+      document.body.classList.toggle('live-dark', dark);
+      btn.textContent = dark ? '☀️' : '🌙';
+      btn.style.background = dark ? '#fef3c7' : '#0f172a';
+      btn.style.color = dark ? '#92400e' : '#fbbf24';
+      
+      btn.addEventListener('click',()=>{
+        gig.liveDark = !gig.liveDark;
+        document.body.classList.toggle('live-dark', gig.liveDark);
+        btn.textContent = gig.liveDark ? '☀️' : '🌙';
+        btn.style.background = gig.liveDark ? '#fef3c7' : '#0f172a';
+        btn.style.color = gig.liveDark ? '#92400e' : '#fbbf24';
+        // Also update Live mode theme button if visible
+        const liveBtn=document.getElementById('liveThemeToggle');
+        if(liveBtn){
+          liveBtn.textContent = gig.liveDark ? '☀️' : '🌙';
+          liveBtn.style.background = gig.liveDark ? '#fef3c7' : '#0f172a';
+          liveBtn.style.color = gig.liveDark ? '#92400e' : '#fbbf24';
+        }
+        // Re-render live to refresh colors
+        try{ renderLive(); }catch(_){ }
+        saveAll();
+      });
+    })();
+
     // Live theme toggle wiring
     (function wireLiveThemeToggle(){
       const btn=document.getElementById('liveThemeToggle');
@@ -3652,6 +4133,16 @@
       btn.addEventListener('click',()=>{
         gig.liveDark = !gig.liveDark;
         document.body.classList.toggle('live-dark', gig.liveDark);
+        // Update both buttons
+        btn.textContent = gig.liveDark ? '☀️' : '🌙';
+        btn.style.background = gig.liveDark ? '#fef3c7' : '#0f172a';
+        btn.style.color = gig.liveDark ? '#92400e' : '#fbbf24';
+        const globalBtn=document.getElementById('globalThemeToggle');
+        if(globalBtn){
+          globalBtn.textContent = gig.liveDark ? '☀️' : '🌙';
+          globalBtn.style.background = gig.liveDark ? '#fef3c7' : '#0f172a';
+          globalBtn.style.color = gig.liveDark ? '#92400e' : '#fbbf24';
+        }
         // Re-render live to refresh colors and icon
         try{ renderLive(); }catch(_){ }
         saveAll();
@@ -4240,6 +4731,115 @@
       // Utility: Generate unique ID
       function generateId(){ return 'tour_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
       
+      // Helper: Parse time string (e.g. "4pm", "16:00", "4:30pm") to 24h format
+      function parseTimeToHHMM(timeStr){
+        if(!timeStr) return null;
+        const cleaned = timeStr.toLowerCase().replace(/\s/g, '');
+        let hours, minutes;
+        
+        const match1 = cleaned.match(/^(\d{1,2}):(\d{2})(am|pm)?$/);
+        const match2 = cleaned.match(/^(\d{1,4})(am|pm)?$/);
+        
+        if(match1){
+          hours = parseInt(match1[1]);
+          minutes = parseInt(match1[2]);
+          if(match1[3] === 'pm' && hours < 12) hours += 12;
+          if(match1[3] === 'am' && hours === 12) hours = 0;
+        } else if(match2){
+          const num = match2[1];
+          if(num.length <= 2){
+            hours = parseInt(num);
+            minutes = 0;
+          } else {
+            hours = parseInt(num.slice(0, -2));
+            minutes = parseInt(num.slice(-2));
+          }
+          if(match2[2] === 'pm' && hours < 12) hours += 12;
+          if(match2[2] === 'am' && hours === 12) hours = 0;
+        } else {
+          return null;
+        }
+        
+        if(hours >= 24) hours = hours % 24;
+        return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`;
+      }
+      
+      // Helper: Sync times to itinerary - creates/updates itinerary entries for load-in, soundcheck, showtime
+      function syncTimesToItinerary(tourDate){
+        if(!tourDate) return;
+        if(!tourDate.itinerary) tourDate.itinerary = [];
+        
+        // Remove existing auto-generated entries (we'll recreate them)
+        tourDate.itinerary = tourDate.itinerary.filter(item => !item.autoGenerated);
+        
+        // Add load-in time
+        if(tourDate.loadIn){
+          const time = parseTimeToHHMM(tourDate.loadIn);
+          if(time){
+            tourDate.itinerary.push({
+              time: time,
+              title: '📦 Load-In',
+              notes: '',
+              duration: 45,
+              color: '#6366f1',
+              autoGenerated: true
+            });
+          }
+        }
+        
+        // Add showtime
+        if(tourDate.showTime){
+          const time = parseTimeToHHMM(tourDate.showTime);
+          if(time){
+            tourDate.itinerary.push({
+              time: time,
+              title: '🎸 Show Time',
+              notes: '',
+              duration: 90,
+              color: '#22c55e',
+              autoGenerated: true
+            });
+          }
+        }
+        
+        // Parse soundcheck from gig notes if present (pattern: "Soundcheck 5pm" or "SC 5pm")
+        if(tourDate.gig && tourDate.gig.notes){
+          const scMatch = tourDate.gig.notes.match(/sound\s*check\s*[@:]?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
+          if(scMatch){
+            const time = parseTimeToHHMM(scMatch[1]);
+            if(time){
+              tourDate.itinerary.push({
+                time: time,
+                title: '🎤 Soundcheck',
+                notes: '',
+                duration: 60,
+                color: '#f59e0b',
+                autoGenerated: true
+              });
+            }
+          }
+          
+          // Parse load-out (pattern: "Load-out 11pm" or "LO 11pm")
+          const loMatch = tourDate.gig.notes.match(/load[\s-]*out\s*[@:]?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
+          if(loMatch){
+            const time = parseTimeToHHMM(loMatch[1]);
+            if(time){
+              tourDate.itinerary.push({
+                time: time,
+                title: '📦 Load-Out',
+                notes: '',
+                duration: 45,
+                color: '#dc2626',
+                autoGenerated: true
+              });
+            }
+          }
+        }
+        
+        // Sort itinerary by time
+        tourDate.itinerary.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      }
+      
       // Helper: Prompt for time in 30-minute increments
       function promptForTime(defaultTime){
         const timeStr = prompt('Enter time (e.g., 2:30pm, 14:30, or just 230)\nUses 30-minute increments:', defaultTime || '');
@@ -4812,6 +5412,9 @@
               td.gig.notes += (td.gig.notes ? '\n' : '') + additionalTimes.trim();
             }
             
+            // Sync times to itinerary
+            syncTimesToItinerary(td);
+            
             // Switch to this date and load it FIRST
             gig.date = dateStr;
             selectedTourDateId = td.id;
@@ -4917,14 +5520,14 @@
           
           box.innerHTML = contentHtml;
           
-          // Single click: preview only (no scroll jump) and switch to Tour tab
+          // Single click: preview only and center on selected date
           box.addEventListener('click', (e) => {
             if(e.defaultPrevented) return;
             
             const td = tourDates.find(t => t.date === dateStr);
             
             if(td){
-              // Preview existing date (load but don't scroll)
+              // Preview existing date
               if(currentDateDirty && selectedTourDateId){
                 if(confirm('You have unsaved changes. Save before switching dates?')){
                   saveCurrentDateData();
@@ -4941,8 +5544,8 @@
               loadDateData(td);
               selectTourDate(td);
               
-              // Update boxes without scrolling
-              renderDateHeader();
+              // Update boxes and center on selected date (don't preserve scroll)
+              renderDateHeader(false);
               saveAll();
               
               // Reload current tab's data for this date
@@ -4960,6 +5563,9 @@
                   if(stageModal && stageModal.classList.contains('open')){
                     try{ closeStageModal(); openStageModal(); }catch(e){ console.log('Stage reload:', e); }
                   }
+                } else if(tabName === 'live'){
+                  // Reload Live Mode with new day's setlist
+                  try{ if(typeof renderLive === 'function') renderLive(); }catch(e){ console.log('Live reload:', e); }
                 }
                 // For other tabs, data is already loaded by loadDateData
               }
@@ -4976,7 +5582,7 @@
                 gig.showTime = '';
                 gig.notes = '';
                 try{ buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); }catch(e){}
-                renderDateHeader();
+                renderDateHeader(false);
                 return;
               }
               
@@ -4989,7 +5595,7 @@
               loadDateData(td);
               selectTourDate(td);
               
-              renderDateHeader();
+              renderDateHeader(false);
               saveAll();
               
               // Update current tab
@@ -5000,6 +5606,9 @@
                   buildSheet('sheetInline');
                   attachPreviewInteractions();
                   renderSongPool();
+                } else if(tabName === 'live'){
+                  // Reload Live Mode with new day's setlist
+                  try{ if(typeof renderLive === 'function') renderLive(); }catch(e){ console.log('Live reload:', e); }
                 }
               }
             }
@@ -5078,16 +5687,37 @@
           dateBoxesContainer.appendChild(box);
         }
         
-        // Handle scrolling: restore position or scroll to today on first load
+        // Center the active date box in the container
+        function centerActiveDate(){
+          const activeBox = dateBoxesContainer.querySelector('.date-box.active');
+          if(activeBox){
+            const containerWidth = dateBoxesContainer.offsetWidth;
+            const boxLeft = activeBox.offsetLeft;
+            const boxWidth = activeBox.offsetWidth;
+            // Center the active box in the container
+            const scrollTo = boxLeft - (containerWidth / 2) + (boxWidth / 2);
+            dateBoxesContainer.scrollLeft = Math.max(0, scrollTo);
+          }
+        }
+        
+        // Handle scrolling: restore position, center active date, or scroll to today on first load
         setTimeout(() => {
           if(preserveScroll && savedScrollLeft > 0){
             // Restore previous scroll position
             dateBoxesContainer.scrollLeft = savedScrollLeft;
+          } else if(gig.date){
+            // Center the active/selected date
+            centerActiveDate();
+            dateHeaderInitialized = true;
           } else if(!dateHeaderInitialized){
-            // First load - scroll to today
+            // First load with no selection - scroll to today
             const todayBox = dateBoxesContainer.querySelector(`[data-date="${today.toISOString().split('T')[0]}"]`);
             if(todayBox){
-              todayBox.scrollIntoView({ behavior: 'instant', inline: 'start', block: 'nearest' });
+              const containerWidth = dateBoxesContainer.offsetWidth;
+              const boxLeft = todayBox.offsetLeft;
+              const boxWidth = todayBox.offsetWidth;
+              const scrollTo = boxLeft - (containerWidth / 2) + (boxWidth / 2);
+              dateBoxesContainer.scrollLeft = Math.max(0, scrollTo);
             }
             dateHeaderInitialized = true;
           }
@@ -5965,6 +6595,9 @@
         tourDate.stagePlotType = tourStagePlotSelect?.value || 'current';
         tourDate.gearSummary = gearSummary;
         tourDate.techNotes = techNotes;
+        
+        // Sync times to itinerary
+        syncTimesToItinerary(tourDate);
         
         // Also update gig object to maintain consistency (including band!)
         gig.venue = tourDate.venue;
