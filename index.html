@@ -6317,8 +6317,10 @@
         if(tourDateInput) tourDateInput.value = tourDate.date || '';
         if(tourVenueInput) tourVenueInput.value = tourDate.venue || '';
         if(tourAddressInput) tourAddressInput.value = tourDate.address || '';
-        if(tourLoadInInput) tourLoadInInput.value = tourDate.loadIn || '';
-        if(tourShowTimeInput) tourShowTimeInput.value = tourDate.showTime || '';
+        // Only set time inputs if value is valid HH:mm format (prevents console warnings)
+        const validTimeFormat = /^\d{2}:\d{2}$/;
+        if(tourLoadInInput) tourLoadInInput.value = (tourDate.loadIn && validTimeFormat.test(tourDate.loadIn)) ? tourDate.loadIn : '';
+        if(tourShowTimeInput) tourShowTimeInput.value = (tourDate.showTime && validTimeFormat.test(tourDate.showTime)) ? tourDate.showTime : '';
         if(tourBandInput) tourBandInput.value = tourDate.band || gig.band || '';
         if(tourSetlistSelect) tourSetlistSelect.value = tourDate.setlistType || 'current';
         if(tourStagePlotSelect) tourStagePlotSelect.value = tourDate.stagePlotType || 'current';
