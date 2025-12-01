@@ -268,13 +268,13 @@
     #stageFrame{max-width:calc(100vw - 48px)}
     .stage-canvas{padding:6px}
   }
-  .stage-legend{width:100%;border:1px solid #e5e7eb;background:#f9fafb;border-radius:6px;padding:4px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1}
-  .stage-legend .row{display:grid;grid-template-columns:60px 1fr 110px 160px;align-items:center;gap:6px;padding:1px 4px;}
+  .stage-legend{max-width:900px;margin:0 auto;border:1px solid #e5e7eb;background:#f9fafb;border-radius:6px;padding:4px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1}
+  .stage-legend .row{display:grid;grid-template-columns:28px 140px 110px 1fr;align-items:center;gap:6px;padding:1px 4px;}
   .stage-legend .row:nth-child(odd){background:#fff}
   .stage-legend img{width:16px;height:16px;object-fit:contain;display:block;margin:0 auto}
   .stage-legend .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
   .stage-legend select,.stage-legend input[type=number]{font-size:11px;padding:0 2px;height:18px}
-  .stage-legend .chain{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stage-legend .chain{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
   .tool[draggable="true"]{user-select:none}
   .stage-actions{position:absolute;top:10px;right:10px;display:flex;gap:8px}
   /* Hide close button in inline mode; Clear moved into toolbox footer */
@@ -11784,7 +11784,7 @@
       item.appendChild(routeCell);
 
       // Chain cell
-  const chainCell=document.createElement('div'); chainCell.className='chain'; chainCell.style.textAlign='left'; chainCell.textContent=buildChain(g); item.appendChild(chainCell);
+  const chainCell=document.createElement('div'); chainCell.className='chain'; chainCell.textContent=buildChain(g); item.appendChild(chainCell);
 
       host.appendChild(item);
     });
