@@ -172,7 +172,6 @@
         overflow:visible!important;
         -webkit-print-color-adjust:exact!important;
         print-color-adjust:exact!important;
-        color-adjust:exact!important;
       }
       
       /* Hide all UI chrome */
@@ -232,6 +231,20 @@
         page-break-inside:avoid!important;
       }
       
+      /* Lyrics print container - ensure isolation */
+      #lyricsPrintContainer{
+        display:block!important;
+        position:relative!important;
+        z-index:999999!important;
+      }
+      #lyricsPrintContainer > div{
+        page-break-after:always!important;
+        page-break-inside:avoid!important;
+      }
+      #lyricsPrintContainer > div:last-child{
+        page-break-after:auto!important;
+      }
+      
       /* Hide scrollbars in print */
       *::-webkit-scrollbar{display:none!important}
       *{scrollbar-width:none!important}
@@ -246,7 +259,7 @@
   .stage-pane .tool{white-space:nowrap}
   .stage-pane .toolbox-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
   .stage-pane .toolbox-actions button{padding:6px 10px;font-size:12px}
-  .stage-canvas{padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:auto}
+  .stage-canvas{padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:auto;position:relative}
   /* Preserve full-size stage canvas on desktop; limit height on tablets/phones */
   #stageSvgFull{width:100% !important;height:auto !important;aspect-ratio:1500/900;flex:0 0 auto;max-height:70vh}
   #stageFrame{max-width:100%;overflow:visible}
@@ -301,6 +314,9 @@
   #stageFrame .stage-handle.bl{bottom:-10px;left:-10px;cursor:nesw-resize}
   #stageFrame .stage-handle.br{bottom:-10px;right:-10px;cursor:nwse-resize}
   #stageFrame .stage-handle:active{background:#374151}
+  .drag-assign-handle{transition:all 0.2s ease}
+  .drag-assign-handle:hover{transform:scale(1.1);box-shadow:0 4px 12px rgba(0,0,0,0.4) !important}
+  .drag-assign-handle:active{transform:scale(0.95);cursor:grabbing !important}
   #stageSvgFull{pointer-events:auto}
   .stage-inspector .muted{color:#6b7280;font-size:13px}
   .gear-wrap{margin-top:8px}
@@ -454,29 +470,15 @@
     border-radius:6px;
     border:1px solid rgba(14,165,233,0.3);
   }
-  .date-view-selector{
-    display:flex;
-    gap:4px;
-    flex-shrink:0;
-  }
-  .date-view-btn{
-    padding:4px 8px;
-    background:#475569;
-    border:1px solid #64748b;
-    border-radius:6px;
-    color:#f1f5f9;
-    font-size:11px;
+  /* Act selector styling */
+  .act-selector{
     font-weight:600;
-    cursor:pointer;
-    white-space:nowrap;
+    padding:4px 10px;
+    border-radius:6px;
+    transition:background 0.15s;
   }
-  .date-view-btn:hover{
-    background:#334155;
-  }
-  .date-view-btn.active{
-    background:#0ea5e9;
-    border-color:#0284c7;
-    color:#f0f9ff;
+  .act-selector:hover{
+    background:rgba(255,255,255,0.15);
   }
   .date-boxes-container{
     display:flex;
@@ -484,49 +486,27 @@
     flex:1;
     overflow-x:auto;
     padding:2px 0;
+    scroll-behavior:smooth;
   }
   .date-box{
-    min-width:52px;
-    width:80px;
+    min-width:70px;
+    width:70px;
     height:48px;
     background:#f8fafc;
     border:2px solid #cbd5e1;
     border-radius:6px;
-    cursor:move;
+    cursor:pointer;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    font-size:9px;
+    font-size:10px;
     font-weight:600;
     color:#1e293b;
     position:relative;
     transition:all 0.15s;
     flex-shrink:0;
     padding:3px;
-  }
-  .date-box.view-7,
-  .date-box.view-14,
-  .date-box.view-30{
-    width:100px;
-    height:52px;
-    font-size:10px;
-  }
-  .date-box.view-60{
-    width:70px;
-    height:48px;
-    font-size:9px;
-  }
-  .date-box.view-90{
-    width:52px;
-    height:44px;
-    font-size:8px;
-  }
-  .date-box.view-120,
-  .date-box.view-365{
-    width:40px;
-    height:40px;
-    font-size:7px;
   }
   .date-box:hover{
     background:#e0f2fe;
@@ -753,17 +733,7 @@
 <body>
   <!-- Global date selector strip: permanently visible across top -->
   <div class="date-header">
-    <span class="date-header-label">Tour Dates:</span>
-    <span class="current-date-display" id="currentDateDisplay">No date selected</span>
-    <div class="date-view-selector">
-      <button class="date-view-btn" data-days="7">7d</button>
-      <button class="date-view-btn" data-days="14">14d</button>
-      <button class="date-view-btn" data-days="30">30d</button>
-      <button class="date-view-btn" data-days="60">60d</button>
-      <button class="date-view-btn active" data-days="90">90d</button>
-      <button class="date-view-btn" data-days="120">120d</button>
-      <button class="date-view-btn" data-days="365">365d</button>
-    </div>
+    <span class="act-selector" id="actSelector" style="cursor:pointer;font-weight:600;color:#60a5fa;padding:4px 12px;border-radius:6px" title="Click to switch band">Select Band...</span>
     <div class="date-boxes-container" id="dateBoxesContainer">
       <!-- Date boxes populated by JS -->
     </div>
@@ -893,10 +863,24 @@
             <div id="poolBreaks" style="display:flex;flex-direction:column;gap:6px"></div>
           </div>
           <div id="previewCol" style="flex:1 1 auto;min-width:560px;max-width:880px;position:sticky;top:12px;align-self:flex-start;max-height:calc(100vh - 24px);display:flex;flex-direction:column">
-            <h3 style="margin:0 0 8px">Preview</h3>
-            <div class="sheet" id="sheetInline" style="overflow:auto;flex:1 1 auto;height:auto;max-height:calc(100vh - 100px)">
-              <div class="hdr" id="hdrInline"></div>
-              <div class="songs" id="songsInline"></div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+              <h3 style="margin:0">Preview</h3>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#64748b;cursor:pointer" title="Lock setlist to prevent accidental edits">
+                <input type="checkbox" id="setlistLockCheckbox" style="cursor:pointer" />
+                🔒 Lock
+              </label>
+            </div>
+            <div style="position:relative">
+              <div id="setlistDragHandle" class="drag-assign-handle" title="Drag to assign this setlist to a calendar date" style="position:absolute;top:8px;right:8px;width:32px;height:32px;background:#000;border:2px solid #fff;border-radius:6px;cursor:grab;display:flex;align-items:center;justify-content:center;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);pointer-events:auto">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 8.5V8a2 2 0 0 0-4 0v1M14 9.5V7a2 2 0 0 0-4 0v4M10 11V4a2 2 0 0 0-4 0v10.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M18 8.5a2 2 0 0 1 2 2v1.5c0 4.5-3 8-8 8s-6-3-7-5l-2.5-4a1.5 1.5 0 0 1 2.5-1.5L7 12" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="sheet" id="sheetInline" style="overflow:auto;flex:1 1 auto;height:auto;max-height:calc(100vh - 100px)">
+                <div class="hdr" id="hdrInline"></div>
+                <div class="songs" id="songsInline"></div>
+              </div>
             </div>
             <div style="margin-top:10px;font-size:12px;color:#64748b">Drag songs from the pool directly into the preview. Drag rows to reorder. Double‑click a title to add/edit notes. Drag a Break chip to insert a break.</div>
           </div>
@@ -951,7 +935,8 @@
               </div>
               <div style="margin-top:12px;display:flex;gap:8px">
                 <button class="btn" id="genBtn" style="flex:1">Generate</button>
-                <button class="btn danger" id="clearSet" type="button" style="flex:1">Clear Setlist</button>
+                <button class="btn" id="newSetBtn" type="button" style="flex:1">New Setlist</button>
+                <button class="btn danger" id="clearSet" type="button" style="flex:1">Clear</button>
               </div>
               <div id="genStats" style="margin-top:8px;color:#64748b;font-size:11px"></div>
             </div>
@@ -1014,6 +999,7 @@
       <div id="adv" style="display:none;padding-top:6px;margin-top:8px">
         <div class="row" style="gap:8px;margin-bottom:4px;padding:0 4px">
           <button class="btn" id="stageToggle" onclick="toggleStageAndNotes()">Stage Plot</button>
+          <button class="btn" id="stagePresetBtnTop" style="padding:4px 10px;font-size:12px;background:#065f46;color:#f9fafb;border:1px solid #064e3b">PRESET</button>
         </div>
       </div>
 
@@ -1057,7 +1043,7 @@
                     <input type="time" id="tourLoadIn" placeholder="Load-In" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
                     <input type="time" id="tourShowTime" placeholder="Show Time" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
                   </div>
-                  <input type="text" id="tourBand" placeholder="Band/Artist" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  <input type="text" id="tourBand" placeholder="Band/Artist (click header to switch)" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
                   <select id="tourSetlistSelect" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px">
                     <option value="current">Use Current Setlist</option>
                     <option value="custom">Custom Setlist</option>
@@ -1382,37 +1368,61 @@
           <div id="customImages" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
         <div style="margin-top:14px;display:flex;justify-content:flex-end;align-items:center;gap:8px">
-          <button class="btn" id="stagePresetBtn" style="padding:4px 10px;font-size:12px;background:#065f46;color:#f9fafb;border:1px solid #064e3b">PRESET</button>
-          <button class="btn danger" id="clearStage" type="button" title="Clear stage plot (keeps background & title)">Clear Stage</button>
+          <button class="btn" id="newStageBtn" type="button" title="Save current as preset and start fresh stage plot">New Stage</button>
+          <button class="btn danger" id="clearStage" type="button" title="Clear stage plot (keeps background & title)">Clear</button>
         </div>
       </div>
       <div class="stage-canvas">
-        <div class="stage-inspector" id="stageInspector" style="margin-bottom:8px">
-          <span class="muted" id="selLabel">Selected:</span>
-          <input id="selName" placeholder="Label (double‑click item to rename)" style="min-width:220px" />
+        <!-- Date/Band/Venue Header Bar -->
+        <div id="stageHeaderBar" style="background:#fef08a;padding:12px 16px;margin-bottom:12px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div style="display:flex;align-items:center;gap:16px;font-weight:600;font-size:16px">
+            <span id="stageHeaderDate" style="color:#854d0e">No date selected</span>
+            <span style="color:#a16207">•</span>
+            <span id="stageHeaderBand" style="color:#854d0e">Band</span>
+            <span style="color:#a16207">•</span>
+            <span id="stageHeaderVenue" style="color:#854d0e">Venue</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#854d0e;cursor:pointer;font-weight:500" title="Lock stage plot to prevent accidental edits">
+              <input type="checkbox" id="stageLockCheckbox" style="cursor:pointer" />
+              🔒 Lock
+            </label>
+            <div id="stageDragHandle" class="drag-assign-handle" draggable="true" title="Drag to assign this stage plot to a calendar date" style="width:32px;height:32px;background:#000;border:2px solid #fff;border-radius:6px;cursor:grab;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 8.5V8a2 2 0 0 0-4 0v1M14 9.5V7a2 2 0 0 0-4 0v4M10 11V4a2 2 0 0 0-4 0v10.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M18 8.5a2 2 0 0 1 2 2v1.5c0 4.5-3 8-8 8s-6-3-7-5l-2.5-4a1.5 1.5 0 0 1 2.5-1.5L7 12" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="stage-inspector" id="stageInspector" style="margin-bottom:8px;display:flex;min-height:42px;background:#f3f4f6;padding:8px 12px;border-radius:6px;align-items:center;gap:12px">
+          <span class="muted" id="selLabel">Selected: (none)</span>
+          <input id="selName" placeholder="Click an item to select" style="min-width:220px" disabled />
           <label class="muted" for="selSize">Size</label>
-          <input id="selSize" type="range" min="0.3" max="5" step="0.05" value="1" style="width:160px" />
+          <input id="selSize" type="range" min="0.3" max="5" step="0.05" value="1" style="width:160px" disabled />
           <label class="muted" for="selRotation">Rotate</label>
-          <input id="selRotation" type="range" min="0" max="360" step="1" value="0" style="width:160px" />
+          <input id="selRotation" type="range" min="0" max="360" step="1" value="0" style="width:160px" disabled />
           <span id="selRotationValue" class="muted" style="min-width:35px">0°</span>
           
-          <label class="muted" for="selShowLabel" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="selShowLabel" /> Show Label</label>
+          <label class="muted" for="selShowLabel" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="selShowLabel" disabled /> Show Label</label>
           <span id="labelSizeControls" style="display:none;align-items:center;gap:6px">
             <label class="muted" for="selLabelSize">Label Size</label>
             <input id="selLabelSize" type="range" min="8" max="32" step="1" value="16" style="width:120px" />
           </span>
-          <button class="btn danger" id="delSel">Delete</button>
-          <button class="btn" id="dupSel" type="button">Duplicate</button>
+          <button class="btn danger" id="delSel" disabled>Delete</button>
+          <button class="btn" id="dupSel" type="button" disabled>Duplicate</button>
         </div>
-        <div id="stageFrame" style="position:relative;display:inline-block;">
-          <svg id="stageSvgFull" class="bw" viewBox="0 0 1500 900" xmlns="http://www.w3.org/2000/svg" style="display:block;">
-            <rect class="stage-bg" x="1" y="1" width="1498" height="898"/>
-            <text x="750" y="50" text-anchor="middle" font-size="26" font-weight="bold" id="stageTitleFull">Band • Date</text>
-          </svg>
-          <div class="stage-handle tl" data-handle="tl"></div>
-          <div class="stage-handle tr" data-handle="tr"></div>
-          <div class="stage-handle bl" data-handle="bl"></div>
-          <div class="stage-handle br" data-handle="br"></div>
+        <div style="position:relative;display:inline-block;">
+          <div id="stageFrame" style="position:relative;display:inline-block;">
+            <svg id="stageSvgFull" class="bw" viewBox="0 0 1500 900" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+              <rect class="stage-bg" x="1" y="1" width="1498" height="898"/>
+              <text x="750" y="50" text-anchor="middle" font-size="26" font-weight="bold" id="stageTitleFull">Band • Date</text>
+            </svg>
+            <div class="stage-handle tl" data-handle="tl"></div>
+            <div class="stage-handle tr" data-handle="tr"></div>
+            <div class="stage-handle bl" data-handle="bl"></div>
+            <div class="stage-handle br" data-handle="br"></div>
+          </div>
         </div>
         <div id="stageLegend" class="stage-legend"></div>
         <div class="stage-actions">
@@ -1440,19 +1450,7 @@
   </div>
 
   <!-- Lighting Notes Fullscreen Modal -->
-  <!-- Stage Preset Modal -->
-  <div class="modal" id="presetModal" style="display:none">
-    <div style="background:#fff;border-radius:8px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
-      <h3 style="margin:0 0 16px 0;font-size:20px">Stage Plot Presets</h3>
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button class="btn" id="addPresetBtn" style="background:#065f46;color:#f9fafb;border:1px solid #064e3b;flex:1">💾 Save Current</button>
-      </div>
-      <div id="presetList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
-      <div style="display:flex;justify-content:flex-end;gap:8px">
-        <button class="btn secondary" id="closePreset">Close</button>
-      </div>
-    </div>
-  </div>
+  <!-- Stage Preset Modal - Created dynamically via showPresetModal() -->
 
   <div class="stage-modal" id="notesModal">
     <div class="stage-editor" style="grid-template-columns:1fr">
@@ -1570,7 +1568,12 @@
   let gearSummary = '';
   // Tech notes persist independently of the current set (keyed by song id)
   let techNotes = {};
-  // Tour dates: array of {id, date, venue, address, loadIn, showTime, band, setlist:[], stage:string, gig:{}, itinerary:[], tourType:'gig'|'hotel'|'travel'|'home', city:''}
+  // Band presets: array of {id, name, defaultStage:'', logo:''}
+  let bandPresets = [];
+  let currentBandPresetId = null;
+  // Stage plot presets: array of {name, svg} - persisted globally across all dates
+  let stagePresets = [];
+  // Tour dates: array of {id, date, venue, address, loadIn, showTime, band, setlist:[], stage:string, gig:{}, itinerary:[], tourType:'gig'|'hotel'|'travel'|'home', city:'', bandPresetId:null}
   let tourDates = [];
   let selectedTourDateId = null; // Currently selected date in tour manager
   let tourViewMode = 'month'; // 'week' | 'month' | 'year'
@@ -1692,20 +1695,12 @@
       }
       
       // Save stage, setlist, gearSummary, and techNotes to current tour date if one is selected
-      // SAFETY: Only save stage if it has content - never overwrite existing data with blank
+      // Each date can have its own unique stage plot (including blank)
       if(typeof selectedTourDateId !== 'undefined' && selectedTourDateId && typeof tourDates !== 'undefined'){
         const tourDate = tourDates.find(td => td.id === selectedTourDateId);
         if(tourDate){
-          // Only save stage if it has actual content OR if there was no previous stage
-          if(stageHTML && stageHTML.length > 0){
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = stageHTML;
-            const svg = tempDiv.querySelector('svg');
-            const hasItems = svg ? svg.querySelectorAll('g[data-draggable]').length > 0 : false;
-            if(hasItems || !tourDate.stage){
-              tourDate.stage = stageHTML;
-            }
-          }
+          // Always save current stage state to tour date (can be blank)
+          tourDate.stage = stageHTML;
           tourDate.setlist = [...setlist];
           tourDate.gig = {...gig};
           if(typeof gearSummary !== 'undefined') tourDate.gearSummary = gearSummary;
@@ -1715,7 +1710,7 @@
       
       // Strip any embedded audioData before persisting to storage
       const dbOut = db.map(s=>{ const { audioData, ...rest } = s || {}; return rest; });
-      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,selectedTourDateId,activeTab:previousTab};
+      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,selectedTourDateId,activeTab:previousTab,bandPresets,currentBandPresetId,stagePresets};
       localStorage.setItem(STORE_KEY, JSON.stringify(payload));
     }catch(e){ console.error('saveAll failed', e); }
   }
@@ -1860,7 +1855,36 @@
     }); }
     // Clear setlist
     const clearSetBtn=document.getElementById('clearSet');
-    if(clearSetBtn){ clearSetBtn.addEventListener('click',()=>{ if(!setlist.length) return; if(!confirm('Clear current setlist?')) return; setlist=[]; buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); saveAll(); }); }
+    if(clearSetBtn){ clearSetBtn.addEventListener('click',()=>{ if(isSetlistLocked()){ alert('Setlist is locked. Uncheck the lock to make changes.'); return; } if(!setlist.length) return; if(!confirm('Clear current setlist?')) return; setlist=[]; buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); saveAll(); }); }
+    
+    // New Setlist button
+    const newSetBtn=document.getElementById('newSetBtn');
+    if(newSetBtn){ newSetBtn.addEventListener('click',()=>{
+      if(isSetlistLocked()){ alert('Setlist is locked. Uncheck the lock to make changes.'); return; }
+      if(!setlist.length){
+        alert('Setlist is already empty!');
+        return;
+      }
+      const save = confirm('Save current setlist as a preset before starting fresh?\n\nOK = Save as preset\nCancel = Just clear (lose current setlist)');
+      if(save){
+        const name = prompt('Name this setlist preset:', 'Setlist ' + new Date().toLocaleDateString());
+        if(name && name.trim()){
+          if(!gig.setlistPresets) gig.setlistPresets = [];
+          gig.setlistPresets.push({
+            name: name.trim(),
+            setlist: JSON.parse(JSON.stringify(setlist)),
+            date: new Date().toISOString()
+          });
+          saveAll();
+          alert('Setlist saved as preset: ' + name.trim());
+        }
+      }
+      setlist = [];
+      buildSheet('sheetInline');
+      attachPreviewInteractions();
+      renderSongPool();
+      saveAll();
+    }); }
     // Help modal open/close and Gear panel
     const helpBtn=document.getElementById('helpBtn'); const helpModal=document.getElementById('helpModal'); const closeHelp=document.getElementById('closeHelp');
     if(helpBtn && helpModal){ helpBtn.addEventListener('click',()=>{ helpModal.style.display='flex'; helpModal.classList.add('open'); }); }
@@ -1964,7 +1988,7 @@
   function loadAll(){
     try{
       const raw=localStorage.getItem(STORE_KEY); if(!raw) return;
-    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn}=JSON.parse(raw);
+    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn,bandPresets:bandPresetsIn,currentBandPresetId:currentBandPresetIdIn,stagePresets:stagePresetsIn}=JSON.parse(raw);
       if(Array.isArray(dbIn)) db.push(...dbIn);
       if(Array.isArray(setIn)) setlist=setIn;
       if(gigIn) gig=Object.assign(gig,gigIn);
@@ -1976,6 +2000,9 @@
   if(typeof tourSearchIn === 'string') { tourCustomSearchTerms = tourSearchIn; }
   if(selectedIdIn) { selectedTourDateId = selectedIdIn; }
   if(activeTabIn) { previousTab = activeTabIn; }
+  if(Array.isArray(bandPresetsIn)) { bandPresets = bandPresetsIn; }
+  if(currentBandPresetIdIn) { currentBandPresetId = currentBandPresetIdIn; }
+  if(Array.isArray(stagePresetsIn)) { stagePresets = stagePresetsIn; }
       // Gig info now edited directly on sheet header
       const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value = gearSummary || '';
       renderDB(); buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool();
@@ -2004,6 +2031,32 @@
     // Tabs
     let previousTab = 'tour'; // Track previous tab
     document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',e=>{
+      // Setlist tab: check if date has setlist
+      if(btn.dataset.tab === 'set'){
+        if(selectedTourDateId){
+          const td = tourDates.find(t => t.id === selectedTourDateId);
+          if(td && td.setlist && td.setlist.length > 0){
+            // Has setlist: auto-edit mode
+            window.setlistEditMode = 'edit';
+            setlist = JSON.parse(JSON.stringify(td.setlist));
+            buildSheet('sheetInline');
+            attachPreviewInteractions();
+            renderSongPool();
+          } else {
+            // No setlist: ask New or Cancel
+            const mode = confirm('Create New Setlist?\n\nNew = Start fresh setlist (draggable to dates)\nCancel = Stay on current tab');
+            if(!mode) {
+              e.preventDefault();
+              return;
+            }
+            window.setlistEditMode = 'new';
+          }
+        } else {
+          // No date selected: new mode
+          window.setlistEditMode = 'new';
+        }
+      }
+      
       // Save Calendar data when leaving Calendar tab
       if(previousTab === 'tour' && btn.dataset.tab !== 'tour'){
         try { if(typeof saveTourDateData === 'function') saveTourDateData(); } catch(err) { console.log('Save tour data:', err); }
@@ -2146,7 +2199,242 @@
           }
         }
       }
+      
+      // Prompt for band name if not set (new user or first launch)
+      setTimeout(()=>{
+        if(!gig.band || gig.band.trim() === '' || gig.band.trim() === 'Enter Band Name'){
+          showBandPresetModal();
+        }
+      }, 300);
     })();
+    
+    // Band Preset Modal - shows on first launch or when no band name is set
+    function showBandPresetModal(){
+      // Always remove and rebuild to ensure fresh event listeners
+      let modal = document.getElementById('bandPresetModal');
+      if(modal) modal.remove();
+      
+      modal = document.createElement('div');
+      modal.id = 'bandPresetModal';
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div style="background:white;border-radius:12px;padding:24px;width:400px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.3)">
+          <h2 style="margin:0 0 16px;font-size:18px;font-weight:600">🎸 Welcome! Enter Your Band Name</h2>
+          <p style="margin:0 0 16px;color:#666;font-size:13px">This will be used on your setlists, stage plots, and calendar dates.</p>
+          
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Band/Artist Name</label>
+            <input type="text" id="bandPresetNameInput" placeholder="e.g., The Kildeers" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+          </div>
+          
+          ${bandPresets.length > 0 ? `
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Or Select Existing Band</label>
+            <select id="bandPresetSelect" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px">
+              <option value="">-- New Band --</option>
+              ${bandPresets.map(bp => `<option value="${bp.id}">${bp.name}</option>`).join('')}
+            </select>
+          </div>
+          ` : ''}
+          
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button id="bandPresetSkip" class="btn" style="padding:8px 16px;font-size:13px">Skip for Now</button>
+            <button id="bandPresetSave" class="btn primary" style="padding:8px 16px;font-size:13px">Save & Continue</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Save handler function
+      function saveBandPreset(){
+        const nameInput = document.getElementById('bandPresetNameInput');
+        const select = document.getElementById('bandPresetSelect');
+        
+        if(select && select.value){
+          // Use existing preset
+          const preset = bandPresets.find(bp => bp.id == select.value);
+          if(preset){
+            gig.band = preset.name;
+            currentBandPresetId = preset.id;
+          }
+        } else if(nameInput && nameInput.value.trim()){
+          // Create new preset
+          const newName = nameInput.value.trim();
+          gig.band = newName;
+          const newPreset = {
+            id: Date.now(),
+            name: newName,
+            defaultStage: '',
+            logo: ''
+          };
+          bandPresets.push(newPreset);
+          currentBandPresetId = newPreset.id;
+        } else {
+          alert('Please enter a band name or select an existing band.');
+          return;
+        }
+        
+        // Update UI and save
+        const sheetBandEl = document.querySelector('.header .band');
+        if(sheetBandEl) sheetBandEl.textContent = gig.band;
+        const calBandInput = document.getElementById('tourBand');
+        if(calBandInput) calBandInput.value = gig.band;
+        // Update current tour date's band
+        const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+        if(tourDate) tourDate.band = gig.band;
+        saveAll();
+        if(typeof updateBandPresetDropdown === 'function') updateBandPresetDropdown();
+        if(typeof updateActDisplay === 'function') updateActDisplay();
+        if(typeof refreshStageHeader === 'function') refreshStageHeader();
+        modal.remove(); // Remove modal from DOM completely
+        try{ buildSheet('sheetInline'); attachPreviewInteractions(); }catch(_){}
+      }
+      
+      // Event listeners
+      document.getElementById('bandPresetSave').addEventListener('click', saveBandPreset);
+      
+      document.getElementById('bandPresetSkip').addEventListener('click', ()=>{
+        modal.remove();
+      });
+      
+      // Enter key to save
+      const nameInput = document.getElementById('bandPresetNameInput');
+      if(nameInput){
+        nameInput.addEventListener('keydown', (e)=>{
+          if(e.key === 'Enter'){
+            e.preventDefault();
+            saveBandPreset();
+          }
+        });
+      }
+      
+      // If existing band selected, populate name field
+      const selectEl = document.getElementById('bandPresetSelect');
+      if(selectEl){
+        selectEl.addEventListener('change', ()=>{
+          if(selectEl.value){
+            const preset = bandPresets.find(bp => bp.id == selectEl.value);
+            if(preset && nameInput) nameInput.value = preset.name;
+          }
+        });
+      }
+      
+      // Show modal and focus input
+      modal.classList.add('open');
+      setTimeout(()=> nameInput.focus(), 100);
+    }
+    
+    // Function to add/manage band presets (can be called from UI)
+    function openBandPresetManager(){
+      showBandPresetModal();
+    }
+    
+    // Band Preset Manager Modal - for editing/deleting presets
+    function showBandPresetManagerModal(){
+      let modal = document.getElementById('bandPresetManagerModal');
+      if(modal) modal.remove(); // Always rebuild to refresh list
+      
+      modal = document.createElement('div');
+      modal.id = 'bandPresetManagerModal';
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div style="background:white;border-radius:12px;padding:24px;width:450px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height:80vh;overflow-y:auto">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h2 style="margin:0;font-size:18px;font-weight:600">🎸 Manage Band Presets</h2>
+            <button id="bandPresetManagerClose" style="background:none;border:none;font-size:18px;cursor:pointer">✕</button>
+          </div>
+          
+          <p style="margin:0 0 16px;color:#666;font-size:13px">Switch between bands for multi-artist management. Each band can have its own setlists and stage plots on your calendar.</p>
+          
+          <div id="bandPresetList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+            ${bandPresets.length === 0 ? '<div style="color:#888;font-size:12px;text-align:center;padding:16px">No band presets saved yet</div>' : 
+              bandPresets.map(bp => `
+                <div class="band-preset-item" data-id="${bp.id}" style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #e5e7eb;border-radius:6px;${currentBandPresetId === bp.id ? 'background:#e0f2fe;border-color:#0ea5e9' : 'background:#f9fafb'}">
+                  <span style="flex:1;font-weight:500">${bp.name}</span>
+                  <button class="band-preset-use btn primary" data-id="${bp.id}" style="padding:4px 10px;font-size:11px">Use</button>
+                  <button class="band-preset-delete btn danger" data-id="${bp.id}" style="padding:4px 8px;font-size:11px">🗑️</button>
+                </div>
+              `).join('')}
+          </div>
+          
+          <div style="border-top:1px solid #e5e7eb;padding-top:16px">
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Add New Band</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="newBandPresetName" placeholder="Band name" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" />
+              <button id="addNewBandPreset" class="btn primary" style="padding:8px 16px;font-size:12px">Add</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Close button
+      document.getElementById('bandPresetManagerClose').addEventListener('click', ()=>{
+        modal.classList.remove('open');
+      });
+      
+      // Use band buttons
+      modal.querySelectorAll('.band-preset-use').forEach(btn => {
+        btn.addEventListener('click', ()=>{
+          const id = parseInt(btn.dataset.id);
+          const preset = bandPresets.find(bp => bp.id === id);
+          if(preset){
+            gig.band = preset.name;
+            currentBandPresetId = preset.id;
+            const tourBandInput = document.getElementById('tourBand');
+            if(tourBandInput) tourBandInput.value = preset.name;
+            const sheetBandEl = document.querySelector('.header .band');
+            if(sheetBandEl) sheetBandEl.textContent = preset.name;
+            const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(tourDate) tourDate.band = preset.name;
+            saveAll();
+            // Refresh dropdown and act display
+            if(typeof updateBandPresetDropdown === 'function') updateBandPresetDropdown();
+            if(typeof updateActDisplay === 'function') updateActDisplay();
+            // Refresh stage header with new band
+            try{ if(typeof refreshStageHeader === 'function') refreshStageHeader(); }catch(_){}
+            modal.classList.remove('open');
+            try{ buildSheet('sheetInline'); attachPreviewInteractions(); }catch(_){}
+          }
+        });
+      });
+      
+      // Delete band buttons
+      modal.querySelectorAll('.band-preset-delete').forEach(btn => {
+        btn.addEventListener('click', ()=>{
+          const id = parseInt(btn.dataset.id);
+          const preset = bandPresets.find(bp => bp.id === id);
+          if(!preset) return;
+          if(!confirm(`Delete band preset "${preset.name}"?`)) return;
+          bandPresets = bandPresets.filter(bp => bp.id !== id);
+          if(currentBandPresetId === id) currentBandPresetId = null;
+          saveAll();
+          if(typeof updateBandPresetDropdown === 'function') updateBandPresetDropdown();
+          showBandPresetManagerModal(); // Refresh
+        });
+      });
+      
+      // Add new band
+      document.getElementById('addNewBandPreset').addEventListener('click', ()=>{
+        const input = document.getElementById('newBandPresetName');
+        const name = input?.value?.trim();
+        if(!name){
+          alert('Enter a band name');
+          return;
+        }
+        if(bandPresets.find(bp => bp.name.toLowerCase() === name.toLowerCase())){
+          alert(`"${name}" already exists`);
+          return;
+        }
+        const newPreset = { id: Date.now(), name, defaultStage: '', logo: '' };
+        bandPresets.push(newPreset);
+        saveAll();
+        if(typeof updateBandPresetDropdown === 'function') updateBandPresetDropdown();
+        showBandPresetManagerModal(); // Refresh
+      });
+      
+      modal.classList.add('open');
+    }
 
     // Add new song inline at top of database
     function addNewSongRow(){
@@ -2864,6 +3152,7 @@
 
     // Generate fresh set each click (ignores current setlist)
     $('#genBtn').addEventListener('click', ()=>{
+      if(isSetlistLocked()){ alert('Setlist is locked. Uncheck the lock to make changes.'); return; }
       const setLen = parseFloat($('#gLen').value || '60') || 60;
       const coverRatio=parseInt($('#gCover').value)||0;
       const breaks=parseInt($('#gBreaks').value)||0; // retained in gig but not auto-inserted
@@ -2979,6 +3268,16 @@
       })();
 
       setlist=plan;
+      
+      // Update current tour date if in edit mode
+      if(selectedTourDateId && window.setlistEditMode === 'edit'){
+        const td = tourDates.find(t => t.id === selectedTourDateId);
+        if(td){
+          td.setlist = JSON.parse(JSON.stringify(setlist));
+          td.setlistType = 'custom';
+        }
+      }
+      
       const actualMusic = setlist.filter(x=>x.type==='song').reduce((a,b)=>a+(b.length||0),0);
       const breakCount=setlist.filter(x=>x.type==='break').length;
       $('#genStats').textContent=`Songs: ${setlist.filter(x=>x.type==='song').length} • Music: ${actualMusic.toFixed(1)}m (≤ target ${musicTime.toFixed(1)}m) • Covers ${coverSum.toFixed(1)}m / Originals ${origSum.toFixed(1)}m${breakCount? ' • Breaks '+breakCount+' × '+breakLen+'m':''}${encore? ' • Encore':''}`;
@@ -3917,6 +4216,10 @@
       const tourSaveDateBtn = document.getElementById('tourSaveDate');
       const tourDeleteDateBtn = document.getElementById('tourDeleteDate');
       
+      // Band preset dropdown removed - now using header Act selector
+      // Keep updateBandPresetDropdown as a no-op for backward compatibility
+      window.updateBandPresetDropdown = function(){};
+      
       // Map & services
       const tourSearchLocationBtn = document.getElementById('tourSearchLocation');
       const tourMapPlaceholder = document.getElementById('tourMapPlaceholder');
@@ -3932,7 +4235,7 @@
       
       // Global date header
       const dateBoxesContainer = document.getElementById('dateBoxesContainer');
-      let currentDateView = 90; // Number of days to display
+      let currentDateView = 14; // Always show 14 days or until first gig
       
       // Utility: Generate unique ID
       function generateId(){ return 'tour_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
@@ -4040,10 +4343,13 @@
             tourDate.stage = stageHTML;
           }
         }
+        // Sync gig details to tour date AND calendar fields
         tourDate.gig = {...gig};
         tourDate.venue = gig.venue || '';
         tourDate.address = gig.address || '';
         tourDate.band = gig.band || '';
+        tourDate.loadIn = gig.loadIn || '';
+        tourDate.showTime = gig.showTime || '';
         tourDate.gearSummary = gearSummary;
         tourDate.techNotes = techNotes;
         currentDateDirty = false;
@@ -4060,10 +4366,12 @@
           setlist = [];
         }
         
-        // Restore stage
+        // Restore stage - always load the date's stage (blank if no stage)
         const container = document.getElementById('stageStore');
-        if(container){
-          if(tourDate.stage && tourDate.stage.length > 0){
+        const fullSvg = document.getElementById('stageSvgFull');
+        if(tourDate.stage && tourDate.stage.length > 0){
+          // Has stage data - load it
+          if(container){
             container.innerHTML = tourDate.stage;
             const svg = container.querySelector('svg');
             if(svg){
@@ -4072,11 +4380,38 @@
               try{ refreshCables(svg); }catch(e){}
             }
           }
-          // Note: If no stage data, we keep existing stage in container
-          // This prevents accidental data loss when switching dates
+          if(fullSvg){
+            // Also update full editor if open
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = tourDate.stage;
+            const srcSvg = tempDiv.querySelector('svg');
+            if(srcSvg){
+              // Clear existing draggables
+              fullSvg.querySelectorAll('g[data-draggable]').forEach(n => n.remove());
+              // Copy draggables from stored stage and enable drag
+              srcSvg.querySelectorAll('g[data-draggable]').forEach(g => {
+                const clone = g.cloneNode(true);
+                fullSvg.appendChild(clone);
+                if(typeof enableSvgDrag === 'function') enableSvgDrag(clone);
+              });
+              try{ refreshCables(fullSvg); }catch(e){}
+              // Bind selection to the full SVG
+              if(typeof bindSelection === 'function') bindSelection(fullSvg);
+            }
+          }
+        } else {
+          // No stage data - show blank stage
+          if(container){
+            container.innerHTML = '<svg id="stageSvg" class="bw" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg"><rect class="stage-bg" x="1" y="1" width="498" height="298"/><text x="250" y="40" text-anchor="middle" font-size="16" font-weight="bold" id="stageTitle">Band • Date</text></svg>';
+          }
+          if(fullSvg){
+            // Clear all draggables from full editor
+            fullSvg.querySelectorAll('g[data-draggable]').forEach(n => n.remove());
+          }
         }
         
-        // Restore gig data
+        // Restore gig data - but PRESERVE the current band from Act selector
+        const currentBandName = currentBandPresetId ? (bandPresets.find(bp => bp.id === currentBandPresetId)?.name || gig.band) : gig.band;
         if(tourDate.gig){
           gig = {...tourDate.gig};
         } else {
@@ -4085,6 +4420,8 @@
           gig.band = tourDate.band || '';
           gig.date = tourDate.date || '';
         }
+        // Always use the Act selector band as authoritative source
+        if(currentBandName) gig.band = currentBandName;
         
         // Restore gear and tech notes
         if(tourDate.gearSummary !== undefined){
@@ -4185,42 +4522,335 @@
       let dragStartTime = 0;
       let dragHoldTimer = null;
       let isDragCopy = false;
+      let dateHeaderInitialized = false; // Track if we've done initial scroll
       
       // Render global date header strip
-      function renderDateHeader(){
+      function renderDateHeader(preserveScroll = true){
         if(!dateBoxesContainer) return;
+        
+        // Save current scroll position before re-rendering
+        const savedScrollLeft = preserveScroll ? dateBoxesContainer.scrollLeft : 0;
         
         dateBoxesContainer.innerHTML = '';
         const today = new Date();
         today.setHours(0,0,0,0);
         
-        // Get current gig date or use today
-        let anchorDate = gig.date ? new Date(gig.date) : new Date();
-        anchorDate.setHours(0,0,0,0);
+        // Always generate 120 days for scrolling (30 days before today, 90 after)
+        // But only 14 are visible at a time
+        const daysToShow = 120;
+        const daysBefore = 30; // Days to show before today
         
-        // Generate fixed date range starting from today (scroll to see past/future)
+        // Calculate box width so exactly 14 fit in the container
+        const containerWidth = dateBoxesContainer.offsetWidth || dateBoxesContainer.parentElement.offsetWidth || 1000;
+        const gap = 4; // Gap between boxes
+        const boxWidth = Math.floor((containerWidth - (13 * gap)) / 14); // 13 gaps between 14 boxes
+        const finalBoxWidth = Math.max(boxWidth, 50); // Minimum 50px
+        
+        // Generate date range starting from daysBefore days ago
         const startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - Math.floor(currentDateView / 3));
+        startDate.setDate(startDate.getDate() - daysBefore);
         
-        for(let i = 0; i < currentDateView; i++){
+        for(let i = 0; i < daysToShow; i++){
           const date = new Date(startDate);
           date.setDate(date.getDate() + i);
           
           const dateStr = date.toISOString().split('T')[0];
           const tourDate = tourDates.find(td => td.date === dateStr);
+          const isToday = date.getTime() === today.getTime();
           
           const box = document.createElement('div');
-          box.className = `date-box view-${currentDateView}`;
+          box.className = 'date-box';
+          box.style.width = finalBoxWidth + 'px';
+          box.style.minWidth = finalBoxWidth + 'px';
           box.draggable = true;
           box.dataset.date = dateStr;
+          
+          // Dragstart: allow dragging date to another date
+          box.addEventListener('dragstart', (e) => {
+            if(tourDate){
+              e.dataTransfer.setData('text/plain', 'dateTransfer');
+              e.dataTransfer.setData('sourceDateStr', dateStr);
+              e.dataTransfer.effectAllowed = 'copy';
+              box.style.opacity = '0.5';
+            } else {
+              e.preventDefault();
+            }
+          });
+          
+          box.addEventListener('dragend', (e) => {
+            box.style.opacity = '1';
+          });
+          
+          // Drop handlers for setlist/stage plot assignment AND date transfer
+          box.addEventListener('dragover', (e) => {
+            const hasAssignType = e.dataTransfer.types.includes('assigntype') || e.dataTransfer.types.includes('text/plain');
+            if(hasAssignType){
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+              box.style.outline = '3px solid #f59e0b';
+              box.style.outlineOffset = '2px';
+            }
+          });
+          
+          box.addEventListener('dragleave', (e) => {
+            box.style.outline = '';
+            box.style.outlineOffset = '';
+          });
+          
+          box.addEventListener('drop', (e) => {
+            let assignType = e.dataTransfer.getData('assignType');
+            if(!assignType) assignType = e.dataTransfer.getData('text/plain');
+            
+            // Handle date-to-date transfer
+            if(assignType === 'dateTransfer'){
+              const sourceDateStr = e.dataTransfer.getData('sourceDateStr');
+              if(!sourceDateStr || sourceDateStr === dateStr) return;
+              
+              e.preventDefault();
+              box.style.outline = '';
+              box.style.outlineOffset = '';
+              
+              const sourceTd = tourDates.find(t => t.date === sourceDateStr);
+              if(!sourceTd) return;
+              
+              // Prompt for what to copy
+              const copyPrompt = prompt(
+                'Copy from ' + new Date(sourceDateStr + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) + 
+                ' to ' + new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) + 
+                '\n\nEnter what to copy (comma-separated):\n' +
+                '  set = Setlist\n' +
+                '  plot = Stage Plot\n' +
+                '  venue = Venue & Address\n' +
+                '  times = Load-in & Show Time\n' +
+                '  notes = Gear & Tech Notes\n' +
+                '  all = Everything\n\n' +
+                'Example: set, plot, times',
+                'all'
+              );
+              if(!copyPrompt) return;
+              
+              const copyParts = copyPrompt.toLowerCase().split(',').map(s => s.trim());
+              const copyAll = copyParts.includes('all');
+              const copySet = copyAll || copyParts.includes('set') || copyParts.includes('setlist');
+              const copyPlot = copyAll || copyParts.includes('plot') || copyParts.includes('stage');
+              const copyVenue = copyAll || copyParts.includes('venue');
+              const copyTimes = copyAll || copyParts.includes('times') || copyParts.includes('loadin') || copyParts.includes('load-in');
+              const copyNotes = copyAll || copyParts.includes('notes') || copyParts.includes('gear') || copyParts.includes('tech');
+              
+              // Find or create target date
+              let targetTd = tourDates.find(t => t.date === dateStr);
+              if(!targetTd){
+                targetTd = {
+                  id: generateId(),
+                  date: dateStr,
+                  venue: '',
+                  address: '',
+                  loadIn: '',
+                  showTime: '',
+                  band: sourceTd.band || gig.band || '',
+                  setlistType: 'custom',
+                  stagePlotType: 'custom',
+                  itinerary: [],
+                  interests: [],
+                  setlist: [],
+                  stage: '',
+                  gearSummary: '',
+                  techNotes: {},
+                  gig: {venue: '', address: '', band: sourceTd.band || '', date: dateStr}
+                };
+                tourDates.push(targetTd);
+                tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+              }
+              
+              // Copy selected data
+              if(copySet && sourceTd.setlist){
+                targetTd.setlist = JSON.parse(JSON.stringify(sourceTd.setlist));
+                targetTd.setlistType = 'custom';
+              }
+              if(copyPlot && sourceTd.stage){
+                targetTd.stage = sourceTd.stage;
+                targetTd.stagePlotType = 'custom';
+              }
+              if(copyVenue){
+                targetTd.venue = sourceTd.venue || '';
+                targetTd.address = sourceTd.address || '';
+                if(targetTd.gig){
+                  targetTd.gig.venue = targetTd.venue;
+                  targetTd.gig.address = targetTd.address;
+                }
+              }
+              if(copyTimes){
+                targetTd.loadIn = sourceTd.loadIn || '';
+                targetTd.showTime = sourceTd.showTime || '';
+              }
+              if(copyNotes){
+                targetTd.gearSummary = sourceTd.gearSummary || '';
+                targetTd.techNotes = JSON.parse(JSON.stringify(sourceTd.techNotes || {}));
+              }
+              
+              // If venue not copied, prompt for it
+              if(!copyVenue){
+                const venueInput = prompt('Enter venue name for ' + new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' (or leave blank):', '');
+                if(venueInput && venueInput.trim()){
+                  targetTd.venue = venueInput.trim();
+                  if(targetTd.gig) targetTd.gig.venue = venueInput.trim();
+                }
+                
+                const addressInput = prompt('Enter venue address (optional):', '');
+                if(addressInput && addressInput.trim()){
+                  targetTd.address = addressInput.trim();
+                  if(targetTd.gig) targetTd.gig.address = addressInput.trim();
+                }
+              }
+              
+              const copied = [];
+              if(copySet) copied.push('Setlist');
+              if(copyPlot) copied.push('Stage Plot');
+              if(copyVenue) copied.push('Venue');
+              if(copyTimes) copied.push('Times');
+              if(copyNotes) copied.push('Notes');
+              
+              saveAll();
+              renderDateHeader();
+              alert('✓ Copied ' + copied.join(', ') + ' to ' + new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'}));
+              return;
+            }
+            
+            if(!assignType || (assignType !== 'setlist' && assignType !== 'stagePlot')) return;
+            
+            e.preventDefault();
+            box.style.outline = '';
+            box.style.outlineOffset = '';
+            
+            console.log('✓ Drop detected:', assignType, 'on date:', dateStr);
+            
+            // Find or create tour date for this dateStr
+            let td = tourDates.find(t => t.date === dateStr);
+            const isNew = !td;
+            
+            if(!td){
+              // Create new tour date
+              td = {
+                id: generateId(),
+                date: dateStr,
+                venue: '',
+                address: '',
+                loadIn: '',
+                showTime: '',
+                band: gig.band || '',
+                setlistType: 'custom',
+                stagePlotType: 'custom',
+                itinerary: [],
+                interests: [],
+                setlist: [],
+                stage: '',
+                gearSummary: '',
+                techNotes: {},
+                gig: {venue: '', address: '', band: gig.band || '', date: dateStr}
+              };
+              tourDates.push(td);
+              tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+            }
+            
+            // Assign setlist or stage plot (copy songs only)
+            if(assignType === 'setlist'){
+              td.setlist = JSON.parse(JSON.stringify(setlist));
+              td.setlistType = 'custom';
+            } else if(assignType === 'stagePlot'){
+              // Get current stage plot HTML from the editor
+              const currentStageHTML = getStageHTML();
+              if(currentStageHTML && currentStageHTML.length > 0){
+                td.stage = currentStageHTML;
+                td.stagePlotType = 'custom';
+              } else {
+                alert('No stage plot to copy. Create a stage plot first.');
+                return;
+              }
+            }
+            
+            // Save immediately
+            saveAll();
+            
+            // Wizard: Prompt for gig details
+            if(!td.venue || td.venue.trim() === ''){
+              const venueInput = prompt('Step 1/5: Enter venue name:', '');
+              if(venueInput && venueInput.trim()){
+                td.venue = venueInput.trim();
+                if(td.gig) td.gig.venue = venueInput.trim();
+              }
+            }
+            
+            if(!td.address || td.address.trim() === ''){
+              const addressInput = prompt('Step 2/5: Enter venue address (optional):', '');
+              if(addressInput && addressInput.trim()){
+                td.address = addressInput.trim();
+                if(td.gig) td.gig.address = addressInput.trim();
+              }
+            }
+            
+            if(!td.loadIn || td.loadIn.trim() === ''){
+              const loadInInput = prompt('Step 3/5: Enter load-in time (e.g., 4pm):', '');
+              if(loadInInput && loadInInput.trim()){
+                td.loadIn = loadInInput.trim();
+                if(td.gig) td.gig.loadIn = loadInInput.trim();
+              }
+            }
+            
+            if(!td.showTime || td.showTime.trim() === ''){
+              const showTimeInput = prompt('Step 4/5: Enter start time (e.g., 7pm):', '');
+              if(showTimeInput && showTimeInput.trim()){
+                td.showTime = showTimeInput.trim();
+                if(td.gig) td.gig.showTime = showTimeInput.trim();
+              }
+            }
+            
+            // Optional: Soundcheck/Load-out in notes or itinerary
+            const additionalTimes = prompt('Step 5/5: Add soundcheck/load-out times? (e.g., "Soundcheck 5pm, Load-out 11pm") Leave blank to skip:', '');
+            if(additionalTimes && additionalTimes.trim()){
+              if(!td.gig) td.gig = {};
+              if(!td.gig.notes) td.gig.notes = '';
+              td.gig.notes += (td.gig.notes ? '\n' : '') + additionalTimes.trim();
+            }
+            
+            // Switch to this date and load it FIRST
+            gig.date = dateStr;
+            selectedTourDateId = td.id;
+            
+            // Update gig object with wizard values before loading
+            gig.venue = td.venue || '';
+            gig.address = td.address || '';
+            gig.loadIn = td.loadIn || '';
+            gig.showTime = td.showTime || '';
+            gig.band = td.band || '';
+            if(td.gig && td.gig.notes) gig.notes = td.gig.notes;
+            
+            // Save with all details
+            saveAll();
+            
+            // Now load the date data (which will populate form fields from td)
+            loadDateData(td);
+            selectTourDate(td);
+            renderDateHeader();
+            
+            // Stay on current tab and update display
+            const currentTab = document.querySelector('.tab.active');
+            if(currentTab && currentTab.dataset.tab === 'set'){
+              // Rebuild sheet with updated gig info
+              buildSheet('sheetInline');
+              attachPreviewInteractions();
+            }
+            
+            const dateDisplay = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+            alert(`✓ ${assignType === 'setlist' ? 'Setlist' : 'Stage plot'} assigned to ${dateDisplay}\n\nVenue: ${td.venue || 'Not set'}\nAddress: ${td.address || 'Not set'}\nLoad-in: ${td.loadIn || 'Not set'}\nStart: ${td.showTime || 'Not set'}`);
+            console.log(`✓ ${assignType} assigned to ${dateDisplay}`);
+          });
           
           // Mark active if matches gig.date
           if(gig.date && dateStr === gig.date){
             box.classList.add('active');
           }
           
-          // Check if this is today
-          const isToday = dateStr === today.toISOString().split('T')[0];
+          // Check if this is today (isToday already defined above)
           const isPast = date < today && !isToday;
           
           // Apply status-based coloring for dates with data
@@ -4314,46 +4944,79 @@
               // Update boxes without scrolling
               renderDateHeader();
               saveAll();
-            } else {
-              // Show "FREE" - blank date, clear all gig data
-              gig.date = dateStr;
-              selectedTourDateId = null;
-              setlist = [];
-              gig.venue = '';
-              gig.address = '';
-              gig.band = '';
-              gig.loadIn = '';
-              gig.showTime = '';
-              gig.notes = '';
               
-              try{ renderDB(); buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); }catch(e){}
+              // Reload current tab's data for this date
+              const currentTab = document.querySelector('.tab.active');
+              if(currentTab){
+                const tabName = currentTab.dataset.tab;
+                if(tabName === 'set'){
+                  // Reload setlist preview
+                  buildSheet('sheetInline');
+                  attachPreviewInteractions();
+                  renderSongPool();
+                } else if(tabName === 'adv'){
+                  // Reload stage plot if in stage view
+                  const stageModal = document.getElementById('stageModal');
+                  if(stageModal && stageModal.classList.contains('open')){
+                    try{ closeStageModal(); openStageModal(); }catch(e){ console.log('Stage reload:', e); }
+                  }
+                }
+                // For other tabs, data is already loaded by loadDateData
+              }
+            } else {
+              // Blank date - prompt to create new entry
+              const td = promptNewTourDate(dateStr);
+              if(!td) {
+                // User cancelled - just preview as FREE day without creating
+                gig.date = dateStr;
+                selectedTourDateId = null;
+                gig.venue = '';
+                gig.address = '';
+                gig.loadIn = '';
+                gig.showTime = '';
+                gig.notes = '';
+                try{ buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); }catch(e){}
+                renderDateHeader();
+                return;
+              }
+              
+              // Create the new tour date
+              tourDates.push(td);
+              tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+              
+              gig.date = dateStr;
+              selectedTourDateId = td.id;
+              loadDateData(td);
+              selectTourDate(td);
+              
               renderDateHeader();
+              saveAll();
+              
+              // Update current tab
+              const currentTab = document.querySelector('.tab.active');
+              if(currentTab){
+                const tabName = currentTab.dataset.tab;
+                if(tabName === 'set'){
+                  buildSheet('sheetInline');
+                  attachPreviewInteractions();
+                  renderSongPool();
+                }
+              }
             }
-            
-            // Switch to Tour tab
-            document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-            const tourTab = document.querySelector('.tab[data-tab="tour"]');
-            if(tourTab) tourTab.classList.add('active');
-            ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
-            const tourEl = document.getElementById('tour');
-            if(tourEl) tourEl.style.display='block';
           });
           
-          // Double click: create/edit date
+          // Double click: edit existing date (same as click for blank)
           box.addEventListener('dblclick', (e) => {
             e.preventDefault();
             
             let td = tourDates.find(t => t.date === dateStr);
             
             if(!td){
-              // Create new date
-              td = promptNewTourDate(dateStr);
-              if(!td) return;
-              
-              tourDates.push(td);
-              tourDates.sort((a,b) => new Date(a.date) - new Date(b.date));
+              // Already handled by click - create new date
+              return;
             }
             
+            // Edit existing date - just select it (click already does this)
             gig.date = dateStr;
             selectedTourDateId = td.id;
             loadDateData(td);
@@ -4414,6 +5077,21 @@
           
           dateBoxesContainer.appendChild(box);
         }
+        
+        // Handle scrolling: restore position or scroll to today on first load
+        setTimeout(() => {
+          if(preserveScroll && savedScrollLeft > 0){
+            // Restore previous scroll position
+            dateBoxesContainer.scrollLeft = savedScrollLeft;
+          } else if(!dateHeaderInitialized){
+            // First load - scroll to today
+            const todayBox = dateBoxesContainer.querySelector(`[data-date="${today.toISOString().split('T')[0]}"]`);
+            if(todayBox){
+              todayBox.scrollIntoView({ behavior: 'instant', inline: 'start', block: 'nearest' });
+            }
+            dateHeaderInitialized = true;
+          }
+        }, 50);
       }
       
       // Context menu for date boxes
@@ -4587,17 +5265,101 @@
         }, 3000);
       }
       
-
-      
-      // Date view selector buttons
-      document.querySelectorAll('.date-view-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.date-view-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentDateView = parseInt(btn.dataset.days);
-          renderDateHeader();
+      // Act selector - click to show band preset dropdown
+      const actSelector = document.getElementById('actSelector');
+      if(actSelector){
+        // Update display with current band
+        function updateActDisplay(){
+          const bandName = gig.band && gig.band.trim() && gig.band.trim() !== 'Enter Band Name' ? gig.band : null;
+          if(bandName){
+            actSelector.textContent = bandName;
+            actSelector.style.color = '#60a5fa'; // Bright blue
+          } else {
+            actSelector.textContent = 'Select Band...';
+            actSelector.style.color = '#94a3b8'; // Gray
+          }
+        }
+        updateActDisplay();
+        
+        // Make globally accessible
+        window.updateActDisplay = updateActDisplay;
+        
+        actSelector.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          // Show dropdown of band presets
+          let dropdown = document.getElementById('actDropdown');
+          if(dropdown){
+            dropdown.remove();
+            return;
+          }
+          
+          // Get position of selector for dropdown placement
+          const rect = actSelector.getBoundingClientRect();
+          
+          dropdown = document.createElement('div');
+          dropdown.id = 'actDropdown';
+          dropdown.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;background:white;border:1px solid #d1d5db;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:99999;min-width:180px;max-height:300px;overflow-y:auto`;
+          
+          // Add "New Band" option
+          const newOpt = document.createElement('div');
+          newOpt.textContent = '➕ Add New Band...';
+          newOpt.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #e5e7eb;color:#059669;font-weight:500';
+          newOpt.addEventListener('mouseenter', ()=> newOpt.style.background = '#f0fdf4');
+          newOpt.addEventListener('mouseleave', ()=> newOpt.style.background = '');
+          newOpt.addEventListener('click', ()=>{
+            dropdown.remove();
+            showBandPresetModal();
+          });
+          dropdown.appendChild(newOpt);
+          
+          // List existing presets
+          if(bandPresets.length > 0){
+            bandPresets.forEach(bp => {
+              const opt = document.createElement('div');
+              opt.textContent = bp.name;
+              opt.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:13px;' + (currentBandPresetId === bp.id ? 'background:#e0f2fe;font-weight:600' : '');
+              opt.addEventListener('mouseenter', ()=> opt.style.background = currentBandPresetId === bp.id ? '#bae6fd' : '#f1f5f9');
+              opt.addEventListener('mouseleave', ()=> opt.style.background = currentBandPresetId === bp.id ? '#e0f2fe' : '');
+              opt.addEventListener('click', ()=>{
+                gig.band = bp.name;
+                currentBandPresetId = bp.id;
+                updateActDisplay();
+                // Update ALL UI elements with band name
+                const sheetBandEl = document.querySelector('.header .band');
+                if(sheetBandEl) sheetBandEl.textContent = bp.name;
+                const calBandInput = document.getElementById('tourBand');
+                if(calBandInput) calBandInput.value = bp.name;
+                const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+                if(tourDate) tourDate.band = bp.name;
+                if(typeof updateBandPresetDropdown === 'function') updateBandPresetDropdown();
+                // Refresh stage plot header
+                if(typeof refreshStageHeader === 'function') refreshStageHeader();
+                saveAll();
+                dropdown.remove();
+                try{ buildSheet('sheetInline'); attachPreviewInteractions(); }catch(_){}
+              });
+              dropdown.appendChild(opt);
+            });
+          } else {
+            const empty = document.createElement('div');
+            empty.textContent = 'No bands saved yet';
+            empty.style.cssText = 'padding:10px 14px;color:#94a3b8;font-size:12px;font-style:italic';
+            dropdown.appendChild(empty);
+          }
+          
+          document.body.appendChild(dropdown);
+          
+          // Close on outside click
+          setTimeout(()=>{
+            document.addEventListener('click', function closeDropdown(e){
+              if(!dropdown.contains(e.target) && e.target !== actSelector){
+                dropdown.remove();
+                document.removeEventListener('click', closeDropdown);
+              }
+            });
+          }, 10);
         });
-      });
+      }
       
       // Context menu for date boxes
       function showDateContextMenu(x, y, dateStr, box){
@@ -4860,6 +5622,9 @@
                 saveCurrentDateData();
               }
               
+              // Get current band from Act selector (authoritative source)
+              const currentBandName = currentBandPresetId ? (bandPresets.find(bp => bp.id === currentBandPresetId)?.name || gig.band || '') : (gig.band || '');
+              
               // Create new BLANK date - user will fill in details
               const newDate = {
                 id: generateId(),
@@ -4868,7 +5633,7 @@
                 address: '',
                 loadIn: '',
                 showTime: '',
-                band: '',
+                band: currentBandName,
                 setlistType: 'current',
                 stagePlotType: 'current',
                 itinerary: [],
@@ -4877,7 +5642,7 @@
                 stage: '',
                 gearSummary: '',
                 techNotes: {},
-                gig: {venue:'', address:'', band:'', date:dateStr}
+                gig: {venue:'', address:'', band: currentBandName, date:dateStr}
               };
               
               tourDates.push(newDate);
@@ -4911,6 +5676,9 @@
         // Load the new date's data
         loadDateData(tourDate);
         
+        // Rebuild sheet with new date's gig data (band name, venue, etc.)
+        try{ buildSheet('sheetInline'); attachPreviewInteractions(); }catch(_){}
+        
         if(tourNoSelection) tourNoSelection.style.display = 'none';
         if(tourDateDetails) tourDateDetails.style.display = '';
         if(tourItineraryContent) tourItineraryContent.style.display = '';
@@ -4921,7 +5689,7 @@
         if(tourAddressInput) tourAddressInput.value = tourDate.address || '';
         if(tourLoadInInput) tourLoadInInput.value = tourDate.loadIn || '';
         if(tourShowTimeInput) tourShowTimeInput.value = tourDate.showTime || '';
-        if(tourBandInput) tourBandInput.value = tourDate.band || '';
+        if(tourBandInput) tourBandInput.value = tourDate.band || gig.band || '';
         if(tourSetlistSelect) tourSetlistSelect.value = tourDate.setlistType || 'current';
         if(tourStagePlotSelect) tourStagePlotSelect.value = tourDate.stagePlotType || 'current';
         
@@ -5198,9 +5966,19 @@
         tourDate.gearSummary = gearSummary;
         tourDate.techNotes = techNotes;
         
-        // Also update gig object to maintain consistency
+        // Also update gig object to maintain consistency (including band!)
         gig.venue = tourDate.venue;
         gig.address = tourDate.address;
+        gig.band = tourDate.band;
+        
+        // Sync band name to sheet header if visible
+        const sheetBandEl = document.querySelector('.header .band');
+        if(sheetBandEl && gig.band) {
+          sheetBandEl.textContent = gig.band;
+        }
+        
+        // Update Act display in header
+        if(typeof updateActDisplay === 'function') updateActDisplay();
         
         saveAll();
       };
@@ -5519,6 +6297,43 @@
               document.addEventListener('mouseup', onMouseUp);
             });
             
+            // Touch support for top handle
+            topHandle.addEventListener('touchstart', (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              resizing = true;
+              const touch = e.touches[0];
+              const startY = touch.clientY;
+              const startDuration = item.duration || 30;
+              const startTime = item.time;
+              const [startH, startM] = startTime.split(':').map(Number);
+              
+              const onTouchMove = (e2) => {
+                if(!resizing) return;
+                const t = e2.touches[0]; if(!t) return;
+                const deltaY = t.clientY - startY;
+                const deltaSlots = Math.round(deltaY / 20);
+                const deltaMinutes = deltaSlots * 15;
+                const newStartMinutes = (startH * 60 + startM) + deltaMinutes;
+                const newDuration = Math.max(15, startDuration - deltaMinutes);
+                const newH = Math.floor(newStartMinutes / 60);
+                const newM = newStartMinutes % 60;
+                item.time = `${String(newH).padStart(2,'0')}:${String(Math.max(0, newM)).padStart(2,'0')}`;
+                item.duration = newDuration;
+                saveAll();
+                renderItinerary(tourDate);
+              };
+              
+              const onTouchEnd = () => {
+                resizing = false;
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+              };
+              
+              document.addEventListener('touchmove', onTouchMove, {passive:false});
+              document.addEventListener('touchend', onTouchEnd);
+            }, {passive:false});
+            
             // Resize from bottom handle
             bottomHandle.addEventListener('mousedown', (e) => {
               e.stopPropagation();
@@ -5547,6 +6362,36 @@
               document.addEventListener('mousemove', onMouseMove);
               document.addEventListener('mouseup', onMouseUp);
             });
+            
+            // Touch support for bottom handle
+            bottomHandle.addEventListener('touchstart', (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              resizing = true;
+              const touch = e.touches[0];
+              const startY = touch.clientY;
+              const startDuration = item.duration || 30;
+              
+              const onTouchMove = (e2) => {
+                if(!resizing) return;
+                const t = e2.touches[0]; if(!t) return;
+                const deltaY = t.clientY - startY;
+                const deltaSlots = Math.round(deltaY / 20);
+                const deltaMinutes = deltaSlots * 15;
+                item.duration = Math.max(15, startDuration + deltaMinutes);
+                saveAll();
+                renderItinerary(tourDate);
+              };
+              
+              const onTouchEnd = () => {
+                resizing = false;
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+              };
+              
+              document.addEventListener('touchmove', onTouchMove, {passive:false});
+              document.addEventListener('touchend', onTouchEnd);
+            }, {passive:false});
             
             // Double-click title to edit
             const titleEl = contentDiv.querySelector('.item-title');
@@ -6888,6 +7733,81 @@
       // Initialize chip drag handlers
       initActivityChips();
       
+      // Drag-to-assign handlers for setlist and stage plot
+      function initDragAssignHandles(){
+        const setlistHandle = document.getElementById('setlistDragHandle');
+        const stageHandle = document.getElementById('stageDragHandle');
+        
+        // Remove old listeners by cloning
+        if(setlistHandle){
+          const newSetlistHandle = setlistHandle.cloneNode(true);
+          setlistHandle.parentNode.replaceChild(newSetlistHandle, setlistHandle);
+          
+          newSetlistHandle.draggable = true;
+          
+          // Use capture phase to block events before they reach other handlers
+          newSetlistHandle.addEventListener('mousedown', (e) => { e.stopPropagation(); e.stopImmediatePropagation(); }, {capture: true});
+          newSetlistHandle.addEventListener('touchstart', (e) => { e.stopPropagation(); e.stopImmediatePropagation(); }, {capture: true});
+          
+          newSetlistHandle.addEventListener('dragstart', (e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData('text/plain', 'setlist');
+            e.dataTransfer.setData('assignType', 'setlist');
+            e.dataTransfer.effectAllowed = 'copy';
+            newSetlistHandle.style.cursor = 'grabbing';
+            console.log('✓ Drag started: setlist');
+          });
+          
+          newSetlistHandle.addEventListener('dragend', (e) => {
+            newSetlistHandle.style.cursor = 'grab';
+          });
+        }
+        
+        // Stage plot drag handle
+        if(stageHandle){
+          const newStageHandle = stageHandle.cloneNode(true);
+          stageHandle.parentNode.replaceChild(newStageHandle, stageHandle);
+          
+          newStageHandle.draggable = true;
+          
+          // Stop propagation to prevent stage plot interactions, but DON'T preventDefault for drag to work
+          newStageHandle.addEventListener('mousedown', (e) => { 
+            e.stopPropagation(); 
+            e.stopImmediatePropagation(); 
+          }, {capture: true});
+          
+          newStageHandle.addEventListener('touchstart', (e) => { 
+            e.stopPropagation(); 
+            e.stopImmediatePropagation(); 
+          }, {capture: true});
+          
+          newStageHandle.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            e.stopImmediatePropagation(); 
+          }, {capture: true});
+          
+          newStageHandle.addEventListener('dragstart', (e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData('text/plain', 'stagePlot');
+            e.dataTransfer.setData('assignType', 'stagePlot');
+            e.dataTransfer.effectAllowed = 'copy';
+            newStageHandle.style.cursor = 'grabbing';
+            console.log('✓ Drag started: stagePlot');
+          });
+          
+          newStageHandle.addEventListener('dragend', (e) => {
+            newStageHandle.style.cursor = 'grab';
+          });
+        }
+      }
+      
+      // Initialize drag-assign handles
+      initDragAssignHandles();
+      
+      // Make globally accessible
+      window.initDragAssignHandles = initDragAssignHandles;
+      
     })();
 
     function buildSheet(target='sheet'){
@@ -6947,13 +7867,24 @@
       const songs = document.getElementById(isInline? 'songsInline' : 'songs');
       if(!hdr || !songs) return;
       
+      // Get current band from Act selector (authoritative source)
+      const currentBandName = currentBandPresetId ? (bandPresets.find(bp => bp.id === currentBandPresetId)?.name || gig.band || '') : (gig.band || '');
+      
       // Header - directly editable
       hdr.innerHTML='';
-      const b = el('div','band',(gig.band||'').trim()||'Enter Band Name');
+      const b = el('div','band',currentBandName.trim()||'Enter Band Name');
       b.contentEditable = 'true';
       b.setAttribute('data-placeholder', 'Enter Band Name');
       b.addEventListener('blur', ()=>{
         gig.band = b.textContent.trim();
+        // Sync to calendar band input
+        const calBandInput = document.getElementById('tourBand');
+        if(calBandInput) calBandInput.value = gig.band;
+        // Also update current tour date's band
+        const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
+        if(currentTourDate) currentTourDate.band = gig.band;
+        // Update Act display in header
+        if(typeof updateActDisplay === 'function') updateActDisplay();
         saveAll();
       });
       b.addEventListener('keydown', (e)=>{
@@ -7399,7 +8330,7 @@
     
     // New drop handling directly on preview songs area
     const previewSongs=document.getElementById('songsInline');
-    function rebuildPreview(){ buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); saveAll(); try{ pushAppHistory('rebuildPreview'); }catch(_){ } }
+    function rebuildPreview(){ buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool(); saveAll(); try{ pushAppHistory('rebuildPreview'); }catch(_){ } initDragAssignHandles(); }
     function attachPreviewInteractions(){
       const sheet=document.getElementById('sheetInline');
       if(!sheet) return;
@@ -7436,6 +8367,11 @@
               e.preventDefault();
               return;
             }
+            // Check if setlist is locked
+            if(isSetlistLocked()) {
+              e.preventDefault();
+              return;
+            }
             e.dataTransfer.setData('text/x-set-index', String(setlistIdx));
             row.classList.add('dragging');
           });
@@ -7443,6 +8379,7 @@
           
           // Add dragover handlers to show blue line indicator
           row.addEventListener('dragover', e => {
+            if(isSetlistLocked()) return;
             e.preventDefault();
             const rect = row.getBoundingClientRect();
             const midpoint = rect.top + rect.height / 2;
@@ -7469,6 +8406,7 @@
           if(row.classList.contains('line')){
             const titleDiv=row.querySelector('.title');
             if(titleDiv){ titleDiv.addEventListener('dblclick',()=>{
+              if(isSetlistLocked()) return;
               const entry=setlist[setlistIdx]; if(!entry || entry.type!=='song') return; const val=prompt('Notes for '+entry.title, entry.notes||''); if(val!=null){ entry.notes=val.trim(); rebuildPreview(); }
             }); }
           }
@@ -7477,6 +8415,7 @@
           dragTargets.forEach(target => {
             target.style.touchAction='none';
             target.addEventListener('touchstart',ev=>{
+              if(isSetlistLocked()){ ev.preventDefault(); return; }
               const t=ev.touches[0]; if(!t) return; 
               window._activeSetTouch={ 
                 idx:setlistIdx, 
@@ -7493,6 +8432,7 @@
           });
           
           row.addEventListener('touchmove',ev=>{
+            if(isSetlistLocked()) return;
             const act=window._activeSetTouch; if(!act) return; 
             for(const t of ev.touches){ 
               if(t.identifier!=null){ 
@@ -7547,6 +8487,7 @@
       
       allSongsContainers.forEach(songsContainer => {
         songsContainer.addEventListener('dragover',e=> {
+          if(isSetlistLocked()) return;
           e.preventDefault();
           
           // Show blue line indicator when dragging from pool
@@ -7591,6 +8532,9 @@
         
         songsContainer.addEventListener('drop',e=>{
           e.preventDefault(); e.stopPropagation(); 
+          
+          // Check if setlist is locked
+          if(isSetlistLocked()) return;
           
           // Clear all drop indicators
           const allRows=[...sheet.querySelectorAll('.line, .break')];
@@ -7942,7 +8886,11 @@
     // Removed openPool button usage (embedded pool); keep flyout logic if still present elsewhere
     if(closePoolBtn && poolFly){ closePoolBtn.addEventListener('click',()=> poolFly.classList.remove('open')); }
     window.addEventListener('scroll',()=>{ if(poolFly && poolFly.classList.contains('open')) positionPool(); }, {passive:true});
-    window.addEventListener('resize',()=>{ if(poolFly && poolFly.classList.contains('open')) positionPool(); });
+    window.addEventListener('resize',()=>{ 
+      if(poolFly && poolFly.classList.contains('open')) positionPool(); 
+      // Recalculate date box widths on resize
+      if(typeof renderDateHeader === 'function') renderDateHeader();
+    });
     if(poolFly && !poolFly.dataset.dropListenerAdded){
       poolFly.dataset.dropListenerAdded = 'true';
       poolFly.addEventListener('dragover',e=> e.preventDefault());
@@ -8328,10 +9276,8 @@
           const b=document.createElement('button');
           b.className='tool';
           b.innerHTML=`<img src="${t.src}" alt="${t.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${t.label}`;
-          b.setAttribute('draggable','true');
+          // Don't use HTML5 draggable - we use custom mouse/touch handlers instead to avoid duplicates
           b.dataset.key = t.key;
-          b.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', t.key); });
-          b.addEventListener('dragend',ev=>{});
           b.addEventListener('touchstart',ev=>{ const touch=ev.touches[0]; if(!touch) return; activeToolTouch={ key:t.key, x:touch.clientX, y:touch.clientY }; ev.preventDefault(); }, {passive:false});
           // Long press (~1s) to hide icon: only when cursor/finger stays put
           let lpTimer=null; let startPos=null; const cancel=()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } startPos=null; };
@@ -8359,8 +9305,8 @@
             const wrap=document.createElement('div'); wrap.style.position='relative';
             const b=document.createElement('button'); b.className='tool'; b.style.paddingRight='26px';
             b.innerHTML=`<img src="${imgObj.data}" alt="${imgObj.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${imgObj.label}`;
-            b.setAttribute('draggable','true'); b.dataset.key=imgObj.key;
-            b.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', imgObj.key); });
+            // Don't use HTML5 draggable - we use custom mouse/touch handlers instead
+            b.dataset.key=imgObj.key;
             b.style.touchAction='none';
             b.addEventListener('touchstart',ev=>{ const touch=ev.touches[0]; if(!touch) return; activeToolTouch={ key:imgObj.key, x:touch.clientX, y:touch.clientY }; ev.preventDefault(); }, {passive:false});
             const del=document.createElement('button'); del.textContent='×'; del.title='Remove'; del.style.position='absolute'; del.style.top='2px'; del.style.right='2px'; del.style.width='20px'; del.style.height='20px'; del.style.lineHeight='16px'; del.style.padding='0'; del.style.fontSize='14px'; del.style.background='#374151'; del.style.color='#fff'; del.style.border='none'; del.style.borderRadius='4px'; del.style.cursor='pointer';
@@ -8382,9 +9328,44 @@
     }
 
     function refreshStageHeader(){
-      const text=`${(gig.band||'Band').trim()} • ${(gig.date||'Date')}`;
+      // Get current band from Act selector (authoritative source)
+      const currentBandName = currentBandPresetId ? (bandPresets.find(bp => bp.id === currentBandPresetId)?.name || gig.band || 'Band') : (gig.band || 'Band');
+      const text=`${currentBandName.trim()} • ${(gig.date||'Date')}`;
       const elT=document.getElementById('stageTitle'); if(elT) elT.textContent=text;
       const elTF=document.getElementById('stageTitleFull'); if(elTF) elTF.textContent=text;
+      
+      // Update the header bar above stage canvas
+      const headerDate = document.getElementById('stageHeaderDate');
+      const headerBand = document.getElementById('stageHeaderBand');
+      const headerVenue = document.getElementById('stageHeaderVenue');
+      
+      if(headerDate){
+        if(selectedTourDateId){
+          const td = tourDates.find(t => t.id === selectedTourDateId);
+          if(td && td.date){
+            const d = new Date(td.date + 'T12:00:00');
+            headerDate.textContent = d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric', year:'numeric'});
+          } else {
+            headerDate.textContent = gig.date || 'No date selected';
+          }
+        } else {
+          headerDate.textContent = gig.date || 'No date selected';
+        }
+      }
+      if(headerBand) headerBand.textContent = gig.band || 'Band';
+      if(headerVenue) headerVenue.textContent = gig.venue || 'Venue';
+    }
+    
+    // Lock state for setlist and stage plot
+    window.setlistLocked = false;
+    window.stageLocked = false;
+    
+    function isSetlistLocked(){
+      return window.setlistLocked || (document.getElementById('setlistLockCheckbox') && document.getElementById('setlistLockCheckbox').checked);
+    }
+    
+    function isStageLocked(){
+      return window.stageLocked || (document.getElementById('stageLockCheckbox') && document.getElementById('stageLockCheckbox').checked);
     }
 
     // Note: small stage removed; glyphs are added via fullscreen only
@@ -8568,11 +9549,12 @@
       let start=null; let orig=null;
       // Long-press cable drag state
       let lpTimer=null; let lpActive=false; let lpLine=null; let lpSource=null; let lpTouchId=null;
-        node.addEventListener('mousedown',e=>{ if(e.button===2){ return; } bringToFront(node); start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
-      function move(e){ if(!start) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); }
-        function up(e){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); if(e && typeof e.clientX==='number'){ autoConnectOnPoint(node, e.clientX, e.clientY); } saveAll(); snapshotStage(); }
+        node.addEventListener('mousedown',e=>{ if(e.button===2){ return; } if(isStageLocked()){ e.preventDefault(); return; } bringToFront(node); start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
+      function move(e){ if(!start || isStageLocked()) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); }
+        function up(e){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); if(e && typeof e.clientX==='number' && !isStageLocked()){ autoConnectOnPoint(node, e.clientX, e.clientY); } saveAll(); snapshotStage(); }
       // rename on double click (desktop only - avoid on mobile to prevent keyboard popup after drag)
       node.addEventListener('dblclick',()=>{
+        if(isStageLocked()) return;
         const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
         if(isMobile) return; // skip on mobile/tablet
         const txt=findText(node); if(!txt) return; const nv=prompt('Rename item:', txt.textContent||''); if(nv!=null){ txt.textContent=nv; syncInspectorFrom(node); saveAll(); }
@@ -8580,8 +9562,10 @@
       // Touch drag + long-press cable gesture OR disconnect gesture
       let touchId=null;
       node.addEventListener('touchstart',e=>{
+        if(isStageLocked()){ e.preventDefault(); return; }
         if(touchId!=null) return; const t=e.touches[0]; if(!t) return; touchId=t.identifier; lpTouchId=touchId; start={x:t.clientX,y:t.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; selectNode(node); e.preventDefault();
         lpTimer=setTimeout(()=>{
+          if(isStageLocked()) return;
           if(lpTouchId===touchId){ 
             // Check if item has any connections - if so, disconnect; otherwise start cable drag
             const hasConnection = node.dataset.routeTo || Array.from(node.closest('svg').querySelectorAll('g[data-draggable]')).some(g => g.dataset.routeTo === node.dataset.id);
@@ -8601,6 +9585,7 @@
         },300);
       }, {passive:false});
       node.addEventListener('touchmove',e=>{
+        if(isStageLocked()) return;
         if(touchId==null) return; for(const t of e.touches){ if(t.identifier===touchId){
             // cancel long-press if user moves significantly before it triggers
             if(!lpActive && lpTimer){ const dx=Math.abs(t.clientX-start.x), dy=Math.abs(t.clientY-start.y); if(dx>8 || dy>8){ clearTimeout(lpTimer); lpTimer=null; }
@@ -9002,11 +9987,34 @@
       const rotVal=document.getElementById('selRotationValue');
       const labelSizeInp=document.getElementById('selLabelSize');
       const labelSizeControls=document.getElementById('labelSizeControls');
+      const selLabel=document.getElementById('selLabel');
+      
+      // Always keep inspector visible
+      if(inspector) inspector.style.display='flex';
+      
       if(!g){
-        if(inspector)inspector.style.display='none';
+        // Show placeholder state
+        if(selLabel) selLabel.textContent='Selected: (none)';
+        if(nameInp){ nameInp.value=''; nameInp.placeholder='Click an item to select'; nameInp.disabled=true; }
+        if(sizeInp){ sizeInp.value='1'; sizeInp.disabled=true; }
+        if(rotInp){ rotInp.value='0'; rotInp.disabled=true; }
+        if(rotVal) rotVal.textContent='0°';
+        if(showLabelChk){ showLabelChk.checked=false; showLabelChk.disabled=true; }
+        if(labelSizeControls) labelSizeControls.style.display='none';
+        if(delBtn) delBtn.disabled=true;
+        if(dupBtn) dupBtn.disabled=true;
         return;
       }
-      if(inspector)inspector.style.display='flex';
+      
+      // Enable controls for selected item
+      if(selLabel) selLabel.textContent='Selected:';
+      if(nameInp){ nameInp.disabled=false; nameInp.placeholder='Label (double‑click item to rename)'; }
+      if(sizeInp) sizeInp.disabled=false;
+      if(rotInp) rotInp.disabled=false;
+      if(showLabelChk) showLabelChk.disabled=false;
+      if(delBtn) delBtn.disabled=false;
+      if(dupBtn) dupBtn.disabled=false;
+      
       g.classList.add('selected');
       const lbl=g.querySelector('[data-role="label"]');
       if(nameInp)nameInp.value=(lbl?lbl.textContent:'')||g.dataset.key||'';
@@ -9099,15 +10107,21 @@
     
     function bindSelection(svg){
         svg.addEventListener('click',ev=>{
+          // Skip if preset modal is open
+          const presetModal = document.getElementById('presetModal');
+          if(presetModal && presetModal.style.display === 'flex') return;
+          
           const g=ev.target.closest && ev.target.closest('g[data-draggable]');
-          if(g){ selectNode(g); refreshStageLegend(); return; }
+          if(g){ selectNode(g); refreshStageLegend(); ev.stopPropagation(); return; }
           // click on whitespace creates a text label at click position
           const bg=ev.target.closest && ev.target.closest('.stage-bg');
           if(bg){
             if(_suppressBgClick){ _suppressBgClick=false; ev.stopPropagation(); return; }
             const pt=svg.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY; const ctm=svg.getScreenCTM().inverse(); const p=pt.matrixTransform(ctm);
-            // Ask first; cancel or empty -> do nothing
-            let entered=prompt('Text label:',''); if(entered==null) return; entered=String(entered).trim(); if(!entered) return;
+            // Ask first; cancel or empty -> deselect only (don't create label)
+            let entered=prompt('Text label (leave empty to deselect):',''); 
+            if(entered==null || entered.trim()==='') { selectNode(null); refreshStageLegend(); return; }
+            entered=String(entered).trim();
             const gN=document.createElementNS('http://www.w3.org/2000/svg','g'); gN.dataset.x=String(Math.round(p.x)); gN.dataset.y=String(Math.round(p.y)); gN.dataset.scale='1'; gN.setAttribute('data-draggable','1'); gN.dataset.key='label'; gN.dataset.type='other'; gN.dataset.showLabel='1';
             const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x','0'); t.setAttribute('y','0'); t.setAttribute('font-size','16'); t.setAttribute('data-role','label'); t.textContent=entered; gN.appendChild(t);
             applyTransform(gN); svg.appendChild(gN); enableSvgDrag(gN); selectNode(gN); refreshStageLegend(); saveAll();
@@ -9115,7 +10129,10 @@
             ev.stopPropagation();
             return;
           }
-          selectNode(null); refreshStageLegend();
+          // Only deselect if clicking on truly empty space (not on any element)
+          if(ev.target === svg || ev.target.tagName === 'svg'){
+            selectNode(null); refreshStageLegend();
+          }
         });
     }
   function ensureSelectionBindings(){ const svg=document.getElementById('stageSvgFull'); if(svg && !svg._boundSel){ bindSelection(svg); svg._boundSel=true; } }
@@ -9318,10 +10335,10 @@
   document.getElementById('selName').addEventListener('change',()=>{ if(!selectedNode) return; const t=findText(selectedNode); if(t){ t.textContent=document.getElementById('selName').value; saveAll(); }});
   document.getElementById('selName').addEventListener('change',()=> refreshStageLegend());
   document.getElementById('selSize').addEventListener('input',()=>{ if(!selectedNode) return; const v=parseFloat(document.getElementById('selSize').value); const k=selectedNode.dataset.key||''; if(k==='arrow' || k==='label'){ const lbl=findText(selectedNode); if(lbl){ const base = (k==='arrow')?14:16; const fs=Math.max(8, Math.round(base*v)); lbl.setAttribute('font-size', String(fs)); } } else { selectedNode.dataset.scale=String(v); applyTransform(selectedNode); } saveAll(); });
-  document.getElementById('selSize').addEventListener('change',()=>{ saveAll(); snapshotStage(); });
-  document.getElementById('selRotation').addEventListener('input',()=>{ if(!selectedNode) return; const v=parseFloat(document.getElementById('selRotation').value); selectedNode.dataset.rotation=String(v); applyTransform(selectedNode); const svg=selectedNode.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } const rotVal=document.getElementById('selRotationValue'); if(rotVal) rotVal.textContent=Math.round(v)+'°'; queueSave(); saveAll(); });
-  document.getElementById('selRotation').addEventListener('change',()=>{ saveAll(); snapshotStage(); });
-  document.getElementById('delSel').addEventListener('click',()=>{ if(!selectedNode) return; selectedNode.remove(); selectedNode=null; document.getElementById('selName').value=''; saveAll(); snapshotStage(); });
+  document.getElementById('selSize').addEventListener('change',()=>{ if(isStageLocked()) return; saveAll(); snapshotStage(); });
+  document.getElementById('selRotation').addEventListener('input',()=>{ if(!selectedNode || isStageLocked()) return; const v=parseFloat(document.getElementById('selRotation').value); selectedNode.dataset.rotation=String(v); applyTransform(selectedNode); const svg=selectedNode.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } const rotVal=document.getElementById('selRotationValue'); if(rotVal) rotVal.textContent=Math.round(v)+'°'; queueSave(); saveAll(); });
+  document.getElementById('selRotation').addEventListener('change',()=>{ if(isStageLocked()) return; saveAll(); snapshotStage(); });
+  document.getElementById('delSel').addEventListener('click',()=>{ if(!selectedNode || isStageLocked()) return; selectedNode.remove(); selectedNode=null; document.getElementById('selName').value=''; saveAll(); snapshotStage(); });
   document.getElementById('delSel').addEventListener('click',()=> refreshStageLegend());
   // Show label toggle
   const showLabelChk=document.getElementById('selShowLabel');
@@ -9396,27 +10413,39 @@
     activeToolTouch=null;
   });
   // Mouse / touchpad fallback drag (for environments where HTML5 drag doesn't fire)
-  let activeToolMouse=null; // {key,x,y,started,ghost}
+  let activeToolMouse=null; // {key,startX,startY,started,ghost}
   document.addEventListener('mousedown',e=>{
+    // Skip if preset modal is open
+    const presetModal = document.getElementById('presetModal');
+    if(presetModal && presetModal.style.display === 'flex') return;
+    
     const btn=e.target.closest && e.target.closest('button.tool');
-    if(!btn) return; if(e.button!==0) return; const key=btn.querySelector('img') ? (btn.dataset.key || btn.getAttribute('data-key') || btn.textContent.trim()) : (btn.dataset.key||btn.getAttribute('data-key'));
+    if(!btn) return; if(e.button!==0) return;
     // We stored key explicitly on custom images; for standard tools key derivation from dragstart handler's closure is harder; embed data-key at build time for reliability
-    const explicit=btn.dataset.key; if(!explicit) return; activeToolMouse={key:explicit,x:e.clientX,y:e.clientY,started:false,ghost:null};
+    const explicit=btn.dataset.key; if(!explicit) return; 
+    activeToolMouse={key:explicit,startX:e.clientX,startY:e.clientY,started:false,ghost:null};
   });
+  // Mouse drag: start after small movement threshold, update ghost position
   document.addEventListener('mousemove',e=>{
-    if(!activeToolMouse) return; activeToolMouse.x=e.clientX; activeToolMouse.y=e.clientY;
-    if(!activeToolMouse.started){ const dx=Math.abs(e.clientX - activeToolMouse.x), dy=Math.abs(e.clientY - activeToolMouse.y); /* dx/dy always 0 here; use distance from initial stored values */ }
-  });
-  // Refine: start drag after small movement threshold
-  document.addEventListener('mousemove',e=>{
-    if(!activeToolMouse) return; if(activeToolMouse.started){ if(activeToolMouse.ghost){ activeToolMouse.ghost.style.left=(e.clientX+12)+'px'; activeToolMouse.ghost.style.top=(e.clientY+12)+'px'; } return; }
-    const dx=Math.abs(e.clientX - activeToolMouse.x), dy=Math.abs(e.clientY - activeToolMouse.y); if(dx+dy>6){
+    if(!activeToolMouse) return; 
+    if(activeToolMouse.started){ 
+      // Already started - just update ghost position
+      if(activeToolMouse.ghost){ activeToolMouse.ghost.style.left=(e.clientX+12)+'px'; activeToolMouse.ghost.style.top=(e.clientY+12)+'px'; } 
+      return; 
+    }
+    // Not started yet - check if moved enough from start position
+    const dx=Math.abs(e.clientX - activeToolMouse.startX), dy=Math.abs(e.clientY - activeToolMouse.startY); 
+    if(dx+dy>6){
       activeToolMouse.started=true;
       const ghost=document.createElement('div'); ghost.style.position='fixed'; ghost.style.left=(e.clientX+12)+'px'; ghost.style.top=(e.clientY+12)+'px'; ghost.style.pointerEvents='none'; ghost.style.zIndex='99999'; ghost.style.padding='4px 6px'; ghost.style.background='rgba(31,41,55,0.85)'; ghost.style.color='#fff'; ghost.style.fontSize='11px'; ghost.style.borderRadius='4px'; ghost.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)'; ghost.textContent='Place '+activeToolMouse.key; document.body.appendChild(ghost); activeToolMouse.ghost=ghost;
     }
   });
   document.addEventListener('mouseup',e=>{
     if(!activeToolMouse) return; const data=activeToolMouse; activeToolMouse=null; if(data.ghost){ data.ghost.remove(); }
+    // Skip if preset modal is open
+    const presetModal = document.getElementById('presetModal');
+    if(presetModal && presetModal.style.display === 'flex') return;
+    
     if(!data.started) return; const stage=document.getElementById('stageSvgFull'); if(!stage) return; const rect=stage.getBoundingClientRect(); const x=e.clientX, y=e.clientY; if(x<rect.left||x>rect.right||y<rect.top||y>rect.bottom) return;
     // detect target before adding
     const el=document.elementFromPoint(x,y); const dropTarget= el && el.closest && el.closest('g[data-draggable]');
@@ -9669,6 +10698,9 @@
         // Re-attach drag handlers to ensure they work
         attachStageDragHandlers();
         
+        // Initialize drag-assign handles
+        initDragAssignHandles();
+        
         // FIRST: Load stage from tourDate if available
         if(selectedTourDateId){
           const tourDate = tourDates.find(td => td.id === selectedTourDateId);
@@ -9871,10 +10903,45 @@ function closeStageModal(){
     // Clear full stage editor
     const clearStageBtn=document.getElementById('clearStage');
     if(clearStageBtn){ clearStageBtn.addEventListener('click',()=>{
+      if(isStageLocked()){ alert('Stage plot is locked. Uncheck the lock to make changes.'); return; }
       const full=document.getElementById('stageSvgFull'); if(!full) return;
       // preserve background rect and title only
       while(full.childNodes.length>2) full.removeChild(full.lastChild);
       saveAll(); snapshotStage();
+    }); }
+    
+    // New Stage button
+    const newStageBtn=document.getElementById('newStageBtn');
+    if(newStageBtn){ newStageBtn.addEventListener('click',()=>{
+      if(isStageLocked()){ alert('Stage plot is locked. Uncheck the lock to make changes.'); return; }
+      const full=document.getElementById('stageSvgFull'); if(!full) return;
+      const hasItems = full.childNodes.length > 2;
+      if(!hasItems){
+        alert('Stage is already empty!');
+        return;
+      }
+      const save = confirm('Save current stage plot as a preset before starting fresh?\n\nOK = Save as preset\nCancel = Just clear (lose current plot)');
+      if(save){
+        const name = prompt('Name this stage preset:', 'Stage ' + new Date().toLocaleDateString());
+        if(name && name.trim()){
+          const container = document.getElementById('stageStore');
+          if(container && container.querySelector('svg')){
+            const stageSvgCopy = container.querySelector('svg').cloneNode(true);
+            stagePresets.push({
+              name: name.trim(),
+              svg: stageSvgCopy.outerHTML,
+              date: new Date().toISOString()
+            });
+            saveAll();
+            if(typeof renderPresetList === 'function') renderPresetList();
+            alert('Stage plot saved as preset: ' + name.trim());
+          }
+        }
+      }
+      // Clear stage (preserve background and title)
+      while(full.childNodes.length>2) full.removeChild(full.lastChild);
+      saveAll();
+      snapshotStage();
     }); }
 
     // Keyboard shortcuts in stage editor: Ctrl+D duplicate (undo/redo handled globally)
@@ -9893,66 +10960,7 @@ function closeStageModal(){
   const closeNotesBtn=document.getElementById('closeNotes');
   if(closeNotesBtn){ closeNotesBtn.addEventListener('click',()=> document.getElementById('notesModal').classList.remove('open')); }
 
-    // Stage Preset Management
-    if(!gig.stagePresets) gig.stagePresets = [];
-    
-    function renderPresetList(){
-      const list = document.getElementById('presetList');
-      if(!list) return;
-      list.innerHTML = '';
-      if(!gig.stagePresets || gig.stagePresets.length === 0){
-        list.innerHTML = '<div style="color:#6b7280;font-size:14px;padding:16px;text-align:center;border:2px dashed #d1d5db;border-radius:6px">No presets saved yet. Click "Save Current" to create one.</div>';
-        return;
-      }
-      gig.stagePresets.forEach((preset, idx)=>{
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb';
-        const nameBtn = document.createElement('button');
-        nameBtn.textContent = '📋 ' + preset.name;
-        nameBtn.className = 'btn';
-        nameBtn.style.cssText = 'flex:1;text-align:left;padding:8px 12px;font-size:14px;background:#fff';
-        nameBtn.title = 'Load this preset';
-        nameBtn.addEventListener('click', ()=>{
-          if(confirm(`Load preset "${preset.name}"? This will replace your current stage plot.`)){
-            loadStagePreset(preset);
-            document.getElementById('presetModal').style.display='none';
-          }
-        });
-        const delBtn = document.createElement('button');
-        delBtn.textContent = '🗑️';
-        delBtn.className = 'btn danger';
-        delBtn.style.cssText = 'padding:6px 12px;font-size:16px;min-width:40px';
-        delBtn.title = 'Delete preset';
-        delBtn.addEventListener('click', ()=>{
-          if(confirm(`Delete preset "${preset.name}"?`)){
-            gig.stagePresets.splice(idx, 1);
-            saveAll();
-            renderPresetList();
-          }
-        });
-        row.append(nameBtn, delBtn);
-        list.appendChild(row);
-      });
-    }
-    
-    function saveStagePreset(){
-      const svg = document.getElementById('stageSvgFull');
-      if(!svg) return;
-      const defaultName = `${gig.band || 'Band'}_${gig.date || 'Date'}_StagePlot`.replace(/\s+/g, '_');
-      const name = prompt('Preset name:', defaultName);
-      if(!name || name.trim().length === 0) return;
-      const preset = {
-        name: name.trim(),
-        date: new Date().toISOString(),
-        stage: svg.outerHTML,
-        gearSummary: gearSummary || ''
-      };
-      if(!gig.stagePresets) gig.stagePresets = [];
-      gig.stagePresets.push(preset);
-      saveAll();
-      renderPresetList();
-      alert(`Preset "${preset.name}" saved!`);
-    }
+    // Stage Preset Management (stagePresets is global, persists across all dates)
     
     function loadStagePreset(preset){
       if(!preset || !preset.stage) return;
@@ -9983,29 +10991,167 @@ function closeStageModal(){
       refreshCables(svg);
     }
     
-    const presetBtn = document.getElementById('stagePresetBtn');
-    const presetModal = document.getElementById('presetModal');
-    const closePresetBtn = document.getElementById('closePreset');
-    const addPresetBtn = document.getElementById('addPresetBtn');
+    // Show preset modal - created dynamically to avoid event issues
+    function showPresetModal(){
+      // Remove any existing modal
+      const existing = document.getElementById('presetModal');
+      if(existing) existing.remove();
+      
+      // Create modal overlay
+      const modal = document.createElement('div');
+      modal.id = 'presetModal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center';
+      
+      // Create modal content
+      const content = document.createElement('div');
+      content.style.cssText = 'background:#fff;border-radius:10px;padding:24px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3)';
+      
+      // Header
+      const header = document.createElement('h3');
+      header.textContent = 'Stage Plot Presets';
+      header.style.cssText = 'margin:0 0 16px 0;font-size:20px;color:#1e293b';
+      content.appendChild(header);
+      
+      // Save button
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = '💾 Save Current';
+      saveBtn.className = 'btn';
+      saveBtn.style.cssText = 'background:#065f46;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;width:100%;margin-bottom:16px;font-size:14px';
+      saveBtn.onclick = function(e) {
+        e.stopPropagation();
+        const svg = document.getElementById('stageSvgFull');
+        if(!svg) { alert('No stage plot to save'); return; }
+        const defaultName = (gig.band || 'Band') + '_StagePlot';
+        const name = prompt('Preset name:', defaultName);
+        if(!name || !name.trim()) return;
+        const preset = {
+          name: name.trim(),
+          date: new Date().toISOString(),
+          stage: svg.outerHTML,
+          gearSummary: gearSummary || ''
+        };
+        stagePresets.push(preset);
+        saveAll();
+        showPresetModal(); // Refresh
+        alert('Preset "' + preset.name + '" saved!');
+      };
+      content.appendChild(saveBtn);
+      
+      // Preset list container
+      const listContainer = document.createElement('div');
+      listContainer.style.cssText = 'margin-bottom:16px';
+      
+      if(!stagePresets || stagePresets.length === 0){
+        listContainer.innerHTML = '<div style="color:#6b7280;font-size:14px;padding:20px;text-align:center;border:2px dashed #d1d5db;border-radius:8px">No presets saved yet</div>';
+      } else {
+        listContainer.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));gap:12px;margin-bottom:16px';
+        
+        stagePresets.forEach((preset, idx) => {
+          const card = document.createElement('div');
+          card.style.cssText = 'border:2px solid #e5e7eb;border-radius:8px;background:#fff;overflow:hidden;cursor:pointer';
+          
+          // Thumbnail
+          const thumb = document.createElement('div');
+          thumb.style.cssText = 'width:100%;height:100px;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid #e5e7eb';
+          if(preset.stage){
+            const temp = document.createElement('div');
+            temp.innerHTML = preset.stage;
+            const svg = temp.querySelector('svg');
+            if(svg){
+              svg.removeAttribute('id');
+              svg.style.cssText = 'width:100%;height:100%;pointer-events:none';
+              thumb.appendChild(svg);
+            }
+          } else {
+            thumb.textContent = 'No preview';
+          }
+          card.appendChild(thumb);
+          
+          // Info bar
+          const info = document.createElement('div');
+          info.style.cssText = 'padding:8px;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#f9fafb';
+          
+          const name = document.createElement('span');
+          name.textContent = preset.name;
+          name.style.cssText = 'font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1';
+          info.appendChild(name);
+          
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '🗑️';
+          delBtn.style.cssText = 'background:#ef4444;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px';
+          delBtn.onclick = function(e) {
+            e.stopPropagation();
+            if(confirm('Delete "' + preset.name + '"?')){
+              stagePresets.splice(idx, 1);
+              saveAll();
+              showPresetModal(); // Refresh
+            }
+          };
+          info.appendChild(delBtn);
+          
+          card.appendChild(info);
+          
+          // Card click to load
+          card.onclick = function(e) {
+            e.stopPropagation();
+            if(confirm('Load "' + preset.name + '"? This will replace your current stage plot.')){
+              loadStagePreset(preset);
+              modal.remove();
+            }
+          };
+          
+          card.onmouseenter = function(){ card.style.borderColor = '#0ea5e9'; };
+          card.onmouseleave = function(){ card.style.borderColor = '#e5e7eb'; };
+          
+          listContainer.appendChild(card);
+        });
+      }
+      content.appendChild(listContainer);
+      
+      // Close button
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = 'Close';
+      closeBtn.className = 'btn secondary';
+      closeBtn.style.cssText = 'background:#6b7280;color:#fff;border:none;padding:10px 24px;border-radius:6px;cursor:pointer;float:right';
+      closeBtn.onclick = function(e) {
+        e.stopPropagation();
+        modal.remove();
+      };
+      content.appendChild(closeBtn);
+      
+      // Clear float
+      const clearDiv = document.createElement('div');
+      clearDiv.style.clear = 'both';
+      content.appendChild(clearDiv);
+      
+      modal.appendChild(content);
+      
+      // Click outside to close
+      modal.onclick = function(e) {
+        if(e.target === modal) modal.remove();
+      };
+      
+      // Stop all events from reaching stage behind
+      content.onclick = function(e) { e.stopPropagation(); };
+      content.onmousedown = function(e) { e.stopPropagation(); };
+      content.ontouchstart = function(e) { e.stopPropagation(); };
+      
+      document.body.appendChild(modal);
+    }
     
-    if(presetBtn && presetModal){
+    // Make showPresetModal globally accessible
+    window.showPresetModal = showPresetModal;
+    
+    const presetBtn = document.getElementById('stagePresetBtnTop');
+    if(presetBtn){
       presetBtn.addEventListener('click', ()=>{
-        renderPresetList();
-        presetModal.style.display='flex';
-      });
-      presetModal.addEventListener('click', (e)=>{
-        if(e.target === presetModal){
-          presetModal.style.display='none';
+        // Open stage plot first if not already open
+        const stageModal = document.getElementById('stageModal');
+        if(stageModal && !stageModal.classList.contains('open')){
+          openStageModal();
         }
+        showPresetModal();
       });
-    }
-    if(closePresetBtn && presetModal){
-      closePresetBtn.addEventListener('click', ()=>{
-        presetModal.style.display='none';
-      });
-    }
-    if(addPresetBtn){
-      addPresetBtn.addEventListener('click', saveStagePreset);
     }
 
     // Drag from toolbox into full SVG at drop position
@@ -10028,11 +11174,13 @@ function closeStageModal(){
     }
     
     function stageDragOver(ev){
+      if(isStageLocked()) return;
       ev.preventDefault();
     }
     
     function stageDrop(ev){
       ev.preventDefault();
+      if(isStageLocked()) return;
       const fullSvg=document.getElementById('stageSvgFull');
       if(!fullSvg) return;
       
@@ -10105,8 +11253,8 @@ function closeStageModal(){
       // Mouse support (capture to preempt item drag when Shift is held)
       svg.addEventListener('mousedown',e=>{
         if(e.button!==0) return;
-        // ignore UI controls outside svg content
-        if(e.target.closest('#stageLegend,.stage-inspector,.stage-actions')) return;
+        // ignore UI controls outside svg content AND drag handles
+        if(e.target.closest('#stageLegend,.stage-inspector,.stage-actions,.drag-assign-handle')) return;
         const overItem = !!(e.target.closest && e.target.closest('g[data-draggable]'));
         if(overItem && !e.shiftKey) return; // allow drawing over items only with Shift
         const p=svgPointFromClient(e.clientX,e.clientY); startDraw(p.x,p.y); e.stopImmediatePropagation(); e.preventDefault();
@@ -10114,7 +11262,7 @@ function closeStageModal(){
       svg.addEventListener('mousemove',e=>{ if(!drawing) return; const p=svgPointFromClient(e.clientX,e.clientY); updateDraw(p.x,p.y); }, {capture:true});
       window.addEventListener('mouseup',e=>{ if(!drawing) return; const p=svgPointFromClient(e.clientX,e.clientY); finishDraw(p.x,p.y); }, {capture:true});
       // Touch support (capture); only allow drawing from whitespace background
-      svg.addEventListener('touchstart',e=>{ const t=e.touches[0]; if(!t) return; if(e.target.closest('#stageLegend,.stage-inspector,.stage-actions')) return; const overItem = !!(e.target.closest && e.target.closest('g[data-draggable]')); const onBg = !!(e.target.closest && e.target.closest('.stage-bg')); if(overItem || !onBg) return; const p=svgPointFromClient(t.clientX,t.clientY); startDraw(p.x,p.y); e.preventDefault(); e.stopImmediatePropagation(); }, {passive:false, capture:true});
+      svg.addEventListener('touchstart',e=>{ const t=e.touches[0]; if(!t) return; if(e.target.closest('#stageLegend,.stage-inspector,.stage-actions,.drag-assign-handle')) return; const overItem = !!(e.target.closest && e.target.closest('g[data-draggable]')); const onBg = !!(e.target.closest && e.target.closest('.stage-bg')); if(overItem || !onBg) return; const p=svgPointFromClient(t.clientX,t.clientY); startDraw(p.x,p.y); e.preventDefault(); e.stopImmediatePropagation(); }, {passive:false, capture:true});
       window.addEventListener('touchmove',e=>{ if(!drawing) return; const t=e.touches[0]; if(!t) return; const p=svgPointFromClient(t.clientX,t.clientY); updateDraw(p.x,p.y); }, {passive:true});
       window.addEventListener('touchend',e=>{ if(!drawing) return; const ct=(e.changedTouches && e.changedTouches[0])|| (e.touches && e.touches[0]); if(!ct) return; const p=svgPointFromClient(ct.clientX, ct.clientY); finishDraw(p.x,p.y); }, {passive:true});
     })();
@@ -10125,7 +11273,7 @@ function closeStageModal(){
     function rebuildCustomImages(){
       const host=document.getElementById('customImages'); if(!host) return; host.innerHTML='';
       (gig.customImages||[]).forEach(ci=>{
-        const b=document.createElement('button'); b.className='tool'; b.innerHTML=`<img src="${ci.data}" alt="${ci.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${ci.label}`; b.setAttribute('draggable','true'); b.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain', ci.key); }); host.appendChild(b);
+        const b=document.createElement('button'); b.className='tool'; b.dataset.key=ci.key; b.innerHTML=`<img src="${ci.data}" alt="${ci.label}" style="width:18px;height:18px;object-fit:contain;margin-right:6px"/>${ci.label}`; host.appendChild(b);
       });
     }
     if(uploadBtn && uploadInput){
@@ -10946,19 +12094,32 @@ function closeStageModal(){
         return;
       }
       
-      // Hide all UI elements first
+      // Hide ALL UI elements that could interfere with print
       const wrap=document.querySelector('.wrap');
       const brandBar=document.querySelector('.brand-bar');
       const modals=document.querySelectorAll('.modal');
+      const stagePrint = document.getElementById('stagePrint');
+      const techPrint = document.getElementById('techPrint');
+      const modalTech = document.getElementById('modalTech');
+      const stageModal = document.getElementById('stageModal');
+      const notesModal = document.getElementById('notesModal');
+      const modal = document.getElementById('modal');
       
       if(wrap) wrap.style.display='none';
       if(brandBar) brandBar.style.display='none';
-      modals.forEach(m => m.style.display='none');
+      modals.forEach(m => { m.style.display='none'; m.classList.remove('open'); });
+      // Explicitly hide stage-related elements
+      if(stagePrint) stagePrint.style.display='none';
+      if(techPrint) techPrint.style.display='none';
+      if(modalTech) { modalTech.style.display='none'; modalTech.classList.remove('open'); }
+      if(stageModal) { stageModal.style.display='none'; stageModal.classList.remove('open'); }
+      if(notesModal) { notesModal.style.display='none'; notesModal.classList.remove('open'); }
+      if(modal) { modal.style.display='none'; modal.classList.remove('open'); }
       
       // Create a temporary print container
       const printContainer = document.createElement('div');
       printContainer.id = 'lyricsPrintContainer';
-      printContainer.style.cssText = 'width:8.5in;padding:0.25in 0.5in;font-family:system-ui,-apple-system,sans-serif;background:white;margin:0 auto';
+      printContainer.style.cssText = 'width:8.5in;padding:0.15in 0.4in;font-family:system-ui,-apple-system,sans-serif;background:white;margin:0 auto';
       
       // Get songs directly from database and print whatever text is in the lyrics field
       for(const id of selectedSongIds){
@@ -10966,19 +12127,21 @@ function closeStageModal(){
         if(!dbSong) continue;
         
         const songPage = document.createElement('div');
-        songPage.style.cssText = 'page-break-after:always;page-break-inside:avoid;padding-bottom:1in';
+        songPage.style.cssText = 'page-break-after:always;page-break-inside:avoid;min-height:10in;max-height:10.5in';
         
         const title = document.createElement('h1');
         title.textContent = dbSong.title || 'Untitled';
-        title.style.cssText = 'font-size:20px;font-weight:bold;margin:0 0 4px 0;color:#111';
+        title.style.cssText = 'font-size:16px;font-weight:bold;margin:0 0 2px 0;color:#111';
         
         const artist = document.createElement('h2');
         artist.textContent = dbSong.artist || 'Original';
-        artist.style.cssText = 'font-size:14px;font-weight:600;margin:0 0 12px 0;color:#666';
+        artist.style.cssText = 'font-size:12px;font-weight:600;margin:0 0 8px 0;color:#666';
         
         const lyrics = document.createElement('div');
-        lyrics.textContent = dbSong.lyrics || '(no lyrics)';
-        lyrics.style.cssText = 'white-space:pre-wrap;font-family:system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.5;margin:0;color:#111';
+        // Remove excessive blank lines (more than 2 consecutive newlines become 2)
+        const cleanedLyrics = (dbSong.lyrics || '(no lyrics)').replace(/\n\n\n+/g, '\n\n');
+        lyrics.textContent = cleanedLyrics;
+        lyrics.style.cssText = 'white-space:pre-wrap;font-family:system-ui,-apple-system,sans-serif;font-size:11px;line-height:1.35;margin:0;color:#111';
         
         songPage.appendChild(title);
         songPage.appendChild(artist);
@@ -10998,6 +12161,13 @@ function closeStageModal(){
       if(wrap) wrap.style.display='';
       if(brandBar) brandBar.style.display='';
       modals.forEach(m => m.style.display='');
+      // Restore stage-related elements (don't re-show them, just remove display:none)
+      if(stagePrint) stagePrint.style.display='';
+      if(techPrint) techPrint.style.display='';
+      if(modalTech) modalTech.style.display='';
+      if(stageModal) stageModal.style.display='';
+      if(notesModal) notesModal.style.display='';
+      if(modal) modal.style.display='';
       
       console.log('✅ Lyrics print complete');
     }
