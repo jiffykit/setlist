@@ -838,7 +838,15 @@
     </div>
 
     <div class="grid">
-      <div class="card" id="db" style="grid-column:1 / -1; width:100%; max-width:100%; overflow:hidden;">
+      <div class="card" id="db" style="grid-column:1 / -1; width:100%; max-width:100%; overflow:hidden; position:relative;">
+        <!-- Database dropzone overlay -->
+        <div id="dbDropzone" style="display:none;position:absolute;inset:0;background:rgba(59,130,246,0.15);border:3px dashed #3b82f6;border-radius:8px;z-index:100;pointer-events:none;flex-direction:column;align-items:center;justify-content:center">
+          <div style="background:white;padding:24px 48px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2);text-align:center">
+            <div style="font-size:48px;margin-bottom:12px">📥</div>
+            <div style="font-size:18px;font-weight:600;color:#1e40af">Drop files to import songs</div>
+            <div style="font-size:13px;color:#64748b;margin-top:8px">Audio, images, PDFs, spreadsheets, text files</div>
+          </div>
+        </div>
         <h2>Song Database</h2>
           <div style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <input type="text" id="dbSearch" placeholder="Search songs..." style="flex:1 1 200px;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px">
@@ -878,14 +886,27 @@
             <button class="btn danger" id="clearDB" style="background:#374151;color:#f9fafb">Clear Database</button>
           </div>
         </div>
-        <div class="import-block" id="importBlock" style="margin-top:22px;padding:14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc">
+        <div class="import-block" id="importBlock" style="margin-top:22px;padding:14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;position:relative">
+          <!-- Spinning vinyl overlay -->
+          <div id="importSpinner" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(248,250,252,0.95);z-index:100;flex-direction:column;align-items:center;justify-content:center;border-radius:8px">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#1f2937 0%,#111827 50%,#1f2937 100%);position:relative;animation:spin-vinyl 1.5s linear infinite;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);border:2px solid #fef2f2"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:#1f2937"></div>
+              <div style="position:absolute;top:10%;left:50%;transform:translateX(-50%);width:60%;height:1px;background:rgba(255,255,255,0.1)"></div>
+              <div style="position:absolute;top:25%;left:50%;transform:translateX(-50%);width:50%;height:1px;background:rgba(255,255,255,0.08)"></div>
+              <div style="position:absolute;top:75%;left:50%;transform:translateX(-50%);width:50%;height:1px;background:rgba(255,255,255,0.08)"></div>
+              <div style="position:absolute;top:90%;left:50%;transform:translateX(-50%);width:60%;height:1px;background:rgba(255,255,255,0.1)"></div>
+            </div>
+            <div id="importSpinnerText" style="margin-top:16px;font-size:14px;font-weight:600;color:#374151">Processing...</div>
+          </div>
+          <style>@keyframes spin-vinyl{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
           <h3 style="margin:0 0 10px;font-size:18px">Import Songs (OCR / Paste)</h3>
           <textarea id="importText" rows="4" placeholder="Paste lines e.g.\nSong Title - Am (Capo 2)\nAnother Song G Capo 3\nThird Song - F#m" style="width:100%;resize:vertical;font-family:monospace"></textarea>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center">
-            <input type="file" id="importFile" accept=".txt,.pdf,.csv,.xls,.xlsx,.ods,image/*,audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.wma,.mp4,.avi,.mov,.mkv" multiple webkitdirectory="false" style="flex:1 1 240px" />
+            <input type="file" id="importFile" accept=".txt,.pdf,.csv,.xls,.xlsx,.ods,image/*,audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.wma,.mp4,.avi,.mov,.mkv" multiple style="flex:1 1 240px" />
             <label><input type="checkbox" id="importFolder" style="width:auto;margin-right:4px">Folder</label>
-            <button class="btn" id="importParseBtn" type="button">Parse Text & Preview</button>
-            <button class="btn secondary" id="importCommitBtn" type="button" disabled>Add Parsed Songs</button>
+            <button class="btn" id="importParseBtn" type="button">Extract</button>
+            <button class="btn secondary" id="importCommitBtn" type="button" disabled>Add Songs</button>
           </div>
           <div id="importStatus" style="margin-top:8px;font-size:12px;color:#64748b"></div>
           <div id="importPreview" style="margin-top:10px;font-size:13px;line-height:1.4"></div>
@@ -1091,11 +1112,11 @@
               <div id="tourHeaderVenue" style="font-size:24px;font-weight:500;color:#64748b;line-height:1.3">No venue</div>
             </div>
             
-            <!-- Yesterday / Tomorrow Buttons -->
+            <!-- Previous / Next / Today buttons -->
             <div style="display:flex;gap:8px;align-items:center">
-              <button id="tourYesterdayBtn" class="btn" style="padding:12px 20px;font-size:16px;font-weight:600">◀ Yesterday</button>
-              <button id="tourTomorrowBtn" class="btn" style="padding:12px 20px;font-size:16px;font-weight:600">Tomorrow ▶</button>
-              <button id="tourAddDate" class="btn primary" style="padding:12px 20px;font-size:14px;margin-left:12px">+ Add Date</button>
+              <button id="tourYesterdayBtn" class="btn" style="padding:12px 20px;font-size:16px;font-weight:600" title="Go to the previous date that has a show or event">◀ Previous Show</button>
+              <button id="tourTomorrowBtn" class="btn" style="padding:12px 20px;font-size:16px;font-weight:600" title="Go to the next date that has a show or event">Next Show ▶</button>
+              <button id="tourTodayBtn" class="btn primary" style="padding:12px 20px;font-size:14px;margin-left:8px" title="Jump to today. If today has no date yet, create one.">Today</button>
             </div>
           </div>
         </div>
@@ -1380,27 +1401,358 @@
 
   <!-- Help / Tutorial Modal -->
   <div class="modal" id="helpModal" style="display:none">
-    <div class="sheet" style="max-width:760px;height:auto">
-      <h2>Jiffykit Setlist – Quick Tutorial</h2>
-      <ol style="font-size:14px;line-height:1.6;margin-left:20px">
-        <li><strong>Song Database</strong>: Add every tune you might play. Mark moods & cover status so the generator can balance energy and originals/covers for you.</li>
-        <li><strong>Lyrics / Chords</strong>: Paste lyrics or chords into the song, or hit “Search Lyrics / Chords” to open a web search and copy from the site you trust.</li>
-        <li><strong>Setlist</strong>: Enter gig details (band, venue, date, notes) and click Generate, or drag songs in manually from the Song Pool. Reorder with the handle (⋮⋮) and type notes inline – notes appear under the title in the print-friendly sheet.</li>
-        <li><strong>Breaks & Events</strong>: Drag Break, Encore, and custom event chips into the set to mark intermissions, announcements, raffles and more. The preview always shows your real running order and total time.</li>
-        <li><strong>Tour Manager</strong>: Plan your tour dates with the scalable timeline (week/month/year view). Add gigs, manage itineraries, set load-in/show times, and search for nearby hotels, music stores, rehearsal spaces, and more. Custom search terms let you always find your favorite spots on the road.</li>
-        <li><strong>Live Mode</strong>: On show night, switch to the Live tab. Tap a song to see big, high-contrast lyrics. On phone/tablet, tap again for fullscreen; the Play button gently auto-scrolls based on song length so you reach the bottom of the page about 75% through the song.</li>
-        <li><strong>Tech / Stage</strong>: Use the Toolbox icons to build a clean, black-and-white stage plot. Drag to move, double‑click labels to rename, assign channels in the legend, and use Clear Stage (at the bottom of the toolbox) only when you really want to start over.</li>
-        <li><strong>Lighting / FX</strong>: Switch to “Lighting / FX” from Tech / Stage to type per‑song notes (e.g., “Blue wash, delay on chorus”). These print alongside the stage plot in the tech rider.</li>
-        <li><strong>Printing</strong>: Use the Print… button at the top to choose Setlist, Stage Plot, and Tech Notes. Each prints separately so you can give the band, engineer and lighting tech exactly what they need.</li>
-        <li><strong>Profiles & Sets</strong>: Save Profile (.BAND) to back up your whole song database and settings. Save .SET when you like a particular set order so you can reload it later.</li>
-        <li><strong>Autosave & Safety</strong>: The app saves as you go, even while dragging things around. You can also duplicate stage items with Ctrl+D and step through recent stage changes with Ctrl+Z / Ctrl+Y.</li>
-      </ol>
-      <div style="margin-top:16px;font-size:14px;background:#f1f5f9;padding:12px;border-radius:8px">
-        The app is free. If it saves you time and you’d like to support development, you can donate:
-        <p style="margin:10px 0"><a href="https://paypal.me/jamesmulvale" target="_blank" rel="noopener" class="btn" style="text-decoration:none">Donate via PayPal</a></p>
-        Thank you and have a great show!
+    <div class="sheet" style="max-width:820px;height:auto;display:flex;flex-direction:column">
+      <h2 style="margin-top:0;margin-bottom:8px">FASTFAST Setlist – Full Tour</h2>
+
+      <!-- Compact sticky single-row search + jump bar -->
+      <div style="position:sticky;top:0;z-index:10;background:#ffffff;padding:4px 0 6px 0;margin:0 0 6px 0;border-bottom:1px solid #e5e7eb">
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap;overflow:hidden">
+          <span style="font-weight:600;white-space:nowrap">Search:</span>
+          <input id="helpSearch" type="text" placeholder="tour, songs…" style="width:90px;flex:0 0 auto;padding:2px 4px;border-radius:6px;border:1px solid #cbd5e1;font-size:11px">
+          <button type="button" class="btn secondary" id="helpSearchPrev" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Prev</button>
+          <button type="button" class="btn secondary" id="helpSearchNext" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Next</button>
+          <span id="helpSearchCount" style="font-size:10px;color:#6b7280;flex:0 0 auto">0</span>
+          <span style="font-weight:600;flex:0 0 auto">Jump:</span>
+          <button type="button" class="btn secondary" data-help-jump="tour-help" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Tour</button>
+          <button type="button" class="btn secondary" data-help-jump="db-help" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Songs</button>
+          <button type="button" class="btn secondary" data-help-jump="set-help" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Setlist</button>
+          <button type="button" class="btn secondary" data-help-jump="stage-help" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Stage</button>
+          <button type="button" class="btn secondary" data-help-jump="live-help" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Live</button>
+          <button type="button" class="btn secondary" data-help-jump="print-help" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Printing</button>
+          <button type="button" class="btn secondary" data-help-jump="files-help" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Saving</button>
+          <button type="button" class="btn secondary" data-help-jump="tips-help" style="padding:1px 6px;font-size:11px;flex:0 0 auto">Tips</button>
+        </div>
       </div>
-      <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end">
+
+      <div id="helpContent" style="font-size:13px;line-height:1.5;max-height:60vh;overflow:auto;padding-right:6px;margin-top:0">
+
+        <!-- 0. Getting started story -->
+        <h3 id="top-help" style="margin-top:4px">0. Getting Started</h3>
+        <p>Here is one simple way to use this app from a totally blank database to a full tour with several bands, dates, rehearsals, and more.</p>
+        <ol>
+          <li><strong>Pick your main band</strong>
+            <ul>
+              <li>Click <strong>"Select Band…"</strong> at the very top left.</li>
+              <li>Type the band or artist name (for example “The Kildeers”).</li>
+              <li>This band now has a place for its own songs, setlists, stage plot and calendar.</li>
+            </ul>
+          </li>
+          <li><strong>Build your song list</strong>
+            <ul>
+              <li>Go to the <strong>Song Database</strong> tab.</li>
+              <li>drag or paste song titles into the <strong>Import Songs</strong> database page or type them one by one.</li>
+              <li>For each song, fill in title, artist, key, capo, length, mood and if it is a cover or original.</li>
+              <li>Add lyrics / chords where needed so Live mode can show them.</li>
+            </ul>
+          </li>
+          <li><strong>Create your first setlist</strong>
+            <ul>
+              <li>Open the <strong>Setlist</strong> tab.</li>
+              <li>Your available songs will be on the left to drag songs into the big setlist preview on the right.</li>
+              <li>Use the <strong>Generator</strong> if you want a quick starting order, then adjust by hand.</li>
+              <li>Drag in <strong>Break</strong> items so your sets are clear.</li>
+            </ul>
+          </li>
+          <li><strong>Draw a simple stage plot</strong>
+            <ul>
+              <li>Go to <strong>Tech / Stage</strong>, open the Stage/ Tech tab.</li>
+              <li>Drag icons for <strong>amps, guitars, bass, keyboards, drums, violins, DI boxes, microphones, vocal mics, wedges, in‑ear packs, DJ decks, playback laptops, fans</strong> and more onto the stage.</li>
+              <li>Drag a guitar to an amp to connect them. Drag an instrument mic to the Amp and it will create the full chain.</li>
+            </ul>
+          </li>
+          <li><strong>Pick your first day of the tour</strong>
+            <ul>
+              <li>Switch to the <strong>Calendar / Tour</strong> tab.</li>
+              <li>Pick a date box or click <strong>+ Add Date</strong>.</li>
+              <li>Fill in venue, address, load‑in and show time.</li>
+              <li>Attach your setlist and stage plot to this date.</li>
+              <li>Drag <strong>Events / Activities</strong> into the timeline: <strong>Drive, Rehearsal, Soundcheck, Gig, DJ set, Radio, Party, Sleep, Food</strong> and more.</li>
+            </ul>
+          </li>
+          <li><strong>Copy this to a tour</strong>
+            <ul>
+              <li>Add more dates in the calendar strip for the full run.</li>
+              <li>Drag date boxes to move a whole day (for example when a show moves from Friday to Sunday).</li>
+              <li>Mark special dates as <strong>Rehearsal, Radio, TV, Recording, DJ, Party, Rest, Travel</strong> using the date menu.</li>
+              <li>Attach different setlists or stage plots to special nights if needed.</li>
+            </ul>
+          </li>
+          <li><strong>Add a second band or project</strong>
+            <ul>
+              <li>Click <strong>"Select Band…"</strong> again.</li>
+              <li>Create another band (for example “Sweetiepies” or a DJ name).</li>
+              <li>Repeat: songs → setlists → stage plot → calendar, all kept separate per act.</li>
+            </ul>
+          </li>
+          <li><strong>Lock it in and print</strong>
+            <ul>
+              <li>Use the setlist lock so the order does not change by accident.</li>
+              <li>Open <strong>Print…</strong> and print setlists for the band, stage + channels for the engineer, and tech notes for the light and sound crew.</li>
+              <li>Save a <strong>.BAND</strong> profile so the full tour is backed up.</li>
+            </ul>
+          </li>
+        </ol>
+
+        <!-- 1. Top bar and basic controls -->
+        <h3>1. Top Bar – Always There</h3>
+        <ul>
+          <li><strong>Band chooser ("Select Band…")</strong> – click / tap to switch between bands or acts. Each band can have its own songs, stage plot and calendar.</li>
+          <li><strong>Calendar strip (little date boxes)</strong> – every box is a day. Green = has a show. Yellow line = travel / drive day. Purple = rehearsal / radio / party / other events. Solid outline = today.</li>
+          <li><strong>Drag a date box</strong> – move a whole day (including the setlist, stage and notes) to a new date. Handy when a gig is moved.</li>
+          <li><strong>Right‑click / long‑press a date box</strong> – opens a small menu to mark the day as: normal show, drive day, rest, home, rehearsal, recording, radio, TV, DJ, party, audition, dress rehearsal, or cancelled.</li>
+          <li><strong>"⚙️" button</strong> – save / load files:
+            <ul>
+              <li><strong>Save Profile (.BAND)</strong> – saves all bands, songs, calendar, stage plots and notes.</li>
+              <li><strong>Load Profile (.BAND)</strong> – open a saved profile from your computer.</li>
+              <li><strong>Save .SET</strong> – saves only the current setlist.</li>
+              <li><strong>Load .SET</strong> – load a saved setlist into the Setlist tab.</li>
+            </ul>
+          </li>
+          <li><strong>"Print…" button</strong> – opens the print options window (setlist, stage, tech notes, lyrics, itinerary).</li>
+          <li><strong>"📤 Share" button</strong> – lets you share / export your song database (for now this mostly works as a way to save and back things up).</li>
+          <li><strong>"?" Help button</strong> – opens this help window.</li>
+          <li><strong>Moon / Sun button</strong> – light / dark theme. Use what looks best on your screen or projector.</li>
+        </ul>
+
+        <!-- 2. Calendar / Tour Manager -->
+        <h3 id="tour-help">2. Calendar / Tour – Your Road Map</h3>
+        <p>Use this tab to plan every day: gigs, drives, rehearsals, radio, parties and sleep.</p>
+        <ul>
+          <li><strong>Big date and venue at the top</strong> – shows the selected day from the date strip.</li>
+          <li><strong>"◀ Yesterday" / "Tomorrow ▶"</strong> – move one day back or forward.</li>
+          <li><strong>"+ Add Date"</strong> – create a new tour day if it does not exist yet.</li>
+        </ul>
+        <p><strong>Gig Details box</strong></p>
+        <ul>
+          <li><strong>Date</strong> – choose the day of the show.</li>
+          <li><strong>Venue name</strong> – club, festival, house party, radio station, studio, etc.</li>
+          <li><strong>Address</strong> – street, city, country. Used to build map links.</li>
+          <li><strong>Load‑in time</strong> – when you start carrying gear in.</li>
+          <li><strong>Show time</strong> – when the first note should hit.</li>
+          <li><strong>Band / Artist</strong> – which act is playing that night.</li>
+          <li><strong>Setlist choice</strong> – use the current setlist or a custom one for this date.</li>
+          <li><strong>Stage choice</strong> – use the current stage plot or a custom one for this date.</li>
+          <li><strong>"Save" button</strong> – keeps all of this for that date.</li>
+          <li><strong>"Delete" button</strong> – removes the date from the calendar (the small date box will clear).</li>
+        </ul>
+        <p><strong>Location box (Map)</strong></p>
+        <ul>
+          <li>Once you type an address, the app builds links for maps (Google Maps / Apple Maps / Waze depending on your device).</li>
+          <li>Click / tap to open directions on your phone, tablet or laptop.</li>
+        </ul>
+        <p><strong>Daily Itinerary (timeline)</strong></p>
+        <ul>
+          <li>The left column shows the day as a simple timeline (morning → night).</li>
+          <li>You fill it by dragging small coloured <strong>Activity chips</strong> from the right: Rehearsal, Soundcheck, Load‑In, Gig, Drive, Home, Sleep, Meals, Party, Meetings, etc.</li>
+          <li><strong>Mouse</strong>: click and hold a chip, drag it to the time slot, then release.</li>
+          <li><strong>Touch</strong>: long‑press a chip until it “lifts up”, drag it, then lift your finger to drop.</li>
+          <li>You can drag items up / down to adjust the order or time.</li>
+          <li>Click / tap an item to edit its start time, length or notes.</li>
+          <li>There are special chips for radio, TV, parties and other promo events so your travel and gig day all sit on one simple line.</li>
+        </ul>
+        <p><strong>Find Places (Hotels / Food / Music / Radio)</strong></p>
+        <ul>
+          <li>Buttons such as <strong>Hotels, Music, Rehearsal, Recording, Radio, TV, Bars, Food, Cafes, Gas, Print, Repair, PA Rental, Pharmacy</strong> open map searches near your venue.</li>
+          <li>You can also type your own search (for example “vegan food” or “late‑night pizza”) and save that as a new button.</li>
+          <li>Results show as little chips; you can drag these to your itinerary or to the <strong>Saved Places</strong> area for that date.</li>
+        </ul>
+        <p><strong>Stage & Setlist previews</strong></p>
+        <ul>
+          <li>The small Stage and Setlist boxes on the right show what is currently attached to this date.</li>
+          <li>Double‑click / double‑tap them to jump straight into editing the big Stage or Setlist views.</li>
+        </ul>
+        <p><strong>Calendar lock & clear</strong></p>
+        <ul>
+          <li><strong>"🔒 Lock Calendar"</strong> – stops you from moving or deleting dates by mistake.</li>
+          <li><strong>"🗑️ Clear Calendar"</strong> – wipes all dates. Only do this at the very start of planning a new tour.</li>
+        </ul>
+
+        <!-- 3. Song Database -->
+        <h3 id="db-help">3. Song Database – Your Master List</h3>
+        <p>Here you keep every song you might ever play, with keys, moods, notes, links and lyrics.</p>
+        <p><strong>Search and filters</strong></p>
+        <ul>
+          <li><strong>Search box</strong> – type part of a song or artist name.</li>
+          <li><strong>Sort by</strong> – choose: order added, A–Z by song, A–Z by band, mood order, audience rating, most used, least used.</li>
+          <li><strong>Filter checkboxes</strong> – only show Covers, only Originals, Has Lyrics, Karaoke, Has Audio, Has URL, In Current Set, and mood filters (Upbeat, Happy, Energetic, Mellow, Sad plus your own moods).</li>
+        </ul>
+        <p><strong>Import songs quickly</strong></p>
+        <ul>
+          <li>Paste text into <strong>Import Songs</strong> (for example from a text file or OCR app) and click <strong>Extract</strong>.</li>
+          <li>Or click the file chooser to add text, PDF, images, audio or spreadsheets.</li>
+          <li>The app guesses titles, keys, capo, and sometimes length. Check the preview, then click <strong>Add Songs</strong>.</li>
+        </ul>
+        <p><strong>Song rows</strong></p>
+        <ul>
+          <li>Each line in the database is one song. You can click / tap fields to edit title, artist, key, capo, length, moods, links, rating, notes and custom fields.</li>
+          <li>There are quick buttons to open lyrics / chords, attach or arm audio files, and send the song to the current setlist.</li>
+          <li>If you add your own columns (for example “Language” or “Show Part”), they appear here and can also be shown in your printed setlist if you wish.</li>
+        </ul>
+        <p><strong>Safe clear</strong></p>
+        <ul>
+          <li>To empty the database you must first tick the <strong>"Unlock Clear"</strong> box, then click <strong>Clear Database</strong>.</li>
+          <li>You will be asked if you want to save a .BAND backup first. Strongly recommended before wipes.</li>
+        </ul>
+
+        <!-- 4. Setlist -->
+        <h3 id="set-help">4. Setlist – Build the Show</h3>
+        <p>Use this tab to plan the running order, breaks and total time for a gig.</p>
+        <p><strong>Song Pool (left side)</strong></p>
+        <ul>
+          <li>Shows Originals, Covers and Break items taken from your database.</li>
+          <li><strong>Search, Type, Sort, Mood</strong> – narrow down the pool to the songs you want tonight.</li>
+          <li><strong>Mouse</strong>: drag a song from the pool into the big setlist preview on the right.</li>
+          <li><strong>Touch</strong>: long‑press a song until it “lifts”, then drag to the setlist and release.</li>
+          <li>There are special Break items you can drag in to mark sets and intervals.</li>
+        </ul>
+        <p><strong>Setlist preview (middle)</strong></p>
+        <ul>
+          <li>Shows what will actually print on paper.</li>
+          <li>Click / tap the <strong>lock</strong> box to stop accidental changes (useful once the band agrees on the order).</li>
+          <li><strong>Reorder songs</strong> by dragging the row up or down.</li>
+          <li><strong>Double‑click / double‑tap a song title</strong> to add notes (“start quiet”, “2 solos”, “ask for drinks special”). Notes print under the song name.</li>
+          <li><strong>Delete</strong> – usually there is a small delete icon or context action on each row; removing a row does not affect the database.</li>
+          <li>The black square handle with an arrow in the corner can be dragged onto a calendar date to attach this full setlist to that night.</li>
+        </ul>
+        <p><strong>Generator settings (right column, top box)</strong></p>
+        <ul>
+          <li><strong>Set length (min)</strong> – how long you want to play.</li>
+          <li><strong>Break length (min)</strong> – how long you want your pauses.</li>
+          <li><strong>Cover ratio</strong> – pick how much of the night is covers vs originals.</li>
+          <li><strong>Breaks</strong> – choose number of breaks.</li>
+          <li><strong>Mood</strong> – overall feel: mixed, upbeat, mellow, etc.</li>
+          <li><strong>Encore</strong> – tick if you want the generator to leave room at the end for an encore song.</li>
+          <li><strong>Grouping rules</strong> – keep covers, keys or moods together if you want the flow to stay smooth (for example mid‑tempo block in the middle).</li>
+          <li><strong>Generate</strong> – creates a suggested set from your database. You can still drag, edit and fine‑tune by hand.</li>
+          <li><strong>New Setlist</strong> – start fresh. You will be asked if you want to save the old one as a preset.</li>
+          <li><strong>Clear</strong> – wipe the current setlist only.</li>
+        </ul>
+        <p><strong>Setlist display options (right column, bottom box)</strong></p>
+        <ul>
+          <li>Here you control what prints: Artist, Key, Capo, BPM, Notes, Lyrics preview and any custom fields.</li>
+          <li>You can also pick paper size (Letter or A4), page count, and how many songs per page.</li>
+        </ul>
+        <p><strong>Setlist presets</strong></p>
+        <ul>
+          <li>The <strong>⭐ Preset</strong> button lets you save great setlists (for example “Short Festival Set”, “Wedding 2 x 45”, “Xmas Show”).</li>
+          <li>You can load presets later, attach them to dates, and still tweak them for the night.</li>
+        </ul>
+
+        <!-- 5. Live Mode -->
+        <h3 id="live-help">5. Live Mode – On Stage</h3>
+        <p>This tab is for the actual show. Big print, simple buttons, touch‑friendly.</p>
+        <ul>
+          <li><strong>Arm All</strong> – choose a folder of audio files (backing tracks, reference tracks). The app links files to songs by name.</li>
+          <li>You can also arm a single song by using the file picker near that song.</li>
+          <li>Click / tap a song in the live list to select it. The right side shows its lyrics.</li>
+          <li><strong>Play / Stop</strong> buttons</li>
+          <ul>
+            <li>In the main Live panel and in the full‑screen overlay they start / stop the smooth auto‑scroll of lyrics.</li>
+            <li>They also try to start linked audio if you have armed a track.</li>
+          </ul>
+          <li><strong>Zoom slider</strong> – makes lyrics bigger or smaller. On small phones you might want 28–32; on big screens 18–22 is often enough.</li>
+          <li><strong>Speed − / +</strong> – changes scroll speed. You can nudge this during the song if the band stretches or shortens sections.</li>
+          <li><strong>Metronome (♩)</strong> – tap several times in tempo to set BPM, then it can flash or click depending on mode. Tap or hold as explained in the tooltip.</li>
+          <li><strong>Full‑screen overlay</strong> – usually opens automatically on phones / tablets; on desktop you can use it for a separate lyrics screen. Use the "Back to Setlist" button to return.</li>
+          <li><strong>Dark / light live theme</strong> – the small moon / sun button in the Live tab changes background and contrast for stage use.</li>
+        </ul>
+
+        <!-- 6. Tech / Stage -->
+        <h3 id="stage-help">6. Tech / Stage – Stage Plot and Tech Notes</h3>
+        <p><strong>Stage Plot</strong></p>
+        <ul>
+          <li>Click the <strong>Stage Plot</strong> button in the Tech / Stage tab to open the stage editor.</li>
+          <li>The yellow bar at the top shows the Band, Date and Venue for this plot.</li>
+          <li>In the left toolbox, drag items (mics, stands, drums, amps, wedges, players, etc.) onto the stage.</li>
+          <li><strong>Mouse</strong>: drag to move, single‑click to select, use the size and rotate sliders to adjust.</li>
+          <li><strong>Touch</strong>: tap to select, drag to move; use the same sliders for size and angle.</li>
+          <li>In the inspector bar you can rename items (for example “Lead Vox”, “Kick In”, “Guitar L”), show / hide labels, and change label size.</li>
+          <li>The black drag handle with an arrow lets you drag this whole stage plot onto a calendar date so that date always uses this layout.</li>
+          <li>The small black squares around the stage frame let you change the stage size and shape.</li>
+          <li><strong>New Stage</strong> – saves a preset and starts a fresh layout.</li>
+          <li><strong>Clear</strong> – removes all icons from the stage but keeps the background; use with care.</li>
+          <li>You can upload your own pictures (for example a band logo or a special instrument) or draw new icons with the Icon Maker.</li>
+        </ul>
+        <p><strong>Tech / Lighting Notes</strong></p>
+        <ul>
+          <li>The Lighting Notes window shows a table with one row per song.</li>
+          <li>Here you type what the sound and light team needs: number of DI boxes, extra vocal mics, “drums out on last chorus”, colour changes, FX, etc.</li>
+          <li>A gear list box under the table lets you list full equipment: amps, cabs, keyboards, in‑ears, extra stands.</li>
+          <li>These notes can print together with the stage plot, or alone, from the Print options.</li>
+        </ul>
+
+        <!-- 7. Printing -->
+        <h3 id="print-help">7. Printing – Paper for Everyone</h3>
+        <p>Use the top <strong>"Print…"</strong> button to open the print options.</p>
+        <ul>
+          <li>Select one or more of: <strong>Setlist, Stage Plot, Lighting / Tech Notes, Lyrics, Itinerary</strong>.</li>
+          <li>If you choose Lyrics, you will see a list of songs and can tick which lyrics to print.</li>
+          <li>Each thing prints as its own set of pages so you can hand them to different people (band, sound, lights, driver, radio host).</li>
+        </ul>
+        <p><strong>Windows / Mac laptop</strong></p>
+        <ul>
+          <li>After you click <strong>Print Selected</strong>, your normal print box opens.</li>
+          <li>Pick your printer or "Save as PDF".</li>
+          <li>Paper size: Letter or A4 as set in the Setlist Display Options.</li>
+        </ul>
+        <p><strong>iPhone / iPad</strong></p>
+        <ul>
+          <li>After clicking print, use the share button in the preview to save as PDF or send to AirPrint.</li>
+          <li>If the printer cuts the edges, switch between Letter and A4 in the app, then try again.</li>
+        </ul>
+        <p><strong>Android phones / tablets</strong></p>
+        <ul>
+          <li>After clicking print, most Android browsers let you share to a printer app or save a PDF.</li>
+          <li>If margins look odd, again try changing between Letter and A4 in Setlist Display Options.</li>
+        </ul>
+
+        <!-- 8. Files and safety -->
+        <h3 id="files-help">8. Saving Files – Profiles and Sets</h3>
+        <ul>
+          <li><strong>.BAND profile</strong> – use this to back up or move your full setup between machines.</li>
+          <li><strong>.SET file</strong> – use this to store favourite setlists (for specific shows or tours).</li>
+          <li>The app also saves to your browser as you go, but a .BAND file is the safest way to move between computers or after a reinstall.</li>
+          <li>On Windows / Mac, your browser will download these files to your usual Downloads folder unless you pick another place.</li>
+        </ul>
+
+        <!-- 9. Tips, touch vs mouse, edge cases -->
+        <h3 id="tips-help">9. Tips, Touch vs Mouse, Edge Cases</h3>
+        <p><strong>Mouse vs touch</strong></p>
+        <ul>
+          <li><strong>Mouse</strong> – click, drag and right‑click as usual.</li>
+          <li><strong>Touch</strong> – long‑press to start a drag, then move; single tap instead of click; long‑press instead of right‑click.</li>
+          <li>On small screens some panels stack vertically. Scroll up and down to see everything.</li>
+        </ul>
+        <p><strong>Moving shows when the date changes</strong></p>
+        <ul>
+          <li>If a gig moves by a day (or a week), drag the small date box to the new spot in the calendar strip.</li>
+          <li>This takes the setlist, stage, itinerary and notes with it.</li>
+        </ul>
+        <p><strong>Cancelled shows</strong></p>
+        <ul>
+          <li>Use the date box menu to mark a date as <strong>Cancelled</strong>.</li>
+          <li>The box gets a dashed red border so you still remember it once existed, but you will not plan new songs there by accident.</li>
+        </ul>
+        <p><strong>Autosave and undo</strong></p>
+        <ul>
+          <li>The app quietly saves while you work. Still, use .BAND and .SET files before big changes or tours.</li>
+          <li>On computers you can use <strong>Ctrl+Z</strong> / <strong>Cmd+Z</strong> to undo, and <strong>Ctrl+Y</strong> / <strong>Shift+Ctrl+Z</strong> to redo, for many actions in setlist and stage.</li>
+        </ul>
+        <p><strong>When things seem stuck</strong></p>
+        <ul>
+          <li>If drag and drop stops working, refresh the page, then reload your latest .BAND or .SET backup.</li>
+          <li>If printing looks tiny or huge, adjust the paper size and songs‑per‑page setting, then try again.</li>
+        </ul>
+
+        <p style="margin-top:16px;font-size:13px;background:#f1f5f9;padding:10px;border-radius:8px">
+          This app is free. If it saves you time and helps your band, you can buy the developer a coffee:
+          <br>
+          <a href="https://paypal.me/jamesmulvale" target="_blank" rel="noopener" class="btn" style="text-decoration:none;margin-top:6px;display:inline-block">Donate via PayPal</a>
+          <br>Thank you and have a great show.
+        </p>
+      </div>
+
+      <div style="margin-top:10px;display:flex;align-items:center;justify-content:flex-end;font-size:11px;color:#6b7280">
         <button class="btn" id="closeHelp">Close</button>
       </div>
     </div>
@@ -1689,6 +2041,96 @@
     return ua.includes('macintosh') || ua.includes('mac os');
   }
   function isMobileLike(){ return isIOS() || isAndroid(); }
+
+  // -----------------------------
+  // Help modal search + jump
+  // -----------------------------
+  let helpMatches = [];
+  let helpMatchIndex = -1;
+  function clearHelpHighlights(){
+    const host = document.getElementById('helpContent');
+    if(!host) return;
+    host.querySelectorAll('mark[data-help-hit]').forEach(m=>{
+      const txt = document.createTextNode(m.textContent || '');
+      m.parentNode.replaceChild(txt, m);
+    });
+  }
+  function findInNode(node, term){
+    if(!term) return;
+    if(node.nodeType === 3){
+      const text = node.nodeValue;
+      const idx = text.toLowerCase().indexOf(term);
+      if(idx === -1) return;
+      const span = document.createElement('mark');
+      span.setAttribute('data-help-hit','1');
+      const before = document.createTextNode(text.slice(0, idx));
+      const match = document.createTextNode(text.slice(idx, idx+term.length));
+      const after = document.createTextNode(text.slice(idx+term.length));
+      span.appendChild(match);
+      const parent = node.parentNode;
+      parent.replaceChild(after, node);
+      parent.insertBefore(span, after);
+      parent.insertBefore(before, span);
+      helpMatches.push(span);
+    } else if(node.nodeType === 1 && node.childNodes && !['SCRIPT','STYLE'].includes(node.tagName)){
+      const kids = Array.from(node.childNodes);
+      kids.forEach(ch=>findInNode(ch, term));
+    }
+  }
+  function runHelpSearch(){
+    const input = document.getElementById('helpSearch');
+    const host = document.getElementById('helpContent');
+    const countLabel = document.getElementById('helpSearchCount');
+    if(!input || !host) return;
+    const raw = input.value || '';
+    const term = raw.trim().toLowerCase();
+    clearHelpHighlights();
+    helpMatches = [];
+    helpMatchIndex = -1;
+    if(!term){ if(countLabel) countLabel.textContent = '0 matches'; return; }
+    findInNode(host, term);
+    if(countLabel){
+      countLabel.textContent = helpMatches.length ? (helpMatches.length + ' matches') : '0 matches';
+    }
+    if(helpMatches.length){
+      helpMatchIndex = 0;
+      helpMatches[0].scrollIntoView({behavior:'smooth',block:'center'});
+      helpMatches[0].style.backgroundColor = '#fde68a';
+    }
+  }
+  function stepHelpMatch(dir){
+    if(!helpMatches.length) return;
+    helpMatchIndex = (helpMatchIndex + dir + helpMatches.length) % helpMatches.length;
+    const el = helpMatches[helpMatchIndex];
+    if(el && el.scrollIntoView){
+      el.scrollIntoView({behavior:'smooth',block:'center'});
+      helpMatches.forEach(m=>m.style.backgroundColor='');
+      el.style.backgroundColor = '#fde68a';
+    }
+  }
+  function setupHelpUI(){
+    const search = document.getElementById('helpSearch');
+    if(search){
+      search.addEventListener('keydown', e=>{
+        if(e.key === 'Enter'){ e.preventDefault(); runHelpSearch(); }
+      });
+      search.addEventListener('input', ()=>{ runHelpSearch(); });
+    }
+    const prevBtn = document.getElementById('helpSearchPrev');
+    const nextBtn = document.getElementById('helpSearchNext');
+    if(prevBtn) prevBtn.addEventListener('click', ()=>stepHelpMatch(-1));
+    if(nextBtn) nextBtn.addEventListener('click', ()=>stepHelpMatch(1));
+    document.querySelectorAll('[data-help-jump]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.getAttribute('data-help-jump');
+        const target = document.getElementById(id);
+        const host = document.getElementById('helpContent');
+        if(target && host){
+          target.scrollIntoView({behavior:'smooth',block:'start'});
+        }
+      });
+    });
+  }
   
   // Detect paper size preference (US = Letter, rest = A4)
   function getPreferredPaperSize(){
@@ -1902,6 +2344,11 @@
       e.returnValue = 'You have unsaved work. Make sure to export your BAND or SET file!';
       return e.returnValue;
     }
+  });
+
+  // Run after everything is ready
+  window.addEventListener('load', ()=>{
+    setupHelpUI();
   });
     
     // Add custom column button
@@ -4726,7 +5173,7 @@
     // ============================================================================
     (function initTourManager(){
       const tourViewModeSelect = document.getElementById('tourViewMode');
-      const tourTodayBtn = document.getElementById('tourToday');
+      const tourTodayBtn = document.getElementById('tourTodayBtn');
       const tourPrevBtn = document.getElementById('tourPrev');
       const tourNextBtn = document.getElementById('tourNext');
       const tourAddDateBtn = document.getElementById('tourAddDate');
@@ -7403,8 +7850,34 @@
       // Navigation
       if(tourTodayBtn){
         tourTodayBtn.addEventListener('click', () => {
-          tourViewDate = new Date();
+          const today = new Date();
+          const todayStr = today.toISOString().split('T')[0];
+          let todayTour = tourDates.find(td => td.date === todayStr);
+          if(!todayTour){
+            // Create a new empty date for today
+            todayTour = {
+              id: generateId(),
+              date: todayStr,
+              venue: '',
+              address: '',
+              loadIn: '',
+              showTime: '',
+              band: gig.band || '',
+              setlistType: 'current',
+              stagePlotType: 'current',
+              itinerary: [],
+              interests: []
+            };
+            tourDates.push(todayTour);
+          }
+          if(typeof saveTourDateData === 'function') saveTourDateData();
+          selectTourDate(todayTour);
+          gig.date = todayStr;
+          selectedTourDateId = todayTour.id;
+          loadDateData(todayTour);
           renderTimeline();
+          renderDateHeader();
+          saveAll();
         });
       }
       
@@ -7423,18 +7896,19 @@
             // Save current date data before navigating
             if(typeof saveTourDateData === 'function') saveTourDateData();
             
-            // Jump back one week
+            // Long press: jump to previous show with any gig/drive/event
             const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
             if(currentTourDate){
-              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
-              currentDate.setDate(currentDate.getDate() - 7);
-              const weekAgoStr = currentDate.toISOString().split('T')[0];
-              const weekAgoTour = tourDates.find(td => td.date === weekAgoStr);
-              if(weekAgoTour){
-                selectTourDate(weekAgoTour);
-                gig.date = weekAgoStr;
-                selectedTourDateId = weekAgoTour.id;
-                loadDateData(weekAgoTour);
+              const currentTime = new Date(currentTourDate.date + 'T12:00:00').getTime();
+              const earlier = tourDates
+                .filter(td => new Date(td.date + 'T12:00:00').getTime() < currentTime)
+                .sort((a,b)=> new Date(b.date).getTime() - new Date(a.date).getTime());
+              const target = earlier[0];
+              if(target){
+                selectTourDate(target);
+                gig.date = target.date;
+                selectedTourDateId = target.id;
+                loadDateData(target);
                 renderDateHeader();
                 saveAll();
               }
@@ -7448,18 +7922,19 @@
             // Save current date data before navigating
             if(typeof saveTourDateData === 'function') saveTourDateData();
             
-            // Normal click: go to yesterday
+            // Normal click: previous show (closest earlier tour date)
             const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
             if(currentTourDate){
-              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
-              currentDate.setDate(currentDate.getDate() - 1);
-              const yesterdayStr = currentDate.toISOString().split('T')[0];
-              const yesterdayTour = tourDates.find(td => td.date === yesterdayStr);
-              if(yesterdayTour){
-                selectTourDate(yesterdayTour);
-                gig.date = yesterdayStr;
-                selectedTourDateId = yesterdayTour.id;
-                loadDateData(yesterdayTour);
+              const currentTime = new Date(currentTourDate.date + 'T12:00:00').getTime();
+              const earlier = tourDates
+                .filter(td => new Date(td.date + 'T12:00:00').getTime() < currentTime)
+                .sort((a,b)=> new Date(b.date).getTime() - new Date(a.date).getTime());
+              const target = earlier[0];
+              if(target){
+                selectTourDate(target);
+                gig.date = target.date;
+                selectedTourDateId = target.id;
+                loadDateData(target);
                 renderDateHeader();
                 saveAll();
               }
@@ -7482,15 +7957,16 @@
             
             const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
             if(currentTourDate){
-              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
-              currentDate.setDate(currentDate.getDate() - 7);
-              const weekAgoStr = currentDate.toISOString().split('T')[0];
-              const weekAgoTour = tourDates.find(td => td.date === weekAgoStr);
-              if(weekAgoTour){
-                selectTourDate(weekAgoTour);
-                gig.date = weekAgoStr;
-                selectedTourDateId = weekAgoTour.id;
-                loadDateData(weekAgoTour);
+              const currentTime = new Date(currentTourDate.date + 'T12:00:00').getTime();
+              const earlier = tourDates
+                .filter(td => new Date(td.date + 'T12:00:00').getTime() < currentTime)
+                .sort((a,b)=> new Date(b.date).getTime() - new Date(a.date).getTime());
+              const target = earlier[0];
+              if(target){
+                selectTourDate(target);
+                gig.date = target.date;
+                selectedTourDateId = target.id;
+                loadDateData(target);
                 renderDateHeader();
                 saveAll();
               }
@@ -7507,15 +7983,16 @@
             
             const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
             if(currentTourDate){
-              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
-              currentDate.setDate(currentDate.getDate() - 1);
-              const yesterdayStr = currentDate.toISOString().split('T')[0];
-              const yesterdayTour = tourDates.find(td => td.date === yesterdayStr);
-              if(yesterdayTour){
-                selectTourDate(yesterdayTour);
-                gig.date = yesterdayStr;
-                selectedTourDateId = yesterdayTour.id;
-                loadDateData(yesterdayTour);
+              const currentTime = new Date(currentTourDate.date + 'T12:00:00').getTime();
+              const earlier = tourDates
+                .filter(td => new Date(td.date + 'T12:00:00').getTime() < currentTime)
+                .sort((a,b)=> new Date(b.date).getTime() - new Date(a.date).getTime());
+              const target = earlier[0];
+              if(target){
+                selectTourDate(target);
+                gig.date = target.date;
+                selectedTourDateId = target.id;
+                loadDateData(target);
                 renderDateHeader();
                 saveAll();
               }
@@ -7532,18 +8009,19 @@
             // Save current date data before navigating
             if(typeof saveTourDateData === 'function') saveTourDateData();
             
-            // Jump forward one week
+            // Long press: jump to next show with any gig/drive/event
             const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
             if(currentTourDate){
-              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
-              currentDate.setDate(currentDate.getDate() + 7);
-              const weekAheadStr = currentDate.toISOString().split('T')[0];
-              const weekAheadTour = tourDates.find(td => td.date === weekAheadStr);
-              if(weekAheadTour){
-                selectTourDate(weekAheadTour);
-                gig.date = weekAheadStr;
-                selectedTourDateId = weekAheadTour.id;
-                loadDateData(weekAheadTour);
+              const currentTime = new Date(currentTourDate.date + 'T12:00:00').getTime();
+              const later = tourDates
+                .filter(td => new Date(td.date + 'T12:00:00').getTime() > currentTime)
+                .sort((a,b)=> new Date(a.date).getTime() - new Date(b.date).getTime());
+              const target = later[0];
+              if(target){
+                selectTourDate(target);
+                gig.date = target.date;
+                selectedTourDateId = target.id;
+                loadDateData(target);
                 renderDateHeader();
                 saveAll();
               }
@@ -7557,18 +8035,19 @@
             // Save current date data before navigating
             if(typeof saveTourDateData === 'function') saveTourDateData();
             
-            // Normal click: go to tomorrow
+            // Normal click: next show (closest later tour date)
             const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
             if(currentTourDate){
-              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
-              currentDate.setDate(currentDate.getDate() + 1);
-              const tomorrowStr = currentDate.toISOString().split('T')[0];
-              const tomorrowTour = tourDates.find(td => td.date === tomorrowStr);
-              if(tomorrowTour){
-                selectTourDate(tomorrowTour);
-                gig.date = tomorrowStr;
-                selectedTourDateId = tomorrowTour.id;
-                loadDateData(tomorrowTour);
+              const currentTime = new Date(currentTourDate.date + 'T12:00:00').getTime();
+              const later = tourDates
+                .filter(td => new Date(td.date + 'T12:00:00').getTime() > currentTime)
+                .sort((a,b)=> new Date(a.date).getTime() - new Date(b.date).getTime());
+              const target = later[0];
+              if(target){
+                selectTourDate(target);
+                gig.date = target.date;
+                selectedTourDateId = target.id;
+                loadDateData(target);
                 renderDateHeader();
                 saveAll();
               }
@@ -7591,15 +8070,16 @@
             
             const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
             if(currentTourDate){
-              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
-              currentDate.setDate(currentDate.getDate() + 7);
-              const weekAheadStr = currentDate.toISOString().split('T')[0];
-              const weekAheadTour = tourDates.find(td => td.date === weekAheadStr);
-              if(weekAheadTour){
-                selectTourDate(weekAheadTour);
-                gig.date = weekAheadStr;
-                selectedTourDateId = weekAheadTour.id;
-                loadDateData(weekAheadTour);
+              const currentTime = new Date(currentTourDate.date + 'T12:00:00').getTime();
+              const later = tourDates
+                .filter(td => new Date(td.date + 'T12:00:00').getTime() > currentTime)
+                .sort((a,b)=> new Date(a.date).getTime() - new Date(b.date).getTime());
+              const target = later[0];
+              if(target){
+                selectTourDate(target);
+                gig.date = target.date;
+                selectedTourDateId = target.id;
+                loadDateData(target);
                 renderDateHeader();
                 saveAll();
               }
@@ -7616,15 +8096,16 @@
             
             const currentTourDate = tourDates.find(td => td.id === selectedTourDateId);
             if(currentTourDate){
-              const currentDate = new Date(currentTourDate.date + 'T12:00:00');
-              currentDate.setDate(currentDate.getDate() + 1);
-              const tomorrowStr = currentDate.toISOString().split('T')[0];
-              const tomorrowTour = tourDates.find(td => td.date === tomorrowStr);
-              if(tomorrowTour){
-                selectTourDate(tomorrowTour);
-                gig.date = tomorrowStr;
-                selectedTourDateId = tomorrowTour.id;
-                loadDateData(tomorrowTour);
+              const currentTime = new Date(currentTourDate.date + 'T12:00:00').getTime();
+              const later = tourDates
+                .filter(td => new Date(td.date + 'T12:00:00').getTime() > currentTime)
+                .sort((a,b)=> new Date(a.date).getTime() - new Date(b.date).getTime());
+              const target = later[0];
+              if(target){
+                selectTourDate(target);
+                gig.date = target.date;
+                selectedTourDateId = target.id;
+                loadDateData(target);
                 renderDateHeader();
                 saveAll();
               }
@@ -7659,29 +8140,7 @@
         });
       }
       
-      // Add new date
-      if(tourAddDateBtn){
-        tourAddDateBtn.addEventListener('click', () => {
-          const newDate = {
-            id: generateId(),
-            date: new Date().toISOString().split('T')[0],
-            venue: '',
-            address: '',
-            loadIn: '',
-            showTime: '',
-            band: gig.band || '',
-            setlistType: 'current',
-            stagePlotType: 'current',
-            itinerary: [],
-            interests: []
-          };
-          tourDates.push(newDate);
-          selectTourDate(newDate);
-          saveAll();
-          renderTimeline();
-          renderDateHeader();
-        });
-      }
+      // Add new date logic now lives on Today button
       
       // Save date changes
       if(tourSaveDateBtn){
@@ -7733,7 +8192,6 @@
           });
           if(tourSaveDateBtn) tourSaveDateBtn.disabled = isLocked;
           if(tourDeleteDateBtn) tourDeleteDateBtn.disabled = isLocked;
-          if(tourAddDateBtn) tourAddDateBtn.disabled = isLocked;
           if(tourAddItineraryItem) tourAddItineraryItem.disabled = isLocked;
         });
       }
@@ -13604,31 +14062,125 @@ function closeStageModal(){
       function sanitizeLine(line){ return line.replace(/\s+/g,' ').trim(); }
       function detectCapo(str){ const m=str.match(/capo\s*(\d{1,2})/i); if(m){ const v=parseInt(m[1],10); if(Number.isInteger(v) && v>=0 && v<=24) return v; } return 0; }
       function detectKey(str){ // first standalone musical key token
-        const m=str.match(/\b([A-G](?:#|b)?m?)\b/); return m? m[1] : ''; }
+        const m=str.match(/\b([A-G](?:#|b)?m?(?:aj|in|ajor|inor)?)\b/i); return m? m[1] : ''; }
       function parseSongLines(text){
         const out=[]; const lines=text.split(/\r?\n/);
-        for(let raw of lines){ let line=sanitizeLine(raw); if(!line) continue; const capo=detectCapo(line); if(capo) line=line.replace(/capo\s*\d{1,2}/i,'').trim(); const key=detectKey(line); let title=line; // remove key if separated by dash/pipe/colon or at end
-          if(key){ const sepPattern=new RegExp('[-|:]?\s*'+key+'\s*$','i'); title=title.replace(sepPattern,'').trim(); if(title.toLowerCase().startsWith(key.toLowerCase()+' ')) title=title.slice(key.length).trim(); }
+        for(let raw of lines){ 
+          let line=sanitizeLine(raw); 
+          if(!line) continue;
+          
+          // Skip header lines (band name, venue, date, etc.)
+          if(/^(the\s+)?[a-z\s]+hotel$/i.test(line)) continue;
+          if(/^\d{4}-\d{2}-\d{2}/.test(line)) continue;
+          if(/^\d{1,2}(:\d{2})?\s*(am|pm)?$/i.test(line)) continue;
+          if(/^(set\s*\d|encore|break|intermission)$/i.test(line)) continue;
+          
+          // Remove leading numbers (setlist numbering like "1 Blue Shadows" or "1. Blue Shadows")
+          line = line.replace(/^\d+[\.\)\-\s]+\s*/, '').trim();
+          
+          // Remove trailing duration (like "4m" or "3.5m" or "4:30")
+          line = line.replace(/\s+\d+(\.\d+)?m$/i, '').trim();
+          line = line.replace(/\s+\d+:\d{2}$/, '').trim();
+          
+          if(!line) continue;
+          
+          const capo=detectCapo(line); 
+          if(capo) line=line.replace(/capo\s*\d{1,2}/i,'').trim(); 
+          
+          // Detect key - look for "Key: X" or just standalone key
+          let key = '';
+          const keyMatch = line.match(/key[:\s]+([A-G](?:#|b)?(?:\s*(?:m|maj|min|major|minor))?)/i);
+          if(keyMatch){
+            key = keyMatch[1].trim();
+            line = line.replace(/key[:\s]+[A-G](?:#|b)?(?:\s*(?:m|maj|min|major|minor))?/i, '').trim();
+          } else {
+            key = detectKey(line);
+          }
+          
+          let title=line; 
+          // remove key if separated by dash/pipe/colon or at end
+          if(key){ 
+            const sepPattern=new RegExp('[-|:]?\\s*'+key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*$','i'); 
+            title=title.replace(sepPattern,'').trim(); 
+            if(title.toLowerCase().startsWith(key.toLowerCase()+' ')) title=title.slice(key.length).trim(); 
+          }
           // Remove trailing parentheses or brackets containing key or capo info
           title=title.replace(/\((?:capo|key)[^)]*\)$/i,'').trim();
-          if(title) out.push({title, key, capo, length:3.5, artist:'Original'}); }
+          // Remove "Key: X" from title
+          title=title.replace(/key[:\s]+[A-G](?:#|b)?m?/i,'').trim();
+          
+          // Skip if title is too short or just a key/number
+          if(title.length < 2) continue;
+          if(/^[A-G](?:#|b)?m?$/i.test(title)) continue;
+          
+          if(title) out.push({title, key, capo, length:3.5, artist:'Original'}); 
+        }
         return out; }
       function dedupe(list){ const seen=new Set(); return list.filter(s=>{ const k=(s.title.toLowerCase()+'|'+(s.artist||'Original').toLowerCase()); if(seen.has(k)) return false; seen.add(k); return true; }); }
       function renderPreview(){ if(!parsed.length){ previewEl.innerHTML='<em>No parsed songs.</em>'; commitBtn.disabled=true; return; }
-        // Build editable table
-        const tbl=document.createElement('table'); tbl.style.width='100%'; tbl.style.borderCollapse='collapse';
-        const thead=document.createElement('thead'); thead.innerHTML='<tr style="background:#e2e8f0"><th style="text-align:left;padding:4px 6px">Title</th><th style="text-align:left;padding:4px 6px">Key</th><th style="text-align:left;padding:4px 6px">Capo</th><th style="text-align:left;padding:4px 6px">Len (m)</th><th style="text-align:left;padding:4px 6px">Remove</th></tr>';
+        // Build editable table with all columns
+        const tbl=document.createElement('table'); tbl.style.width='100%'; tbl.style.borderCollapse='collapse'; tbl.style.fontSize='12px';
+        const thead=document.createElement('thead'); 
+        thead.innerHTML='<tr style="background:#e2e8f0"><th style="text-align:left;padding:4px 6px">Title</th><th style="text-align:left;padding:4px 6px">Artist</th><th style="text-align:left;padding:4px 6px">Key</th><th style="text-align:left;padding:4px 6px">Capo</th><th style="text-align:left;padding:4px 6px">BPM</th><th style="text-align:left;padding:4px 6px">Len</th><th style="text-align:left;padding:4px 6px;max-width:200px">Lyrics</th><th style="text-align:left;padding:4px 6px">Cover</th><th style="text-align:left;padding:4px 6px">×</th></tr>';
         const tbody=document.createElement('tbody');
         parsed.forEach((s,i)=>{
-          const tr=document.createElement('tr');
-          const tdTitle=document.createElement('td'); const inpTitle=document.createElement('input'); inpTitle.type='text'; inpTitle.value=s.title; inpTitle.style.width='100%'; inpTitle.addEventListener('input',()=>{ s.title=inpTitle.value.trim(); }); tdTitle.style.padding='4px 6px'; tdTitle.appendChild(inpTitle);
-          const tdKey=document.createElement('td'); const inpKey=document.createElement('input'); inpKey.type='text'; inpKey.value=s.key||''; inpKey.placeholder='Key'; inpKey.style.width='70px'; inpKey.addEventListener('input',()=>{ s.key=inpKey.value.trim(); }); tdKey.style.padding='4px 6px'; tdKey.appendChild(inpKey);
-          const tdCapo=document.createElement('td'); const inpCapo=document.createElement('input'); inpCapo.type='number'; inpCapo.min='0'; inpCapo.max='24'; inpCapo.value=String(Number.isInteger(s.capo)? s.capo:0); inpCapo.style.width='56px'; inpCapo.addEventListener('change',()=>{ let v=parseInt(inpCapo.value,10); if(!Number.isInteger(v)||v<0) v=0; if(v>24) v=24; s.capo=v; inpCapo.value=String(v); }); tdCapo.style.padding='4px 6px'; tdCapo.appendChild(inpCapo);
-          const tdLen=document.createElement('td'); const inpLen=document.createElement('input'); inpLen.type='number'; inpLen.min='0.5'; inpLen.step='0.5'; inpLen.value=String(s.length||3.5); inpLen.style.width='70px'; inpLen.addEventListener('change',()=>{ let v=parseFloat(inpLen.value); if(!isFinite(v)||v<=0) v=3.5; s.length=v; inpLen.value=String(v); }); tdLen.style.padding='4px 6px'; tdLen.appendChild(inpLen);
-          const tdRemove=document.createElement('td'); tdRemove.style.padding='4px 6px'; const btnRem=document.createElement('button'); btnRem.type='button'; btnRem.textContent='×'; btnRem.className='btn danger'; btnRem.style.padding='2px 8px'; btnRem.style.fontSize='14px'; btnRem.addEventListener('click',()=>{ parsed.splice(i,1); renderPreview(); }); tdRemove.appendChild(btnRem);
-          tr.append(tdTitle,tdKey,tdCapo,tdLen,tdRemove); tbody.appendChild(tr);
+          const tr=document.createElement('tr'); tr.style.borderBottom='1px solid #e5e7eb';
+          
+          // Title
+          const tdTitle=document.createElement('td'); const inpTitle=document.createElement('input'); inpTitle.type='text'; inpTitle.value=s.title||''; inpTitle.style.cssText='width:100%;min-width:120px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px'; inpTitle.addEventListener('input',()=>{ s.title=inpTitle.value.trim(); }); tdTitle.style.padding='4px 6px'; tdTitle.appendChild(inpTitle);
+          
+          // Artist
+          const tdArtist=document.createElement('td'); const inpArtist=document.createElement('input'); inpArtist.type='text'; inpArtist.value=s.artist||'Original'; inpArtist.style.cssText='width:100px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px'; inpArtist.addEventListener('input',()=>{ s.artist=inpArtist.value.trim()||'Original'; s.isCover=(s.artist.toLowerCase()!=='original'); }); tdArtist.style.padding='4px 6px'; tdArtist.appendChild(inpArtist);
+          
+          // Key
+          const tdKey=document.createElement('td'); const inpKey=document.createElement('input'); inpKey.type='text'; inpKey.value=s.key||''; inpKey.placeholder='Key'; inpKey.style.cssText='width:50px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px'; inpKey.addEventListener('input',()=>{ s.key=inpKey.value.trim(); }); tdKey.style.padding='4px 6px'; tdKey.appendChild(inpKey);
+          
+          // Capo
+          const tdCapo=document.createElement('td'); const inpCapo=document.createElement('input'); inpCapo.type='number'; inpCapo.min='0'; inpCapo.max='24'; inpCapo.value=String(Number.isInteger(s.capo)? s.capo:0); inpCapo.style.cssText='width:45px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px'; inpCapo.addEventListener('change',()=>{ let v=parseInt(inpCapo.value,10); if(!Number.isInteger(v)||v<0) v=0; if(v>24) v=24; s.capo=v; inpCapo.value=String(v); }); tdCapo.style.padding='4px 6px'; tdCapo.appendChild(inpCapo);
+          
+          // BPM
+          const tdBpm=document.createElement('td'); const inpBpm=document.createElement('input'); inpBpm.type='number'; inpBpm.min='0'; inpBpm.max='300'; inpBpm.value=String(s.bpm||0); inpBpm.placeholder='BPM'; inpBpm.style.cssText='width:50px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px'; inpBpm.addEventListener('change',()=>{ let v=parseInt(inpBpm.value,10); if(!Number.isInteger(v)||v<0) v=0; s.bpm=v; }); tdBpm.style.padding='4px 6px'; tdBpm.appendChild(inpBpm);
+          
+          // Length
+          const tdLen=document.createElement('td'); const inpLen=document.createElement('input'); inpLen.type='number'; inpLen.min='0.5'; inpLen.step='0.5'; inpLen.value=String(s.length||3.5); inpLen.style.cssText='width:50px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px'; inpLen.addEventListener('change',()=>{ let v=parseFloat(inpLen.value); if(!isFinite(v)||v<=0) v=3.5; s.length=v; inpLen.value=String(v); }); tdLen.style.padding='4px 6px'; tdLen.appendChild(inpLen);
+          
+          // Lyrics preview
+          const tdLyrics=document.createElement('td'); tdLyrics.style.cssText='padding:4px 6px;max-width:200px';
+          const lyricsPreview = (s.lyrics||'').substring(0,80).replace(/\n/g,' ');
+          if(s.lyrics){
+            const lyricsSpan=document.createElement('span'); lyricsSpan.style.cssText='font-size:10px;color:#64748b;cursor:pointer;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px';
+            lyricsSpan.textContent=lyricsPreview+(s.lyrics.length>80?'...':'');
+            lyricsSpan.title='Click to edit lyrics';
+            lyricsSpan.addEventListener('click',()=>{
+              const ta=document.createElement('textarea'); ta.value=s.lyrics||''; ta.style.cssText='width:180px;height:60px;font-size:10px;padding:2px;border:1px solid #3b82f6;border-radius:3px';
+              ta.addEventListener('blur',()=>{ s.lyrics=ta.value; renderPreview(); });
+              ta.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ renderPreview(); } });
+              tdLyrics.innerHTML=''; tdLyrics.appendChild(ta); ta.focus();
+            });
+            tdLyrics.appendChild(lyricsSpan);
+          } else {
+            const addBtn=document.createElement('button'); addBtn.type='button'; addBtn.textContent='+'; addBtn.style.cssText='padding:1px 6px;font-size:10px;cursor:pointer;background:#f1f5f9;border:1px solid #d1d5db;border-radius:3px';
+            addBtn.title='Add lyrics';
+            addBtn.addEventListener('click',()=>{
+              const ta=document.createElement('textarea'); ta.value=''; ta.placeholder='Paste lyrics...'; ta.style.cssText='width:180px;height:60px;font-size:10px;padding:2px;border:1px solid #3b82f6;border-radius:3px';
+              ta.addEventListener('blur',()=>{ s.lyrics=ta.value; renderPreview(); });
+              tdLyrics.innerHTML=''; tdLyrics.appendChild(ta); ta.focus();
+            });
+            tdLyrics.appendChild(addBtn);
+          }
+          
+          // Cover checkbox
+          const tdCover=document.createElement('td'); tdCover.style.padding='4px 6px';
+          const chkCover=document.createElement('input'); chkCover.type='checkbox'; chkCover.checked=s.isCover||(s.artist&&s.artist.toLowerCase()!=='original'); chkCover.style.cssText='width:16px;height:16px';
+          chkCover.addEventListener('change',()=>{ s.isCover=chkCover.checked; });
+          tdCover.appendChild(chkCover);
+          
+          // Remove button
+          const tdRemove=document.createElement('td'); tdRemove.style.padding='4px 6px'; const btnRem=document.createElement('button'); btnRem.type='button'; btnRem.textContent='×'; btnRem.className='btn danger'; btnRem.style.cssText='padding:2px 8px;font-size:12px;background:#dc2626;color:white;border:none;border-radius:3px;cursor:pointer'; btnRem.addEventListener('click',()=>{ parsed.splice(i,1); renderPreview(); }); tdRemove.appendChild(btnRem);
+          
+          tr.append(tdTitle,tdArtist,tdKey,tdCapo,tdBpm,tdLen,tdLyrics,tdCover,tdRemove); tbody.appendChild(tr);
         });
-        tbl.append(thead,tbody); previewEl.innerHTML=''; previewEl.appendChild(tbl); commitBtn.disabled=false;
+        tbl.append(thead,tbody); previewEl.innerHTML=''; previewEl.style.maxHeight='400px'; previewEl.style.overflowY='auto'; previewEl.appendChild(tbl); commitBtn.disabled=false;
       }
       function addParsedToDb(){ const existingKeyOf=s=> (s.title.toLowerCase()+'|'+(s.artist||'Original').toLowerCase()); const existing=new Set(db.map(existingKeyOf)); let added=0; parsed.forEach(s=>{ if(!existing.has(existingKeyOf(s))){ s.id=Date.now()+Math.random(); db.push(s); existing.add(existingKeyOf(s)); added++; } }); renderDB(); renderSongPool(); saveAll(); statusEl.textContent=`Imported ${added} new song${added===1?'':'s'}.`; }
       parseBtn.addEventListener('click',()=>{ parsed=dedupe(parseSongLines(txt.value||'')); statusEl.textContent=`Parsed ${parsed.length} song line${parsed.length===1?'':'s'}.`; renderPreview(); });
@@ -13644,6 +14196,162 @@ function closeStageModal(){
           file.multiple = true;
           file.value = '';
         });
+      }
+      
+      // Paste handler for images and text (CTRL+V on the import section)
+      const importBlock = document.getElementById('importBlock');
+      if(importBlock){
+        importBlock.addEventListener('paste', async (e) => {
+          const items = e.clipboardData?.items;
+          if(!items || items.length === 0) return;
+          
+          let hasImage = false;
+          let imageFile = null;
+          let pastedText = '';
+          
+          // Check for images first
+          for(let i = 0; i < items.length; i++){
+            const item = items[i];
+            if(item.type.startsWith('image/')){
+              hasImage = true;
+              imageFile = item.getAsFile();
+              break;
+            }
+          }
+          
+          // If no image, check for text
+          if(!hasImage){
+            for(let i = 0; i < items.length; i++){
+              const item = items[i];
+              if(item.type === 'text/plain'){
+                pastedText = await new Promise(resolve => item.getAsString(resolve));
+                break;
+              }
+            }
+          }
+          
+          // Process pasted image with OCR
+          if(imageFile){
+            e.preventDefault();
+            
+            // Show spinner
+            const spinner = document.getElementById('importSpinner');
+            const spinnerText = document.getElementById('importSpinnerText');
+            if(spinner){ spinner.style.display = 'flex'; }
+            const updatePasteSpinner = (text) => { 
+              if(spinnerText) spinnerText.textContent = text; 
+              statusEl.textContent = text; 
+            };
+            
+            updatePasteSpinner('Processing pasted image...');
+            
+            try{
+              await ensureTesseract();
+              const { Tesseract } = window;
+              
+              // Preprocess image for better handwriting OCR
+              updatePasteSpinner('Preprocessing image...');
+              const canvas = await prepareImageForOCR(imageFile, 3);
+              
+              const result = await Tesseract.recognize(canvas, 'eng', {
+                logger: m => {
+                  if(m.status === 'recognizing text'){
+                    updatePasteSpinner(`OCR pasted image: ${Math.round(m.progress*100)}%`);
+                  }
+                }
+              });
+              
+              const ocrText = result?.data?.text || '';
+              if(ocrText.trim()){
+                // Parse the OCR text as song lines
+                const songs = parseSongLines(ocrText);
+                if(songs.length > 0){
+                  parsed = dedupe([...parsed, ...songs]);
+                  updatePasteSpinner(`Extracted ${songs.length} song${songs.length===1?'':'s'} from pasted image.`);
+                  renderPreview();
+                } else {
+                  // Put the OCR text in the textarea for manual review
+                  txt.value = (txt.value ? txt.value + '\n' : '') + ocrText;
+                  updatePasteSpinner('OCR complete. Review text and click Extract.');
+                }
+              } else {
+                updatePasteSpinner('No text detected in pasted image.');
+              }
+            }catch(err){
+              console.error('Paste OCR error:', err);
+              updatePasteSpinner('Failed to process pasted image.');
+            }
+            
+            // Hide spinner
+            if(spinner){ spinner.style.display = 'none'; }
+          }
+          // Process pasted text (if not pasted into textarea)
+          else if(pastedText && document.activeElement !== txt){
+            // Let the paste go through to textarea if that's focused
+            // Otherwise, process it as song lines
+            e.preventDefault();
+            
+            const songs = parseSongLines(pastedText);
+            if(songs.length > 0){
+              parsed = dedupe([...parsed, ...songs]);
+              statusEl.textContent = `Extracted ${songs.length} song${songs.length===1?'':'s'} from pasted text.`;
+              renderPreview();
+            } else {
+              // Put text in textarea
+              txt.value = (txt.value ? txt.value + '\n' : '') + pastedText;
+              statusEl.textContent = 'Text pasted. Click Extract to parse.';
+            }
+          }
+        });
+      }
+      
+      // Image preprocessing for better OCR (especially handwriting)
+      function preprocessImageForOCR(canvas){
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Convert to grayscale and enhance contrast
+        for(let i = 0; i < data.length; i += 4){
+          // Grayscale using luminance formula
+          const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+          
+          // Enhance contrast (stretch histogram)
+          let enhanced = ((gray - 128) * 1.5) + 128;
+          enhanced = Math.max(0, Math.min(255, enhanced));
+          
+          // Apply adaptive thresholding for handwriting
+          // This helps separate ink from paper
+          const threshold = 180; // Adjust for yellowed paper
+          const binarized = enhanced < threshold ? 0 : 255;
+          
+          data[i] = binarized;
+          data[i+1] = binarized;
+          data[i+2] = binarized;
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        return canvas;
+      }
+      
+      // Prepare canvas from image for OCR with preprocessing
+      async function prepareImageForOCR(imageSource, scale = 3){
+        const imgBitmap = await createImageBitmap(imageSource);
+        const canvas = document.createElement('canvas');
+        canvas.width = imgBitmap.width * scale;
+        canvas.height = imgBitmap.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        // Fill with white background first (helps with transparency)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(imgBitmap, 0, 0, canvas.width, canvas.height);
+        
+        // Apply preprocessing for handwriting
+        preprocessImageForOCR(canvas);
+        
+        return canvas;
       }
       
       // Load jsmediatags library for ID3 reading
@@ -13835,7 +14543,14 @@ function closeStageModal(){
         previewEl.innerHTML=''; parsed=[]; commitBtn.disabled=true; statusEl.textContent='';
         const files = Array.from(file.files || []);
         if(!files.length) return;
-        statusEl.textContent = `Processing ${files.length} file${files.length===1?'':'s'}...`;
+        
+        // Show spinning vinyl overlay
+        const spinner = document.getElementById('importSpinner');
+        const spinnerText = document.getElementById('importSpinnerText');
+        if(spinner){ spinner.style.display = 'flex'; }
+        const updateSpinner = (text) => { if(spinnerText) spinnerText.textContent = text; statusEl.textContent = text; };
+        
+        updateSpinner(`Processing ${files.length} file${files.length===1?'':'s'}...`);
         
         // First, group files by base name to match audio with lyrics
         const fileGroups = new Map(); // baseName -> {audio: file, lyrics: [files]}
@@ -13873,12 +14588,12 @@ function closeStageModal(){
             // Extract audio metadata if present
             if(group.audio){
               songData = await extractAudioMetadata(group.audio);
-              statusEl.textContent = `Processing ${processed+1}/${files.length}: ${group.audio.name}...`;
+              updateSpinner(`Processing ${processed+1}/${files.length}: ${group.audio.name}...`);
             }
             
             // Extract lyrics from companion files
             for(const lyricsFile of group.lyrics){
-              statusEl.textContent = `Processing lyrics: ${lyricsFile.name}...`;
+              updateSpinner(`Processing lyrics: ${lyricsFile.name}...`);
               const type = lyricsFile.type || '';
               const name = lyricsFile.name.toLowerCase();
               
@@ -13896,35 +14611,59 @@ function closeStageModal(){
                 const url = URL.createObjectURL(lyricsFile);
                 const doc = await window.pdfjsLib.getDocument(url).promise;
                 let pdfText = '';
+                
+                // Try to extract text
                 for(let p = 1; p <= doc.numPages; p++){
                   const page = await doc.getPage(p);
                   const txtC = await page.getTextContent();
                   pdfText += txtC.items.map(i => i.str).join(' ') + '\n';
                 }
+                
+                // If no text, OCR the PDF pages
+                const textOnly = pdfText.replace(/\s+/g, '').trim();
+                if(textOnly.length < 20){
+                  await ensureTesseract();
+                  const { Tesseract } = window;
+                  pdfText = '';
+                  
+                  for(let p = 1; p <= doc.numPages; p++){
+                    updateSpinner(`OCR lyrics PDF page ${p}/${doc.numPages}...`);
+                    const page = await doc.getPage(p);
+                    const viewport = page.getViewport({ scale: 2.0 });
+                    const canvas = document.createElement('canvas');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    const ctx = canvas.getContext('2d');
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    
+                    const result = await Tesseract.recognize(canvas, 'eng', {
+                      logger: m => {
+                        if(m.status === 'recognizing text'){
+                          updateSpinner(`OCR lyrics page ${p}: ${Math.round(m.progress*100)}%`);
+                        }
+                      }
+                    });
+                    pdfText += (result?.data?.text || '') + '\n';
+                  }
+                }
+                
                 URL.revokeObjectURL(url);
                 lyricsText += (lyricsText ? '\n\n' : '') + pdfText;
               }
               else if(type.startsWith('image/')){
                 await ensureTesseract();
                 const { Tesseract } = window;
-                const imgBitmap = await createImageBitmap(lyricsFile);
-                const canvas = document.createElement('canvas');
-                const scale = 2;
-                canvas.width = imgBitmap.width * scale;
-                canvas.height = imgBitmap.height * scale;
-                const ctx = canvas.getContext('2d');
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
-                ctx.drawImage(imgBitmap, 0, 0, canvas.width, canvas.height);
+                
+                // Preprocess image for better handwriting OCR
+                updateSpinner(`Preprocessing: ${lyricsFile.name}...`);
+                const canvas = await prepareImageForOCR(lyricsFile, 3);
                 
                 const result = await Tesseract.recognize(canvas, 'eng', {
                   logger: m => {
                     if(m.status === 'recognizing text'){
-                      statusEl.textContent = `OCR lyrics: ${lyricsFile.name} ${Math.round(m.progress*100)}%`;
+                      updateSpinner(`OCR lyrics: ${lyricsFile.name} ${Math.round(m.progress*100)}%`);
                     }
-                  },
-                  tessedit_pageseg_mode: Tesseract.PSM.AUTO,
-                  tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:!?\'-[]()#/\\|'
+                  }
                 });
                 lyricsText += (lyricsText ? '\n\n' : '') + (result?.data?.text || '');
               }
@@ -13937,8 +14676,15 @@ function closeStageModal(){
               allSongs.push(songData);
               if(group.audio) processed++;
             } else if(lyricsText){
-              // Lyrics only, no audio - parse as song lines
-              allSongs.push(...parseSongLines(lyricsText));
+              // Lyrics only, no audio - parse as song lines (this is likely a setlist or lyrics sheet)
+              console.log('Parsing lyrics-only text:', lyricsText.substring(0, 500));
+              const parsedSongs = parseSongLines(lyricsText);
+              console.log('Parsed songs from lyrics:', parsedSongs);
+              allSongs.push(...parsedSongs);
+              processed++;
+            } else if(group.lyrics.length > 0){
+              // Had lyrics files but no text extracted - count as processed
+              processed++;
             }
           }catch(err){
             console.error(`Failed to process group ${baseName}:`, err);
@@ -13977,36 +14723,64 @@ function closeStageModal(){
               const url = URL.createObjectURL(f);
               const doc = await window.pdfjsLib.getDocument(url).promise;
               let full = '';
+              
+              // Try to extract text from each page
               for(let p = 1; p <= doc.numPages; p++){
                 const page = await doc.getPage(p);
                 const txtC = await page.getTextContent();
                 full += txtC.items.map(i => i.str).join(' ') + '\n';
               }
+              
+              // If no text found, PDF is likely image-based - OCR each page
+              const textOnly = full.replace(/\s+/g, '').trim();
+              if(textOnly.length < 20){
+                updateSpinner(`PDF appears to be image-based, running OCR on ${f.name}...`);
+                await ensureTesseract();
+                const { Tesseract } = window;
+                full = '';
+                
+                for(let p = 1; p <= doc.numPages; p++){
+                  updateSpinner(`OCR page ${p}/${doc.numPages} of ${f.name}...`);
+                  const page = await doc.getPage(p);
+                  const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR
+                  
+                  // Render PDF page to canvas
+                  const canvas = document.createElement('canvas');
+                  canvas.width = viewport.width;
+                  canvas.height = viewport.height;
+                  const ctx = canvas.getContext('2d');
+                  
+                  await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                  
+                  // OCR the rendered page
+                  const result = await Tesseract.recognize(canvas, 'eng', {
+                    logger: m => {
+                      if(m.status === 'recognizing text'){
+                        updateSpinner(`OCR page ${p}/${doc.numPages}: ${Math.round(m.progress*100)}%`);
+                      }
+                    }
+                  });
+                  full += (result?.data?.text || '') + '\n';
+                }
+              }
+              
               URL.revokeObjectURL(url);
               allSongs.push(...parseSongLines(full));
             }
             else if(type.startsWith('image/')){
               await ensureTesseract();
               const { Tesseract } = window;
-              // Increase resolution for better handwriting recognition
-              const imgBitmap = await createImageBitmap(f);
-              const canvas = document.createElement('canvas');
-              const scale = 2; // 2x resolution
-              canvas.width = imgBitmap.width * scale;
-              canvas.height = imgBitmap.height * scale;
-              const ctx = canvas.getContext('2d');
-              ctx.imageSmoothingEnabled = true;
-              ctx.imageSmoothingQuality = 'high';
-              ctx.drawImage(imgBitmap, 0, 0, canvas.width, canvas.height);
+              
+              // Preprocess image for better handwriting OCR
+              updateSpinner(`Preprocessing: ${f.name}...`);
+              const canvas = await prepareImageForOCR(f, 3);
               
               const result = await Tesseract.recognize(canvas, 'eng', {
                 logger: m => {
                   if(m.status === 'recognizing text'){
-                    statusEl.textContent = `OCR ${processed+1}/${files.length}: ${Math.round(m.progress*100)}%`;
+                    updateSpinner(`OCR ${processed+1}/${files.length}: ${Math.round(m.progress*100)}%`);
                   }
-                },
-                tessedit_pageseg_mode: Tesseract.PSM.AUTO,
-                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:!?\'-[]()#/\\|'
+                }
               });
               const text = result && result.data && result.data.text || '';
               allSongs.push(...parseSongLines(text));
@@ -14015,12 +14789,192 @@ function closeStageModal(){
             console.error(`Failed to process ${f.name}:`, err);
           }
           processed++;
-          statusEl.textContent = `Processed ${processed}/${files.length} files...`;
+          updateSpinner(`Processed ${processed}/${files.length} files...`);
         }
         parsed = dedupe(allSongs);
         statusEl.textContent = `Parsed ${parsed.length} song${parsed.length===1?'':'s'} from ${files.length} file${files.length===1?'':'s'}.`;
+        
+        // Hide spinner when done
+        const spinnerDone = document.getElementById('importSpinner');
+        if(spinnerDone){ spinnerDone.style.display = 'none'; }
+        
         renderPreview();
       });
+      
+      // Database dropzone handler - drag files onto the DATABASE tab to import
+      const dbCard = document.getElementById('db');
+      const dbDropzone = document.getElementById('dbDropzone');
+      
+      if(dbCard && dbDropzone){
+        let dragCounter = 0;
+        
+        dbCard.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter++;
+          dbDropzone.style.display = 'flex';
+        });
+        
+        dbCard.addEventListener('dragleave', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter--;
+          if(dragCounter <= 0){
+            dragCounter = 0;
+            dbDropzone.style.display = 'none';
+          }
+        });
+        
+        dbCard.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.dataTransfer.dropEffect = 'copy';
+        });
+        
+        dbCard.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter = 0;
+          dbDropzone.style.display = 'none';
+          
+          // Scroll to import section so user can see progress
+          const importBlock = document.getElementById('importBlock');
+          if(importBlock){
+            importBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          
+          // Show spinning vinyl overlay immediately
+          const spinner = document.getElementById('importSpinner');
+          const spinnerText = document.getElementById('importSpinnerText');
+          if(spinner){ spinner.style.display = 'flex'; }
+          const updateDropSpinner = (text) => { 
+            if(spinnerText) spinnerText.textContent = text; 
+            statusEl.textContent = text; 
+          };
+          
+          updateDropSpinner('Processing dropped files…');
+          console.log('Drop event received');
+          
+          // Collect all files from the drop (including from folders)
+          const items = e.dataTransfer.items;
+          const dtFiles = e.dataTransfer.files;
+          let droppedFiles = [];
+          
+          console.log('items:', items?.length, 'files:', dtFiles?.length);
+          
+          // Helper to recursively get files from directory entries
+          function getFilesFromEntry(entry){
+            return new Promise((resolve) => {
+              if(!entry){
+                resolve([]);
+                return;
+              }
+              if(entry.isFile){
+                entry.file((f) => {
+                  console.log('Got file from entry:', f.name);
+                  resolve([f]);
+                }, (err) => {
+                  console.warn('Failed to get file from entry:', err);
+                  resolve([]);
+                });
+              } else if(entry.isDirectory){
+                console.log('Reading directory:', entry.name);
+                const reader = entry.createReader();
+                const allFiles = [];
+                const readBatch = () => {
+                  reader.readEntries((entries) => {
+                    console.log('Read', entries.length, 'entries from', entry.name);
+                    if(entries.length === 0){
+                      resolve(allFiles);
+                    } else {
+                      Promise.all(entries.map(e => getFilesFromEntry(e))).then(results => {
+                        results.forEach(files => allFiles.push(...files));
+                        readBatch(); // Keep reading (Chrome returns max 100 entries per call)
+                      });
+                    }
+                  }, (err) => {
+                    console.warn('Failed to read directory:', err);
+                    resolve(allFiles);
+                  });
+                };
+                readBatch();
+              } else {
+                resolve([]);
+              }
+            });
+          }
+          
+          // Try using DataTransferItemList with webkitGetAsEntry for folder support
+          if(items && items.length > 0){
+            console.log('Using DataTransferItemList');
+            const entryPromises = [];
+            
+            // Must capture entries synchronously
+            for(let i = 0; i < items.length; i++){
+              const item = items[i];
+              console.log('Item', i, 'kind:', item.kind, 'type:', item.type);
+              
+              if(item.webkitGetAsEntry){
+                const entry = item.webkitGetAsEntry();
+                console.log('Got entry:', entry?.name, 'isDir:', entry?.isDirectory, 'isFile:', entry?.isFile);
+                if(entry){
+                  entryPromises.push(getFilesFromEntry(entry));
+                }
+              } else if(item.kind === 'file'){
+                // Fallback for browsers without webkitGetAsEntry
+                const f = item.getAsFile();
+                if(f){
+                  console.log('Got file directly:', f.name);
+                  droppedFiles.push(f);
+                }
+              }
+            }
+            
+            // Wait for all entries to be processed
+            if(entryPromises.length > 0){
+              updateDropSpinner('Reading folder contents…');
+              const results = await Promise.all(entryPromises);
+              results.forEach(files => droppedFiles.push(...files));
+            }
+          }
+          
+          // Fallback: use dataTransfer.files if no files collected yet
+          if(droppedFiles.length === 0 && dtFiles && dtFiles.length > 0){
+            console.log('Falling back to dataTransfer.files');
+            droppedFiles = Array.from(dtFiles);
+          }
+          
+          console.log('Total dropped files:', droppedFiles.length);
+          
+          if(droppedFiles.length === 0){
+            updateDropSpinner('No files detected. Try: check "Folder" → Choose Files.');
+            if(spinner){ spinner.style.display = 'none'; }
+            return;
+          }
+          
+          // Filter to supported file types
+          const supportedExtensions = /\.(txt|pdf|csv|xls|xlsx|ods|mp3|wav|flac|m4a|aac|ogg|wma|mp4|avi|mov|mkv|jpg|jpeg|png|gif|bmp)$/i;
+          const validFiles = droppedFiles.filter(f => supportedExtensions.test(f.name));
+          
+          console.log('Valid files:', validFiles.length, validFiles.map(f=>f.name));
+          updateDropSpinner(`Found ${droppedFiles.length} files, ${validFiles.length} supported.`);
+          
+          if(validFiles.length === 0){
+            updateDropSpinner(`No supported files in ${droppedFiles.length} items.`);
+            if(spinner){ spinner.style.display = 'none'; }
+            return;
+          }
+          
+          // Create a DataTransfer to simulate file input
+          const dt = new DataTransfer();
+          validFiles.forEach(f => dt.items.add(f));
+          file.files = dt.files;
+          
+          // Trigger the change event to process files (spinner will be hidden by the change handler when done)
+          updateDropSpinner(`Processing ${validFiles.length} files…`);
+          file.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
     })();
   </script>
   <!-- Lightweight libs for client PDF/ZIP export -->
