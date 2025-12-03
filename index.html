@@ -834,7 +834,6 @@
         <button class="tab" data-tab="adv">Tech / Stage</button>
         <button class="tab" data-tab="live">Live</button>
       </div>
-      <button id="globalThemeToggle" type="button" title="Toggle light/dark mode" style="border-radius:999px;border:none;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#0f172a;color:#fbbf24;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15)">🌙</button>
     </div>
 
     <div class="grid">
@@ -1384,9 +1383,8 @@
                 <input id="liveInlineZoom" type="range" min="16" max="32" value="20" step="1" style="width:140px">
               </div>
               <div style="display:flex;align-items:center;gap:4px">
-                <span style="font-size:11px;color:#64748b">Speed</span>
                 <button id="liveInlineSpeedDown" type="button" style="padding:4px 8px;border-radius:4px;border:1px solid #d1d5db;background:#fff;color:#111;cursor:pointer;font-size:14px;font-weight:bold">−</button>
-                <span id="liveInlineSpeedDisplay" style="font-size:14px;color:#111;font-weight:bold;min-width:12px;text-align:center">5</span>
+                <span id="liveInlineSpeedDisplay" style="font-size:12px;color:#111;font-weight:bold;min-width:56px;text-align:center">20 LPM</span>
                 <button id="liveInlineSpeedUp" type="button" style="padding:4px 8px;border-radius:4px;border:1px solid #d1d5db;background:#fff;color:#111;cursor:pointer;font-size:14px;font-weight:bold">+</button>
               </div>
               <button id="metronomeBtn" type="button" title="Metronome: Tap once=flash, twice=click, thrice=off. Hold to set BPM" style="padding:6px 12px;border-radius:4px;border:2px solid #d1d5db;background:#fff;color:#111;cursor:pointer;font-size:16px;font-weight:bold;margin-left:8px">♩</button>
@@ -1975,9 +1973,8 @@
         <input id="liveLyricsZoom" type="range" min="16" max="96" value="20" step="1" style="width:180px">
       </div>
       <div style="display:flex;align-items:center;gap:4px;margin-right:10px">
-        <span style="font-size:11px;color:#9ca3af">Speed</span>
         <button id="liveSpeedDown" type="button" style="padding:4px 8px;border-radius:4px;border:1px solid #444;background:#1f2937;color:#e5e7eb;cursor:pointer;font-size:14px;font-weight:bold">−</button>
-        <span id="liveSpeedDisplay" style="font-size:14px;color:#e5e7eb;font-weight:bold;min-width:12px;text-align:center">5</span>
+        <span id="liveSpeedDisplay" style="font-size:12px;color:#e5e7eb;font-weight:bold;min-width:56px;text-align:center">20 LPM</span>
         <button id="liveSpeedUp" type="button" style="padding:4px 8px;border-radius:4px;border:1px solid #444;background:#1f2937;color:#e5e7eb;cursor:pointer;font-size:14px;font-weight:bold">+</button>
       </div>
       <button id="metronomeBtnOverlay" type="button" title="Metronome: Tap (4+) to set tempo. Pause then click cycles mode. Hold to set BPM." style="padding:6px 12px;border-radius:4px;border:2px solid #444;background:#1f2937;color:#fbbf24;cursor:pointer;font-size:18px;font-weight:bold;margin-right:12px">♩</button>
@@ -4405,6 +4402,13 @@
           const lyrMain=document.getElementById('liveLyrics'); if(lyrMain){ lyrMain.scrollTop=0; }
           const zoom=document.getElementById('liveInlineZoom'); if(zoom){ zoom.value=String(liveZoomPx); }
           const body=document.getElementById('liveLyricsBody'); if(body){ body.style.fontSize=liveZoomPx+'px'; }
+          
+          // Load song's saved LPM or estimate
+          liveScrollLpm = getSongLpm(it);
+          liveCurrentSongId = it.id;
+          const speedDisplay=document.getElementById('liveInlineSpeedDisplay');
+          if(speedDisplay) speedDisplay.textContent = liveScrollLpm === 0 ? 'OFF' : liveScrollLpm + ' LPM';
+          
           try{ stopLiveInlineAutoScroll(); }catch(_){ }
           try{ preloadSongAudioFor(it); }catch(_){ }
           // Show Play button again for new selection; keep Stop hidden until audio/scroll actions
@@ -4582,14 +4586,19 @@
       }
     }
 
-    // Global theme toggle wiring (next to tabs, visible on all pages)
-    (function wireGlobalThemeToggle(){
-      const btn=document.getElementById('globalThemeToggle');
-      if(!btn) return;
-      
-      // Initialize button state from saved preference
+    // Initialize dark mode from saved preference
+    (function initDarkMode(){
       const dark=!!gig.liveDark;
       document.body.classList.toggle('live-dark', dark);
+    })();
+
+    // Live theme toggle wiring (only in Live mode)
+    (function wireLiveThemeToggle(){
+      const btn=document.getElementById('liveThemeToggle');
+      if(!btn) return;
+      
+      // Initialize button state
+      const dark=!!gig.liveDark;
       btn.textContent = dark ? '☀️' : '🌙';
       btn.style.background = dark ? '#fef3c7' : '#0f172a';
       btn.style.color = dark ? '#92400e' : '#fbbf24';
@@ -4600,36 +4609,6 @@
         btn.textContent = gig.liveDark ? '☀️' : '🌙';
         btn.style.background = gig.liveDark ? '#fef3c7' : '#0f172a';
         btn.style.color = gig.liveDark ? '#92400e' : '#fbbf24';
-        // Also update Live mode theme button if visible
-        const liveBtn=document.getElementById('liveThemeToggle');
-        if(liveBtn){
-          liveBtn.textContent = gig.liveDark ? '☀️' : '🌙';
-          liveBtn.style.background = gig.liveDark ? '#fef3c7' : '#0f172a';
-          liveBtn.style.color = gig.liveDark ? '#92400e' : '#fbbf24';
-        }
-        // Re-render live to refresh colors
-        try{ renderLive(); }catch(_){ }
-        saveAll();
-      });
-    })();
-
-    // Live theme toggle wiring
-    (function wireLiveThemeToggle(){
-      const btn=document.getElementById('liveThemeToggle');
-      if(!btn) return;
-      btn.addEventListener('click',()=>{
-        gig.liveDark = !gig.liveDark;
-        document.body.classList.toggle('live-dark', gig.liveDark);
-        // Update both buttons
-        btn.textContent = gig.liveDark ? '☀️' : '🌙';
-        btn.style.background = gig.liveDark ? '#fef3c7' : '#0f172a';
-        btn.style.color = gig.liveDark ? '#92400e' : '#fbbf24';
-        const globalBtn=document.getElementById('globalThemeToggle');
-        if(globalBtn){
-          globalBtn.textContent = gig.liveDark ? '☀️' : '🌙';
-          globalBtn.style.background = gig.liveDark ? '#fef3c7' : '#0f172a';
-          globalBtn.style.color = gig.liveDark ? '#92400e' : '#fbbf24';
-        }
         // Re-render live to refresh colors and icon
         try{ renderLive(); }catch(_){ }
         saveAll();
@@ -4683,28 +4662,79 @@
       });
     })();
 
-    // Live fullscreen lyrics: timed auto-scroll to ~75% of song length
+    // Live fullscreen lyrics: timed auto-scroll based on Lines Per Minute (LPM)
     let liveScrollTimer=null;
     let liveScrollStart=null;
     let liveScrollDurationMs=0;
     let liveZoomPx=20; // inline lyrics zoom (desktop pane)
     let liveOverlayZoomPx=20; // fullscreen overlay zoom
-    let liveScrollSpeed=5; // user-adjustable scroll speed (0-9, default 5, 0=stopped, 9=fastest)
+    let liveScrollLpm=20; // current scroll speed in Lines Per Minute (0=stopped, 1-60)
+    let liveCurrentSongId=null; // track which song is currently displayed for saving LPM
     let liveManualScrollOffset=0; // manual scroll adjustment during playback
-    // Compute scroll duration based on lines-per-minute model
-    function computeScrollDuration(container, bodyEl, zoomPx, speedSetting){
+    
+    // Count actual lines in lyrics text
+    function countLyricsLines(lyrics){
+      if(!lyrics) return 0;
+      return lyrics.split('\n').filter(line => line.trim().length > 0).length;
+    }
+    
+    // Estimate LPM based on song length (minutes) and number of lyrics lines
+    // Goal: scroll through all lines in ~90% of song duration
+    function estimateLpm(song){
+      if(!song) return 20; // default
+      const lyrics = song.lyrics || '';
+      const lineCount = countLyricsLines(lyrics);
+      if(lineCount <= 1) return 20; // not enough lines to estimate
+      
+      // Parse song length (format: "3:45" or "3" for minutes)
+      let durationMin = 3.5; // default 3.5 minutes
+      const lengthStr = String(song.length || '').trim();
+      if(lengthStr){
+        if(lengthStr.includes(':')){
+          const [m, s] = lengthStr.split(':').map(x => parseInt(x, 10) || 0);
+          durationMin = m + s / 60;
+        } else {
+          durationMin = parseFloat(lengthStr) || 3.5;
+        }
+      }
+      if(durationMin < 0.5) durationMin = 3.5;
+      
+      // Calculate LPM to scroll through all lines in 90% of song duration
+      const scrollTime = durationMin * 0.9; // 90% of song length
+      const lpm = Math.round(lineCount / scrollTime);
+      // Clamp to valid range 1-200
+      return Math.max(1, Math.min(200, lpm));
+    }
+    
+    // Get LPM for a song (saved or estimated)
+    function getSongLpm(song){
+      if(!song) return 20;
+      if(typeof song.lyricsLpm === 'number' && song.lyricsLpm >= 0 && song.lyricsLpm <= 200){
+        return song.lyricsLpm;
+      }
+      return estimateLpm(song);
+    }
+    
+    // Save LPM to song
+    function saveSongLpm(song, lpm){
+      if(!song) return;
+      song.lyricsLpm = lpm;
+      // Also save to base song in database
+      const baseSong = findSongById(song.id) || findSongByTitle(song.title);
+      if(baseSong) baseSong.lyricsLpm = lpm;
+      saveAll();
+    }
+    
+    // Compute scroll duration based on LPM and actual content
+    function computeScrollDuration(container, bodyEl, zoomPx, lpm){
       try{
         if(!container || !bodyEl) return 0;
+        if(lpm <= 0) return 0; // stopped
         const lineHeightPx = zoomPx * 1.4; // approximate line-height factor
         const totalLines = Math.max(1, Math.round(bodyEl.scrollHeight / lineHeightPx));
         const visibleLines = Math.max(1, Math.round(container.clientHeight / lineHeightPx));
         const linesToScroll = Math.max(1, totalLines - visibleLines);
-        if(speedSetting===0) return 0;
-        // Base lines per minute scaling; speed 9 roughly 2x previous max
-        const baseLinesPerMin = 30 + speedSetting * 10; // 1=>40, 9=>120
-        // Bigger zoom => fewer lines visible, scroll proportionally faster
-        const linesPerMin = baseLinesPerMin * (zoomPx / 20);
-        const durationMs = (linesToScroll / linesPerMin) * 60000;
+        const durationMs = (linesToScroll / lpm) * 60000;
         return durationMs;
       }catch(e){ return 0; }
     }
@@ -4739,6 +4769,13 @@
       titleEl.textContent=item.title || '';
       bodyEl.textContent=item.lyrics || '';
       bodyEl.style.paddingTop='50vh';
+      
+      // Load song's saved LPM or estimate from song length
+      liveScrollLpm = getSongLpm(item);
+      liveCurrentSongId = item.id;
+      const speedDisplay=document.getElementById('liveSpeedDisplay');
+      if(speedDisplay) speedDisplay.textContent = liveScrollLpm === 0 ? 'OFF' : liveScrollLpm + ' LPM';
+      
       // Add rating UI at bottom
       const ratingDiv=document.createElement('div'); ratingDiv.style.cssText='margin-top:40px;padding:20px;text-align:center;border-top:2px solid #d1d5db';
       const ratingLabel=document.createElement('div'); ratingLabel.textContent='Rate this performance:'; ratingLabel.style.cssText='font-weight:600;margin-bottom:12px;font-size:24px';
@@ -4775,9 +4812,9 @@
       const titleText=document.getElementById('liveLyricsOverlayTitle')?.textContent || '';
       const song=setlist.find(x=> x.type==='song' && x.title===titleText);
       const body=document.getElementById('liveLyricsOverlayBody');
-      liveScrollDurationMs = computeScrollDuration(main, body, liveOverlayZoomPx, liveScrollSpeed);
+      liveScrollDurationMs = computeScrollDuration(main, body, liveOverlayZoomPx, liveScrollLpm);
       if(liveScrollDurationMs<=0) liveScrollDurationMs=15000; // fallback
-      const maxTop = main.scrollHeight - main.clientHeight;
+      let maxTop = main.scrollHeight - main.clientHeight;
       if(maxTop<=0){ return; }
       const startTop = 0;
       main.scrollTop = startTop;
@@ -4788,22 +4825,42 @@
       if(playBtn) playBtn.style.display='none';
       if(stopBtn) stopBtn.style.display='';
       let lastComputedTop = startTop;
+      let lastManualAdjustTime = 0; // track when user last touched scroll
       function step(now){
         if(!liveScrollStart){ return; }
+        // Recalculate maxTop each frame in case zoom changed
+        const currentMaxTop = main.scrollHeight - main.clientHeight;
+        if(currentMaxTop <= 0){ stopLiveAutoScroll(); return; }
+        
         const elapsed = now - liveScrollStart;
         const t = Math.min(1, elapsed / liveScrollDurationMs);
-        // Compute target position for this frame
-        const targetTop = startTop + (maxTop - startTop) * t;
+        // Compute target position for this frame (as percentage of total)
+        const targetTop = startTop + (currentMaxTop - startTop) * t;
         // Detect user manual scroll: if actual position differs from last computed, update offset
         const actualTop = main.scrollTop;
         if(Math.abs(actualTop - lastComputedTop) > 2){ 
+          // User manually scrolled - calculate new offset and recalibrate
           liveManualScrollOffset = actualTop - targetTop;
+          lastManualAdjustTime = now;
         }
-        // Apply target + offset and remember for next frame
-        lastComputedTop = targetTop + liveManualScrollOffset;
-        main.scrollTop = lastComputedTop;
-        if(t<1){ liveScrollTimer = requestAnimationFrame(step); }
-        else { stopLiveAutoScroll(); }
+        
+        // Calculate final position with offset, but clamp to valid range
+        let finalTop = targetTop + liveManualScrollOffset;
+        
+        // If user scrolled ahead, they might be past the "end" based on old timing
+        // Keep scrolling until we actually reach the real current end
+        finalTop = Math.max(0, Math.min(currentMaxTop, finalTop));
+        
+        lastComputedTop = finalTop;
+        main.scrollTop = finalTop;
+        
+        // Continue until we reach the actual bottom (with small tolerance)
+        const atBottom = actualTop >= currentMaxTop - 2;
+        if(t < 1 || !atBottom){ 
+          liveScrollTimer = requestAnimationFrame(step); 
+        } else { 
+          stopLiveAutoScroll(); 
+        }
       }
       liveScrollTimer = requestAnimationFrame(step);
     }
@@ -4823,9 +4880,9 @@
       const titleText=document.getElementById('liveLyricsTitle')?.textContent || '';
       const song=setlist.find(x=> x.type==='song' && x.title===titleText);
       const body=document.getElementById('liveLyricsBody');
-      liveInlineScrollDurationMs = computeScrollDuration(main, body, liveZoomPx, liveScrollSpeed);
+      liveInlineScrollDurationMs = computeScrollDuration(main, body, liveZoomPx, liveScrollLpm);
       if(liveInlineScrollDurationMs<=0) liveInlineScrollDurationMs=15000;
-      const maxTop = main.scrollHeight - main.clientHeight;
+      let maxTop = main.scrollHeight - main.clientHeight;
       if(maxTop<=0){ return; }
       const startTop = 0;
       main.scrollTop = startTop;
@@ -4838,17 +4895,32 @@
       if(stopBtn) stopBtn.style.display='';
       function step(now){
         if(!liveInlineScrollStart){ return; }
+        // Recalculate maxTop each frame in case zoom changed
+        const currentMaxTop = main.scrollHeight - main.clientHeight;
+        if(currentMaxTop <= 0){ stopLiveInlineAutoScroll(); return; }
+        
         const elapsed = now - liveInlineScrollStart;
         const t = Math.min(1, elapsed / liveInlineScrollDurationMs);
-        const targetTop = startTop + (maxTop - startTop) * t;
+        const targetTop = startTop + (currentMaxTop - startTop) * t;
         const actualTop = main.scrollTop;
         if(Math.abs(actualTop - lastComputedTop) > 2){
           liveInlineManualScrollOffset = actualTop - targetTop;
         }
-        lastComputedTop = targetTop + liveInlineManualScrollOffset;
-        main.scrollTop = lastComputedTop;
-        if(t<1){ liveInlineScrollTimer = requestAnimationFrame(step); }
-        else { stopLiveInlineAutoScroll(); }
+        
+        // Calculate final position with offset, but clamp to valid range
+        let finalTop = targetTop + liveInlineManualScrollOffset;
+        finalTop = Math.max(0, Math.min(currentMaxTop, finalTop));
+        
+        lastComputedTop = finalTop;
+        main.scrollTop = finalTop;
+        
+        // Continue until we reach the actual bottom
+        const atBottom = actualTop >= currentMaxTop - 2;
+        if(t < 1 || !atBottom){ 
+          liveInlineScrollTimer = requestAnimationFrame(step); 
+        } else { 
+          stopLiveInlineAutoScroll(); 
+        }
       }
       liveInlineScrollTimer = requestAnimationFrame(step);
     }
@@ -4909,33 +4981,65 @@
       const speedDownBtn=document.getElementById('liveSpeedDown');
       const speedUpBtn=document.getElementById('liveSpeedUp');
       const speedDisplay=document.getElementById('liveSpeedDisplay');
-      if(speedDownBtn){
-        speedDownBtn.addEventListener('click',()=>{
-          if(liveScrollSpeed > 0) liveScrollSpeed--;
-          if(speedDisplay) speedDisplay.textContent = liveScrollSpeed;
-          if(liveScrollTimer && liveScrollStart){
-            const elapsed = performance.now() - liveScrollStart;
-            const oldT = Math.min(1, elapsed / liveScrollDurationMs);
-            const main=document.getElementById('liveLyricsOverlayMain');
-            const body=document.getElementById('liveLyricsOverlayBody');
-            liveScrollDurationMs = computeScrollDuration(main, body, liveOverlayZoomPx, liveScrollSpeed);
-            liveScrollStart = performance.now() - (oldT * liveScrollDurationMs);
+      
+      // Helper to update speed display and save to current song
+      const updateSpeedDisplay = () => {
+        if(speedDisplay) speedDisplay.textContent = liveScrollLpm === 0 ? 'OFF' : liveScrollLpm + ' LPM';
+      };
+      const saveCurrentSongLpm = () => {
+        const titleText=document.getElementById('liveLyricsOverlayTitle')?.textContent || '';
+        const song=setlist.find(x=> x.type==='song' && x.title===titleText);
+        if(song) saveSongLpm(song, liveScrollLpm);
+      };
+      const recalcScrollTiming = () => {
+        if(liveScrollTimer && liveScrollStart && liveScrollLpm > 0){
+          const elapsed = performance.now() - liveScrollStart;
+          const oldT = Math.min(1, elapsed / liveScrollDurationMs);
+          const main=document.getElementById('liveLyricsOverlayMain');
+          const body=document.getElementById('liveLyricsOverlayBody');
+          liveScrollDurationMs = computeScrollDuration(main, body, liveOverlayZoomPx, liveScrollLpm);
+          liveScrollStart = performance.now() - (oldT * liveScrollDurationMs);
+        }
+      };
+      
+      // Hold-to-repeat for speed buttons
+      let speedHoldTimer = null;
+      let speedHoldInterval = null;
+      const startSpeedHold = (delta) => {
+        const doChange = () => {
+          const newVal = liveScrollLpm + delta;
+          if(newVal >= 0 && newVal <= 200){
+            liveScrollLpm = newVal;
+            updateSpeedDisplay();
+            recalcScrollTiming();
           }
-        });
+        };
+        doChange(); // immediate first change
+        speedHoldTimer = setTimeout(() => {
+          speedHoldInterval = setInterval(doChange, 50); // fast repeat after hold
+        }, 400); // start repeating after 400ms hold
+      };
+      const stopSpeedHold = () => {
+        if(speedHoldTimer){ clearTimeout(speedHoldTimer); speedHoldTimer = null; }
+        if(speedHoldInterval){ clearInterval(speedHoldInterval); speedHoldInterval = null; }
+        saveCurrentSongLpm(); // save when released
+      };
+      
+      if(speedDownBtn){
+        speedDownBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startSpeedHold(-1); });
+        speedDownBtn.addEventListener('mouseup', stopSpeedHold);
+        speedDownBtn.addEventListener('mouseleave', stopSpeedHold);
+        speedDownBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startSpeedHold(-1); }, {passive:false});
+        speedDownBtn.addEventListener('touchend', stopSpeedHold);
+        speedDownBtn.addEventListener('touchcancel', stopSpeedHold);
       }
       if(speedUpBtn){
-        speedUpBtn.addEventListener('click',()=>{
-          if(liveScrollSpeed < 9) liveScrollSpeed++;
-          if(speedDisplay) speedDisplay.textContent = liveScrollSpeed;
-          if(liveScrollTimer && liveScrollStart){
-            const elapsed = performance.now() - liveScrollStart;
-            const oldT = Math.min(1, elapsed / liveScrollDurationMs);
-            const main=document.getElementById('liveLyricsOverlayMain');
-            const body=document.getElementById('liveLyricsOverlayBody');
-            liveScrollDurationMs = computeScrollDuration(main, body, liveOverlayZoomPx, liveScrollSpeed);
-            liveScrollStart = performance.now() - (oldT * liveScrollDurationMs);
-          }
-        });
+        speedUpBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startSpeedHold(1); });
+        speedUpBtn.addEventListener('mouseup', stopSpeedHold);
+        speedUpBtn.addEventListener('mouseleave', stopSpeedHold);
+        speedUpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startSpeedHold(1); }, {passive:false});
+        speedUpBtn.addEventListener('touchend', stopSpeedHold);
+        speedUpBtn.addEventListener('touchcancel', stopSpeedHold);
       }
     })();
 
@@ -4986,34 +5090,141 @@
       const speedDownBtn=document.getElementById('liveInlineSpeedDown');
       const speedUpBtn=document.getElementById('liveInlineSpeedUp');
       const speedDisplay=document.getElementById('liveInlineSpeedDisplay');
-      if(speedDownBtn){
-        speedDownBtn.addEventListener('click',()=>{
-          if(liveScrollSpeed > 0) liveScrollSpeed--;
-          if(speedDisplay) speedDisplay.textContent = liveScrollSpeed;
-          if(liveInlineScrollTimer && liveInlineScrollStart){
-            const elapsed = performance.now() - liveInlineScrollStart;
-            const oldT = Math.min(1, elapsed / liveInlineScrollDurationMs);
-            const main=document.getElementById('liveLyrics');
-            const body=document.getElementById('liveLyricsBody');
-            liveInlineScrollDurationMs = computeScrollDuration(main, body, liveZoomPx, liveScrollSpeed);
-            liveInlineScrollStart = performance.now() - (oldT * liveInlineScrollDurationMs);
+      
+      // Helper to update speed display and save to current song
+      const updateSpeedDisplay = () => {
+        if(speedDisplay) speedDisplay.textContent = liveScrollLpm === 0 ? 'OFF' : liveScrollLpm + ' LPM';
+      };
+      const saveCurrentSongLpm = () => {
+        const titleText=document.getElementById('liveLyricsTitle')?.textContent || '';
+        const song=setlist.find(x=> x.type==='song' && x.title===titleText);
+        if(song) saveSongLpm(song, liveScrollLpm);
+      };
+      const recalcScrollTiming = () => {
+        if(liveInlineScrollTimer && liveInlineScrollStart && liveScrollLpm > 0){
+          const elapsed = performance.now() - liveInlineScrollStart;
+          const oldT = Math.min(1, elapsed / liveInlineScrollDurationMs);
+          const main=document.getElementById('liveLyrics');
+          const body=document.getElementById('liveLyricsBody');
+          liveInlineScrollDurationMs = computeScrollDuration(main, body, liveZoomPx, liveScrollLpm);
+          liveInlineScrollStart = performance.now() - (oldT * liveInlineScrollDurationMs);
+        }
+      };
+      
+      // Hold-to-repeat for speed buttons
+      let speedHoldTimer = null;
+      let speedHoldInterval = null;
+      const startSpeedHold = (delta) => {
+        const doChange = () => {
+          const newVal = liveScrollLpm + delta;
+          if(newVal >= 0 && newVal <= 200){
+            liveScrollLpm = newVal;
+            updateSpeedDisplay();
+            recalcScrollTiming();
           }
-        });
+        };
+        doChange(); // immediate first change
+        speedHoldTimer = setTimeout(() => {
+          speedHoldInterval = setInterval(doChange, 50); // fast repeat after hold
+        }, 400); // start repeating after 400ms hold
+      };
+      const stopSpeedHold = () => {
+        if(speedHoldTimer){ clearTimeout(speedHoldTimer); speedHoldTimer = null; }
+        if(speedHoldInterval){ clearInterval(speedHoldInterval); speedHoldInterval = null; }
+        saveCurrentSongLpm(); // save when released
+      };
+      
+      if(speedDownBtn){
+        speedDownBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startSpeedHold(-1); });
+        speedDownBtn.addEventListener('mouseup', stopSpeedHold);
+        speedDownBtn.addEventListener('mouseleave', stopSpeedHold);
+        speedDownBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startSpeedHold(-1); }, {passive:false});
+        speedDownBtn.addEventListener('touchend', stopSpeedHold);
+        speedDownBtn.addEventListener('touchcancel', stopSpeedHold);
       }
       if(speedUpBtn){
-        speedUpBtn.addEventListener('click',()=>{
-          if(liveScrollSpeed < 9) liveScrollSpeed++;
-          if(speedDisplay) speedDisplay.textContent = liveScrollSpeed;
-          if(liveInlineScrollTimer && liveInlineScrollStart){
-            const elapsed = performance.now() - liveInlineScrollStart;
-            const oldT = Math.min(1, elapsed / liveInlineScrollDurationMs);
-            const main=document.getElementById('liveLyrics');
-            const body=document.getElementById('liveLyricsBody');
-            liveInlineScrollDurationMs = computeScrollDuration(main, body, liveZoomPx, liveScrollSpeed);
-            liveInlineScrollStart = performance.now() - (oldT * liveInlineScrollDurationMs);
-          }
-        });
+        speedUpBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startSpeedHold(1); });
+        speedUpBtn.addEventListener('mouseup', stopSpeedHold);
+        speedUpBtn.addEventListener('mouseleave', stopSpeedHold);
+        speedUpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startSpeedHold(1); }, {passive:false});
+        speedUpBtn.addEventListener('touchend', stopSpeedHold);
+        speedUpBtn.addEventListener('touchcancel', stopSpeedHold);
       }
+    })();
+
+    // Live lyrics inline editing on double-click (WYSIWYG - edit in place)
+    (function wireLiveLyricsEdit(){
+      const bodyEl = document.getElementById('liveLyricsBody');
+      const titleEl = document.getElementById('liveLyricsTitle');
+      if(!bodyEl) return;
+      
+      let isEditing = false;
+      let currentSong = null;
+      
+      bodyEl.addEventListener('dblclick', (e) => {
+        if(isEditing) return;
+        
+        const songTitle = titleEl?.textContent || '';
+        if(!songTitle) return;
+        
+        const song = setlist.find(x => x.type === 'song' && x.title === songTitle);
+        if(!song) return;
+        
+        isEditing = true;
+        currentSong = song;
+        
+        // Remove rating div while editing
+        const ratingDiv = bodyEl.querySelector('div');
+        if(ratingDiv) ratingDiv.remove();
+        
+        // Just make it editable - no visual changes
+        bodyEl.contentEditable = 'true';
+        bodyEl.focus();
+      });
+      
+      // Save on blur
+      bodyEl.addEventListener('blur', () => {
+        if(!isEditing || !currentSong) return;
+        
+        // Get the edited text
+        const newLyrics = bodyEl.innerText || '';
+        
+        // Save to song and database
+        currentSong.lyrics = newLyrics;
+        const baseSong = findSongById(currentSong.id) || findSongByTitle(currentSong.title);
+        if(baseSong) baseSong.lyrics = newLyrics;
+        saveAll();
+        
+        // Exit edit mode
+        bodyEl.contentEditable = 'false';
+        
+        // Re-add rating UI
+        const ratingDiv = document.createElement('div');
+        ratingDiv.style.cssText = 'margin-top:40px;padding:20px;text-align:center;border-top:2px solid #d1d5db';
+        const ratingLabel = document.createElement('div');
+        ratingLabel.textContent = 'Rate this performance:';
+        ratingLabel.style.cssText = 'font-weight:600;margin-bottom:12px;font-size:18px';
+        const ratingBtns = document.createElement('div');
+        ratingBtns.style.cssText = 'display:flex;justify-content:center;gap:10px';
+        const ratingIcons = ['👎','👈','👍','👍 👍'];
+        [0,1,2,3].forEach(r => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = ratingIcons[r];
+          btn.style.cssText = 'padding:8px 16px;border:2px solid ' + (currentSong.audienceRating === r ? '#374151' : '#d1d5db') + ';border-radius:8px;background:' + (currentSong.audienceRating === r ? '#e5e7eb' : '#fff') + ';cursor:pointer;font-size:24px;touch-action:manipulation';
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const baseSong2 = findSongById(currentSong.id) || findSongByTitle(currentSong.title);
+            if(baseSong2) { baseSong2.audienceRating = r; currentSong.audienceRating = r; saveAll(); }
+          });
+          ratingBtns.appendChild(btn);
+        });
+        ratingDiv.append(ratingLabel, ratingBtns);
+        bodyEl.appendChild(ratingDiv);
+        
+        isEditing = false;
+        currentSong = null;
+      });
     })();
 
     // Metronome functionality with tap tempo (4+ taps) & overlay support
@@ -10805,22 +11016,146 @@
       power:'utility', fan:'utility', table:'utility', stool:'utility', tipjar:'utility'
     };
 
-    // Allowed routing targets by source type (routeTo). 'channel' is represented by selecting a channel directly, not via routeTo.
+    // ========================= CONNECTION VALIDATION SYSTEM =========================
+    // Signal chain order: SOURCE > [MIC] > [DI] > [FX] > [DI] > CHANNEL
+    // Categories for connection validation
+    const SIGNAL_CATEGORIES = {
+      source: ['acoustic', 'electric', 'drum', 'cymbal', 'deck', 'keys', 'sax', 'sampler'], // instruments/sources
+      mic: ['mic'],
+      di: ['di'],
+      fx: ['fx'],
+      amp: ['amp'],
+      endpoint: ['channel', 'monitor'],
+      utility: ['label', 'arrow'] // display-only items, no routing
+    };
+    
+    // Get category for a type
+    function getCategory(type) {
+      for (const [cat, types] of Object.entries(SIGNAL_CATEGORIES)) {
+        if (types.includes(type)) return cat;
+      }
+      return 'other';
+    }
+    
+    // Signal chain order (lower = earlier in chain)
+    function getChainPosition(type) {
+      const cat = getCategory(type);
+      switch(cat) {
+        case 'source': return 0;  // instruments first
+        case 'amp': return 1;     // amps after instruments (guitar/bass amp)
+        case 'mic': return 2;     // mics capture sound from sources/amps
+        case 'di': return 3;      // DI boxes for impedance matching
+        case 'fx': return 4;      // FX processing
+        case 'endpoint': return 5; // channels/monitors are endpoints
+        default: return 3;        // other items treated like DI
+      }
+    }
+    
+    // Check if connection is allowed: source -> target
+    // Rules:
+    // 1. No mic-to-mic connections
+    // 2. No mic-to-electric-instrument connections (mics can only connect TO acoustics as sources)
+    // 3. No instrument-to-same-instrument-type (guitar to guitar, drum to drum)
+    // 4. No backwards connections (if A->B exists, B->A is disallowed)
+    // 5. No duplicate connections
+    // 6. Must follow signal chain order
+    function canConnect(sourceNode, targetNode, svg) {
+      if (!sourceNode || !targetNode || sourceNode === targetNode) return false;
+      
+      const srcType = sourceNode.dataset.type || 'other';
+      const tgtType = targetNode.dataset.type || 'other';
+      const srcCat = getCategory(srcType);
+      const tgtCat = getCategory(tgtType);
+      const srcPos = getChainPosition(srcType);
+      const tgtPos = getChainPosition(tgtType);
+      
+      // Utility types (labels, arrows) cannot connect to anything
+      const srcKey = sourceNode.dataset.key || '';
+      const tgtKey = targetNode.dataset.key || '';
+      if (srcCat === 'utility' || tgtCat === 'utility') return false;
+      if (srcKey === 'label' || srcKey === 'arrow' || tgtKey === 'label' || tgtKey === 'arrow') return false;
+      
+      // Rule 1: No mic-to-mic
+      if (srcCat === 'mic' && tgtCat === 'mic') return false;
+      
+      // Rule 2: Mics cannot connect to electric instruments (mics are only for capturing acoustic sound)
+      // But mics CAN connect to acoustic instruments (as the source being mic'd)
+      if (srcCat === 'mic' && tgtCat === 'source') {
+        // Mics can only "point at" acoustic sources, not connect TO them in the signal chain
+        // Actually, mics receive from acoustics - so acoustic -> mic is valid, not mic -> acoustic
+        return false; // mic cannot route TO an instrument
+      }
+      
+      // Rule 3: No same-category connections for sources (guitar to guitar, drum to drum, etc.)
+      if (srcCat === 'source' && tgtCat === 'source') return false;
+      
+      // Rule 3b: No amp-to-amp
+      if (srcCat === 'amp' && tgtCat === 'amp') return false;
+      
+      // Rule 4: No backwards connections (check if target already routes to source)
+      if (targetNode.dataset.routeTo === sourceNode.dataset.id) return false;
+      
+      // Rule 5: No duplicate connections (source already routes to target)
+      if (sourceNode.dataset.routeTo === targetNode.dataset.id) return false;
+      
+      // Rule 6: Must follow signal chain order (source position should be <= target position)
+      // Special case: DI can go to another DI (DI -> FX -> DI is valid for re-amping etc.)
+      if (srcCat === 'di' && tgtCat === 'di') return true; // DI chaining allowed
+      if (srcCat === 'fx' && tgtCat === 'di') return true; // FX back to DI allowed
+      
+      // Electric instruments go to amps first (guitar -> amp -> mic -> channel)
+      if (srcType === 'electric' && tgtCat === 'amp') return true;
+      
+      // Amps can only go to mics (amp -> mic -> channel)
+      if (srcCat === 'amp' && tgtCat !== 'mic') {
+        // Exception: bass amp can go direct to DI or channel
+        const srcKey = sourceNode.dataset.key || '';
+        if (srcKey === 'bassamp' && (tgtCat === 'di' || tgtCat === 'endpoint')) return true;
+        return false;
+      }
+      
+      // General rule: must flow forward in chain
+      if (srcPos > tgtPos) return false;
+      
+      return true;
+    }
+    
+    // Determine which direction the connection should go (returns {from, to} or null if invalid)
+    function determineConnectionDirection(nodeA, nodeB, svg) {
+      const canAtoB = canConnect(nodeA, nodeB, svg);
+      const canBtoA = canConnect(nodeB, nodeA, svg);
+      
+      if (canAtoB && !canBtoA) return { from: nodeA, to: nodeB };
+      if (canBtoA && !canAtoB) return { from: nodeB, to: nodeA };
+      if (canAtoB && canBtoA) {
+        // Both directions valid - choose based on signal chain position
+        const posA = getChainPosition(nodeA.dataset.type || 'other');
+        const posB = getChainPosition(nodeB.dataset.type || 'other');
+        if (posA <= posB) return { from: nodeA, to: nodeB };
+        return { from: nodeB, to: nodeA };
+      }
+      return null; // Neither direction is valid
+    }
+    // ========================= END CONNECTION VALIDATION =========================
+    
+    // Allowed routing targets by source type (for legacy compatibility and UI hints)
     const ROUTE_TARGETS={
-      drum:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','monitor'], // can connect to everything except utility
-      cymbal:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','monitor'],
-      mic:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'], // mics can NOT connect to other mics
-      di:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // can connect to everything except utility
-      fx:['di','channel','sampler','fx','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // FX intermediates can connect between any items
-      amp:['mic','di','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'], // amps can connect to mics
-      acoustic:['di','mic','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
-      electric:['fx','amp','di','channel','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
-      deck:['fx','di','channel','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
-      sampler:['fx','di','channel','sampler','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
-      keys:['sampler','di','mic','channel','fx','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
-      sax:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
-      monitor:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
-      other:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // custom can connect to anything
+      drum:['mic','di','channel','monitor'], // drums go to mic or direct to DI/channel
+      cymbal:['mic','di','channel','monitor'], // cymbals same as drums
+      mic:['di','fx','channel','monitor'], // mics go forward to DI/FX/channel only
+      di:['di','fx','channel','monitor'], // DI can chain to another DI, FX, or endpoint
+      fx:['di','fx','channel','monitor'], // FX can go to DI, another FX, or endpoint
+      amp:['mic'], // guitar amps ONLY go to mics (bass amp handled in effectiveTargets)
+      acoustic:['mic','di','fx','channel','monitor'], // acoustic instruments can go to mic, DI, or direct
+      electric:['amp','di','fx'], // electric instruments go to amp, DI, or FX (not direct to channel typically)
+      deck:['di','fx','channel','monitor'], // DJ decks go to DI/FX/channel
+      sampler:['di','fx','channel','monitor'], // samplers like decks
+      keys:['di','fx','amp','channel','monitor'], // keys can go to amp or direct
+      sax:['mic','di','channel','monitor'], // sax like acoustic
+      monitor:['channel'], // monitors are endpoints
+      label:[], // display-only, no routing
+      arrow:[], // display-only, no routing
+      other:['di','fx','channel','monitor','mic'], // custom items flexible
     };
 
     // Effective per-node targets (adds key-specific rules, e.g., bass amp can go direct to channel)
@@ -11041,46 +11376,19 @@
       return simple;
     }
 
-    // Helper: connect source->target if allowed, otherwise try reverse
+    // Helper: connect source->target using strict validation rules
     function connectEitherDirection(source, target){
       if(!source || !target || source===target) return false;
       
-      // Determine connection priority based on type hierarchy: instruments → amps → mics → channels
-      const getConnectionPriority=(node)=>{
-        const type=node.dataset.type||'other';
-        if(type==='acoustic' || type==='electric' || type==='keys' || type==='sax' || type==='deck' || type==='drum' || type==='cymbal') return 0; // instruments
-        if(type==='amp') return 1; // amps
-        if(type==='mic') return 2; // mics
-        if(type==='di') return 1.5; // DI
-        if(type==='fx') return 1.7; // FX
-        if(type==='sampler') return 0.5; // samplers
-        return 3; // others/endpoints
-      };
+      const svg = source.closest('svg');
       
-      const sPriority=getConnectionPriority(source);
-      const tPriority=getConnectionPriority(target);
-      const sAllowed=effectiveTargets(source);
-      const tAllowed=effectiveTargets(target);
-      const sCanTarget=sAllowed.includes(target.dataset.type||'other');
-      const tCanTarget=tAllowed.includes(source.dataset.type||'other');
+      // Use the new validation system
+      const direction = determineConnectionDirection(source, target, svg);
+      if (!direction) return false; // Connection not allowed in either direction
       
-      // If both directions are valid, choose based on priority (lower priority → higher priority)
-      if(sCanTarget && tCanTarget){
-        if(sPriority < tPriority){ 
-          // source has lower priority (e.g., amp) and target has higher priority (e.g., mic)
-          source.dataset.routeTo=target.dataset.id; 
-          return true; 
-        } else { 
-          // target has lower priority, so target routes to source
-          target.dataset.routeTo=source.dataset.id; 
-          return true; 
-        }
-      }
-      
-      // Only one direction is valid
-      if(sCanTarget){ source.dataset.routeTo=target.dataset.id; return true; }
-      if(tCanTarget){ target.dataset.routeTo=source.dataset.id; return true; }
-      return false;
+      // Make the connection
+      direction.from.dataset.routeTo = direction.to.dataset.id;
+      return true;
     }
     // Helper: find chain endpoint (following valid routeTo)
     function resolveEndpoint(start){
@@ -11091,8 +11399,6 @@
         seen.add(cur);
         const nid=cur.dataset.routeTo||''; if(!nid) break;
         const nxt=nodes.find(n=> n.dataset.id===nid); if(!nxt) break;
-        const allowed=effectiveTargets(cur);
-        if(allowed.indexOf(nxt.dataset.type||'other')===-1) break;
         cur=nxt;
       }
       return cur||start;
@@ -11185,13 +11491,26 @@
         if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; }
         if(lpActive){ // finalize cable connection
           if(lpLine){ lpLine.remove(); }
-          const touch=e.changedTouches && e.changedTouches[0]; if(touch){ const targetEl=document.elementFromPoint(touch.clientX,touch.clientY); const tgt= targetEl && targetEl.closest && targetEl.closest('g[data-draggable]'); if(tgt && tgt!==lpSource){ const sAllowed=effectiveTargets(lpSource); const tAllowed=effectiveTargets(tgt); if(sAllowed.includes(tgt.dataset.type||'other')){ lpSource.dataset.routeTo=tgt.dataset.id; } else if(tAllowed.includes(lpSource.dataset.type||'other')){ tgt.dataset.routeTo=lpSource.dataset.id; } 
-            // Easter egg: Fan connected to vocal mic
-            if((lpSource.dataset.key==='fan' && tgt.dataset.key==='vocal') || (tgt.dataset.key==='fan' && lpSource.dataset.key==='vocal')){
-              const fanNode = lpSource.dataset.key==='fan' ? lpSource : tgt;
-              const txt=findText(fanNode); if(txt){ txt.textContent="I'm the bad guy"; }
-            }
-            saveAll(); refreshStageLegend(); } }
+          const touch=e.changedTouches && e.changedTouches[0]; 
+          if(touch){ 
+            const targetEl=document.elementFromPoint(touch.clientX,touch.clientY); 
+            const tgt= targetEl && targetEl.closest && targetEl.closest('g[data-draggable]'); 
+            if(tgt && tgt!==lpSource){ 
+              // Use new validation system
+              const svg = lpSource.closest('svg');
+              const direction = determineConnectionDirection(lpSource, tgt, svg);
+              if(direction) {
+                direction.from.dataset.routeTo = direction.to.dataset.id;
+                // Easter egg: Fan connected to vocal mic
+                if((lpSource.dataset.key==='fan' && tgt.dataset.key==='vocal') || (tgt.dataset.key==='fan' && lpSource.dataset.key==='vocal')){
+                  const fanNode = lpSource.dataset.key==='fan' ? lpSource : tgt;
+                  const txt=findText(fanNode); if(txt){ txt.textContent="I'm the bad guy"; }
+                }
+                saveAll(); refreshStageLegend(); 
+                if(svg) refreshCables(svg);
+              }
+            } 
+          }
           lpActive=false; lpLine=null; lpSource=null; lpTouchId=null;
         }
         // Auto-connect on drop if released over another component
@@ -11734,6 +12053,45 @@
       const nameInp=document.getElementById('selName');
       const selLabel=document.getElementById('selLabel');
       
+      // Check if this is a utility type (label/arrow) - show simplified display
+      // Check both type and key since legacy items may have type='other' but key='label'/'arrow'
+      const itemType = selectedItem.dataset.type || 'other';
+      const itemKey = selectedItem.dataset.key || '';
+      const isUtility = (itemType === 'label' || itemType === 'arrow' || itemKey === 'label' || itemKey === 'arrow');
+      
+      if(isUtility){
+        // Utility types just show their name - no routing, no channel
+        if(nameInp) nameInp.style.display='none';
+        if(selLabel) selLabel.style.display='none';
+        
+        // Remove any existing chain displays
+        inspector.querySelectorAll('.connection-chain').forEach(el => el.remove());
+        
+        // Create simple name-only display
+        const utilDiv=document.createElement('div');
+        utilDiv.className='connection-chain';
+        utilDiv.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 8px;background:#f3f4f6;border-radius:6px;';
+        
+        const itemInput=document.createElement('input');
+        itemInput.type='text';
+        itemInput.value=findText(selectedItem)?.textContent || 'Label';
+        itemInput.style.cssText='padding:4px 8px;border:2px solid #374151;border-radius:4px;font-size:13px;font-weight:700;background:#e5e7eb;width:180px;';
+        itemInput.title='Name';
+        itemInput.addEventListener('change',()=>{
+          const t=findText(selectedItem);
+          if(t){ t.textContent=itemInput.value; saveAll(); refreshStageLegend(); }
+        });
+        utilDiv.appendChild(itemInput);
+        
+        const typeLabel=document.createElement('span');
+        typeLabel.textContent= itemType==='arrow' ? '(arrow)' : '(text label)';
+        typeLabel.style.cssText='color:#6b7280;font-size:12px;font-style:italic;';
+        utilDiv.appendChild(typeLabel);
+        
+        inspector.appendChild(utilDiv);
+        return; // Don't build chain for utility types
+      }
+      
       // Build the complete chain by finding the true start
       const chain=[];
       const visited=new Set();
@@ -11788,9 +12146,13 @@
         if(!nextId) break;
         const next=allNodes.find(n=> n.dataset.id===nextId);
         if(!next) break;
+        // Skip utility types (labels/arrows) - they can't be part of signal chain
+        const nextType = next.dataset.type || 'other';
+        const nextKey = next.dataset.key || '';
+        if(nextType === 'label' || nextType === 'arrow' || nextKey === 'label' || nextKey === 'arrow') break;
         // validate connection is allowed
         const allowed=effectiveTargets(current);
-        if(!allowed.includes(next.dataset.type||'other')) break;
+        if(!allowed.includes(nextType)) break;
         current=next;
       }
       
@@ -12150,9 +12512,13 @@
         if(!nextId) break;
         const next=rows.find(r=> r.dataset.id===nextId);
         if(!next) break;
+        // Skip utility types (labels/arrows can't be in signal chain)
+        const nextType = next.dataset.type || 'other';
+        const nextKey = next.dataset.key || '';
+        if(nextType === 'label' || nextType === 'arrow' || nextKey === 'label' || nextKey === 'arrow') break;
         // validate that next type is an allowed target from current type
         const allowed=effectiveTargets(cur);
-        if(allowed.indexOf(next.dataset.type||'other')===-1){ break; }
+        if(allowed.indexOf(nextType)===-1){ break; }
         cur=next;
       }
       const last=cur||from;
@@ -12379,6 +12745,35 @@
           // Remove any legacy filter attributes
           Array.from(gr.querySelectorAll('image[filter]')).forEach(im=> im.removeAttribute('filter'));
         });
+  // Clean up invalid routes to utility types (labels/arrows can't receive connections)
+  // Check both type and key since legacy items may have type='other' but key='label'/'arrow'
+  const allStageNodes = Array.from(full.querySelectorAll('g[data-draggable]'));
+  let cleanedRoutes = false;
+  allStageNodes.forEach(g=>{
+    const routeToId = g.dataset.routeTo;
+    if(routeToId){
+      const target = allStageNodes.find(n=> n.dataset.id === routeToId);
+      if(target){
+        const targetType = target.dataset.type || 'other';
+        const targetKey = target.dataset.key || '';
+        if(targetType === 'label' || targetType === 'arrow' || targetKey === 'label' || targetKey === 'arrow'){
+          // Clear invalid route to utility type
+          delete g.dataset.routeTo;
+          g.removeAttribute('data-route-to');
+          cleanedRoutes = true;
+          // Also fix the target's type if it's wrong
+          if(targetKey === 'label' && targetType !== 'label') target.dataset.type = 'label';
+          if(targetKey === 'arrow' && targetType !== 'arrow') target.dataset.type = 'arrow';
+        }
+      }
+    }
+    // Also fix this node's type if needed
+    const key = g.dataset.key || '';
+    const type = g.dataset.type || 'other';
+    if(key === 'label' && type !== 'label') g.dataset.type = 'label';
+    if(key === 'arrow' && type !== 'arrow') g.dataset.type = 'arrow';
+  });
+  if(cleanedRoutes) saveAll();
   Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=>{
     enableSvgDrag(g);
     applyLabelTransform(g); // Apply saved label offsets and size
@@ -12816,7 +13211,7 @@ function closeStageModal(){
           // Ask first; cancel or empty -> abort (no stray labels)
           let entered=prompt('Text label:',''); if(entered==null) return; entered=String(entered).trim(); if(!entered) return;
           // Create label at point
-          const gN=document.createElementNS('http://www.w3.org/2000/svg','g'); gN.dataset.x=String(Math.round(x0)); gN.dataset.y=String(Math.round(y0)); gN.dataset.scale='1'; gN.setAttribute('data-draggable','1'); gN.dataset.key='label'; gN.dataset.type='other'; gN.dataset.showLabel='1';
+          const gN=document.createElementNS('http://www.w3.org/2000/svg','g'); gN.dataset.x=String(Math.round(x0)); gN.dataset.y=String(Math.round(y0)); gN.dataset.scale='1'; gN.setAttribute('data-draggable','1'); gN.dataset.key='label'; gN.dataset.type='label'; gN.dataset.showLabel='1';
           const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x','0'); t.setAttribute('y','0'); t.setAttribute('font-size','16'); t.setAttribute('data-role','label'); t.textContent=entered; gN.appendChild(t);
           applyTransform(gN); svg.appendChild(gN); enableSvgDrag(gN); selectNode(gN); refreshStageLegend(); saveAll();
           const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
@@ -12825,7 +13220,7 @@ function closeStageModal(){
           return;
         }
         // Create arrow group anchored at origin (x0,y0) pointing to (x1,y1)
-        const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.dataset.x=String(Math.round(x0)); g.dataset.y=String(Math.round(y0)); g.dataset.scale='1'; g.setAttribute('data-draggable','1'); g.dataset.key='arrow'; g.dataset.type='other'; g.dataset.showLabel='1';
+        const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.dataset.x=String(Math.round(x0)); g.dataset.y=String(Math.round(y0)); g.dataset.scale='1'; g.setAttribute('data-draggable','1'); g.dataset.key='arrow'; g.dataset.type='arrow'; g.dataset.showLabel='1';
         const ln=document.createElementNS('http://www.w3.org/2000/svg','line'); ln.setAttribute('x1','0'); ln.setAttribute('y1','0'); ln.setAttribute('x2',String(Math.round(dx))); ln.setAttribute('y2',String(Math.round(dy))); ln.setAttribute('stroke','#000'); ln.setAttribute('stroke-width','2'); ln.setAttribute('marker-end','url(#arrowHead)'); g.appendChild(ln);
         // Ask for arrow label; cancel or empty -> abort entire arrow creation
         let enteredA=prompt('Arrow label:',''); if(enteredA==null) return; enteredA=String(enteredA).trim(); if(!enteredA) return;
@@ -13229,7 +13624,7 @@ function closeStageModal(){
         const isStereo=n=> (n.dataset.key||'')==='stereoPair';
         const typeOf=n=> n.dataset.type||'other';
         const findRoot=(end)=>{ let cur=end; const seen=new Set(); while(cur && !seen.has(cur)){ seen.add(cur); const prev=rows.find(r=> r.dataset.routeTo===cur.dataset.id && effectiveTargets(r).includes(typeOf(cur))); if(!prev) break; cur=prev; } return cur||end; };
-        const buildChain=(from)=>{ const seen=new Set(); const parts=[]; let cur=from; while(cur){ if(seen.has(cur)) break; seen.add(cur); const t=cur.querySelector('text[data-role="label"]')||cur.querySelector('text'); const base=(t && t.textContent)||(cur.dataset.key||'Item'); parts.push(base); const nid=cur.dataset.routeTo||''; if(!nid) break; const next=rows.find(r=> r.dataset.id===nid); if(!next) break; const ok=effectiveTargets(cur).includes(typeOf(next)); if(!ok) break; cur=next; } const last=cur||from; if(last.dataset.channel){ if(isStereo(last)){ const a=parseInt(last.dataset.channel,10); parts.push('Ch '+a+' & '+(a+1)); } else { parts.push('Ch '+last.dataset.channel); } } return parts.join(' - '); };
+        const buildChain=(from)=>{ const seen=new Set(); const parts=[]; let cur=from; while(cur){ if(seen.has(cur)) break; seen.add(cur); const t=cur.querySelector('text[data-role="label"]')||cur.querySelector('text'); const base=(t && t.textContent)||(cur.dataset.key||'Item'); parts.push(base); const nid=cur.dataset.routeTo||''; if(!nid) break; const next=rows.find(r=> r.dataset.id===nid); if(!next) break; const nextType=typeOf(next); const nextKey=next.dataset.key||''; if(nextType==='label' || nextType==='arrow' || nextKey==='label' || nextKey==='arrow') break; const ok=effectiveTargets(cur).includes(nextType); if(!ok) break; cur=next; } const last=cur||from; if(last.dataset.channel){ if(isStereo(last)){ const a=parseInt(last.dataset.channel,10); parts.push('Ch '+a+' & '+(a+1)); } else { parts.push('Ch '+last.dataset.channel); } } return parts.join(' - '); };
         // Collect only endpoints that have an assigned channel (used channels only)
         const endpoints=rows.filter(r=> r.dataset.channel && r.dataset.channel!=='' && (parseInt(r.dataset.channel||'0',10)>0));
         const byCh = endpoints
