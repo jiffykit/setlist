@@ -41,7 +41,7 @@
     .modal.open{display:flex;pointer-events:auto}
     .modal .modalbox{pointer-events:auto}
     .modal .sheet{pointer-events:auto}
-    .sheet{width:8.5in;max-width:100%;min-height:11in;background:white;color:var(--paperText);border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0.4in 0.5in;overflow:visible;margin:auto}
+    .sheet{width:8.5in;max-width:100%;min-height:11in;background:white;color:var(--paperText);border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0.4in 0.5in;overflow:visible;margin:auto;transform:scale(0.75);transform-origin:top center}
   @media (max-width:768px){
     .modal{align-items:flex-start;padding:10px}
     .modal .sheet{width:100%;height:auto;max-height:90vh;padding:16px;box-sizing:border-box}
@@ -184,8 +184,8 @@
       .print-fab{display:none!important}
       
       /* Show only modal content */
-      .modal{position:static;display:none;background:none;padding:0;margin:0}
-      .modal.open{display:block!important}
+      .modal{position:static!important;display:none;background:none!important;padding:0!important;margin:0!important;visibility:visible!important;opacity:1!important}
+      .modal.open{display:block!important;visibility:visible!important;opacity:1!important}
       
       /* Setlist print layout */
       .sheet{
@@ -199,6 +199,10 @@
         max-width:100%!important;
         display:flex!important;
         flex-direction:column!important;
+        transform:none!important;
+        visibility:visible!important;
+        opacity:1!important;
+        background:white!important;
       }
       .sheet.multipage{gap:0!important;height:auto!important}
       .sheet-page{
@@ -372,7 +376,10 @@
   .live-lyrics-body{white-space:pre-wrap;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:20px;line-height:1.5;text-align:center;max-width:1100px;margin:0 auto}
   .live-lyrics-play{padding:8px 14px;border-radius:999px;border:none;background:#22c55e;color:#022c22;font-weight:700;cursor:pointer;margin-right:8px}
   .live-lyrics-stop{padding:8px 14px;border-radius:999px;border:none;background:#374151;color:#f9fafb;font-weight:700;cursor:pointer;margin-right:8px}
-  .live-lyrics-exit{padding:8px 14px;border-radius:999px;border:none;background:#374151;color:#f9fafb;font-weight:700;cursor:pointer}
+  .live-lyrics-exit{padding:8px 14px;border-radius:999px;border:none;background:#374151;color:#f9fafb;font-weight:700;cursor:pointer;margin-right:16px}
+  .live-lyrics-prev,.live-lyrics-next{padding:8px 14px;border-radius:999px;border:none;background:#475569;color:#f9fafb;font-weight:700;cursor:pointer;margin-right:8px}
+  .live-lyrics-prev:hover,.live-lyrics-next:hover{background:#64748b}
+  .live-lyrics-prev:disabled,.live-lyrics-next:disabled{opacity:0.4;cursor:not-allowed}
   @media (max-width:768px){
     .live-lyrics-body{font-size:18px}
   }
@@ -1051,11 +1058,11 @@
           <div style="margin-bottom:12px">
             <label style="font-weight:600;font-size:13px;margin-bottom:6px;display:block">Display Columns</label>
             <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:13px">
-              <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_artist" checked> Artist</label>
-              <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_key"> Key</label>
-              <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_capo"> Capo</label>
+              <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_artist"> Artist</label>
+              <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_key" checked> Key</label>
+              <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_capo" checked> Capo</label>
               <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_bpm"> BPM</label>
-              <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_notes" checked> Notes</label>
+              <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_notes"> Notes</label>
               <label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="setCol_lyrics"> Lyrics Preview</label>
               <span id="setColCustom"></span>
             </div>
@@ -1972,8 +1979,11 @@
   <!-- Live fullscreen lyrics overlay (phone / tablet / desktop) -->
   <div id="liveLyricsOverlay" class="live-lyrics-overlay">
     <div class="live-lyrics-header">
+      <button id="liveLyricsExit" class="live-lyrics-exit" type="button">Back to Setlist</button>
+      <button id="liveLyricsPrev" class="live-lyrics-prev" type="button">◀ Prev</button>
       <button id="liveLyricsPlay" class="live-lyrics-play" type="button">Play</button>
       <button id="liveLyricsStop" class="live-lyrics-stop" type="button" style="display:none">Stop</button>
+      <button id="liveLyricsNext" class="live-lyrics-next" type="button">Next ▶</button>
       <div id="liveLyricsOverlayTitle" class="live-lyrics-title"></div>
       <div style="display:flex;align-items:center;gap:6px;margin-right:10px">
         <span style="font-size:11px;color:#9ca3af">Zoom</span>
@@ -1984,8 +1994,7 @@
         <span id="liveSpeedDisplay" style="font-size:12px;color:#e5e7eb;font-weight:bold;min-width:56px;text-align:center">20 LPM</span>
         <button id="liveSpeedUp" type="button" style="padding:4px 8px;border-radius:4px;border:1px solid #444;background:#1f2937;color:#e5e7eb;cursor:pointer;font-size:14px;font-weight:bold">+</button>
       </div>
-      <button id="metronomeBtnOverlay" type="button" title="Metronome: Tap (4+) to set tempo. Pause then click cycles mode. Hold to set BPM." style="padding:6px 12px;border-radius:4px;border:2px solid #444;background:#1f2937;color:#fbbf24;cursor:pointer;font-size:18px;font-weight:bold;margin-right:12px">♩</button>
-      <button id="liveLyricsExit" class="live-lyrics-exit" type="button">Back to Setlist</button>
+      <button id="metronomeBtnOverlay" type="button" title="Metronome: Tap (4+) to set tempo. Pause then click cycles mode. Hold to set BPM." style="padding:6px 12px;border-radius:4px;border:2px solid #444;background:#1f2937;color:#fbbf24;cursor:pointer;font-size:18px;font-weight:bold">♩</button>
     </div>
     <div id="liveLyricsOverlayMain" class="live-lyrics-main">
       <pre id="liveLyricsOverlayBody" class="live-lyrics-body"></pre>
@@ -2017,7 +2026,7 @@
   let tourCustomSearchTerms = ''; // User-defined search terms
   let currentDateDirty = false; // Track unsaved changes for current date
   // Setlist display column preferences
-  let setlistColumns = {artist:true, capo:false, key:false, notes:true, bpm:false, lyrics:false};
+  let setlistColumns = {artist:false, capo:true, key:true, notes:false, bpm:false, lyrics:false};
   // Page layout preferences
   let pageLayout = {format:'letter', pageCount:1, songsPerPage:25};
   // Live audio playback handles
@@ -2548,7 +2557,16 @@
       if(gigIn) gig=Object.assign(gig,gigIn);
       if(gearIn) { gearSummary = gearIn; }
   if(tnIn && typeof tnIn==='object') { techNotes = tnIn; }
-  if(setColIn && typeof setColIn==='object') { setlistColumns = Object.assign(setlistColumns, setColIn); }
+  if(setColIn && typeof setColIn==='object') { 
+    // Force new defaults for display columns
+    setlistColumns = {artist:false, capo:true, key:true, notes:false, bpm:false, lyrics:false};
+    // Preserve any custom column settings
+    Object.keys(setColIn).forEach(k => {
+      if(!['artist','capo','key','notes','bpm','lyrics'].includes(k)) {
+        setlistColumns[k] = setColIn[k];
+      }
+    });
+  }
   if(pageLayoutIn && typeof pageLayoutIn==='object') { pageLayout = Object.assign(pageLayout, pageLayoutIn); }
   if(Array.isArray(tourIn)) { tourDates = tourIn; }
   if(typeof tourSearchIn === 'string') { tourCustomSearchTerms = tourSearchIn; }
@@ -4982,6 +5000,41 @@
       }
       if(scrollBtn){ scrollBtn.addEventListener('click',startLiveAutoScroll); }
       if(exitBtn){ exitBtn.addEventListener('click',closeLiveLyricsOverlay); }
+      
+      // Previous and Next song navigation
+      const prevBtn=document.getElementById('liveLyricsPrev');
+      const nextBtn=document.getElementById('liveLyricsNext');
+      if(prevBtn){
+        prevBtn.addEventListener('click',()=>{
+          const titleText=document.getElementById('liveLyricsOverlayTitle')?.textContent || '';
+          const currentIdx=setlist.findIndex(x=> x.type==='song' && x.title===titleText);
+          if(currentIdx > 0){
+            // Find previous song (skip breaks/encores)
+            for(let i=currentIdx-1; i>=0; i--){
+              if(setlist[i].type==='song'){
+                openLiveLyricsOverlay(setlist[i]);
+                break;
+              }
+            }
+          }
+        });
+      }
+      if(nextBtn){
+        nextBtn.addEventListener('click',()=>{
+          const titleText=document.getElementById('liveLyricsOverlayTitle')?.textContent || '';
+          const currentIdx=setlist.findIndex(x=> x.type==='song' && x.title===titleText);
+          if(currentIdx >= 0 && currentIdx < setlist.length - 1){
+            // Find next song (skip breaks/encores)
+            for(let i=currentIdx+1; i<setlist.length; i++){
+              if(setlist[i].type==='song'){
+                openLiveLyricsOverlay(setlist[i]);
+                break;
+              }
+            }
+          }
+        });
+      }
+      
       if(main){ main.addEventListener('click',closeLiveLyricsOverlay); }
       if(zoomSlider){
         zoomSlider.addEventListener('input',()=>{
@@ -13648,7 +13701,10 @@ function closeStageModal(){
       return blob;
     }
 
-    function printPromise(){ return new Promise(res=> setTimeout(res, 150)); }
+    function printPromise(){ 
+      const delay = isMobileLike() ? 800 : 150; // Mobile needs more time to render
+      return new Promise(res=> setTimeout(res, delay)); 
+    }
     
     // Convert SVG to high-quality canvas for reliable printing across platforms
     async function svgToCanvas(svgElement, targetWidth, targetHeight) {
@@ -13741,25 +13797,39 @@ function closeStageModal(){
       if(notesModal) notesModal.style.display='none';
       
       modal.classList.add('open'); 
+      modal.style.display='flex'; // Force visible
+      modal.style.position='static'; // Ensure in document flow for mobile
+      
       await printPromise();
       
       // Platform-specific handling
       if(sheet) {
+        sheet.style.opacity='1';
+        sheet.style.visibility='visible';
+        
         // Prepare content for printing (convert SVGs if needed)
         await preparePrintContent(modal, sheet);
         
-        // Force layout recalculation
+        // Force multiple layout recalculations for mobile
         sheet.style.display='none'; 
         sheet.offsetHeight; // trigger reflow
-        sheet.style.display='block';
+        sheet.style.display='flex';
+        sheet.offsetHeight; // trigger reflow again
       }
       
+      // Extra wait for mobile devices
       await printPromise();
+      if(isMobileLike()) {
+        await printPromise(); // Double wait for mobile
+      }
+      
       console.log('🖨️ Triggering print dialog...');
       window.print(); 
       await printPromise();
       
       modal.classList.remove('open'); 
+      modal.style.display=''; // Reset
+      modal.style.position=''; // Reset
       
       // Restore visibility
       if(wrap) wrap.style.display='';
