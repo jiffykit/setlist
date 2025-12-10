@@ -4418,7 +4418,10 @@
           row.style.background = dark ? '#0b3a59' : '#e0f2fe';
           if(titleEl) titleEl.textContent=it.title||'';
           if(bodyEl){
-            bodyEl.textContent=it.lyrics || '';
+            // Get fresh lyrics from database
+            const baseSong = findSongById(it.id) || findSongByTitle(it.title);
+            const freshLyrics = baseSong ? baseSong.lyrics : it.lyrics;
+            bodyEl.textContent=freshLyrics || '';
             bodyEl.style.paddingTop='50vh';
             // Add rating UI at bottom
             const ratingDiv=document.createElement('div'); ratingDiv.style.cssText='margin-top:40px;padding:20px;text-align:center;border-top:2px solid #d1d5db';
@@ -4800,7 +4803,10 @@
       stopLiveAutoScroll();
       overlay.classList.add('open');
       titleEl.textContent=item.title || '';
-      bodyEl.textContent=item.lyrics || '';
+      // Get fresh lyrics from database
+      const baseSong = findSongById(item.id) || findSongByTitle(item.title);
+      const freshLyrics = baseSong ? baseSong.lyrics : item.lyrics;
+      bodyEl.textContent=freshLyrics || '';
       bodyEl.style.paddingTop='50vh';
       
       // Load song's saved LPM or estimate from song length
