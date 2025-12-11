@@ -13902,25 +13902,48 @@ function closeStageModal(){
       
       const modal=document.getElementById('modalTech');
       modal.classList.add('open');
+      modal.style.display='flex'; // Force visible for mobile
+      modal.style.position='static'; // Ensure in document flow
+      
       await printPromise();
       
       // Platform-specific SVG handling
       const sheet=document.getElementById('sheetTech');
       if(sheet){
+        sheet.style.opacity='1';
+        sheet.style.visibility='visible';
+        
+        // For mobile: rebuild the stage SVG at correct scale AFTER modal is visible
+        if(isMobileLike()){
+          console.log('📱 Mobile detected - rebuilding stage at correct scale...');
+          stageOut.innerHTML='';
+          buildStageExport(stageOut);
+          await inlineStageImages(stageOut.querySelector('svg'));
+          await printPromise(); // Extra time for images to load
+        }
+        
         // Prepare content for printing (convert SVGs on mobile)
         await preparePrintContent(modal, stageOut);
         
         // Force layout recalculation
         sheet.style.display='none';
         sheet.offsetHeight; // trigger reflow
-        sheet.style.display='block';
+        sheet.style.display='flex';
+        sheet.offsetHeight; // trigger reflow again
       }
       
+      // Extra wait for mobile devices
       await printPromise();
+      if(isMobileLike()) {
+        await printPromise(); // Double wait for mobile
+      }
+      
       console.log('🖨️ Triggering print dialog for stage plot...');
       window.print();
       await printPromise();
       modal.classList.remove('open');
+      modal.style.display=''; // Reset
+      modal.style.position=''; // Reset
       
       // Restore visibility
       if(wrap) wrap.style.display='';
