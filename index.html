@@ -17,7 +17,9 @@
     .tab.active{color:#111;border-bottom:3px solid var(--accent);background:#f0f9ff}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:100%;overflow:visible}
     .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:16px;max-width:100%;overflow:visible}
-    .card h2{margin:0 0 12px;font-size:20px;color:#111}
+    .card h2{margin:0 0 12px;font-size:22px;color:#111;font-weight:700}
+    h2{margin:0 0 12px;font-size:22px;color:#111;font-weight:700}
+    h3{margin:0 0 10px;font-size:16px;color:#374151;font-weight:600}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .row>.field{flex:1;min-width:220px}
     .field{margin:8px 0}
@@ -41,10 +43,10 @@
     .modal.open{display:flex;pointer-events:auto}
     .modal .modalbox{pointer-events:auto}
     .modal .sheet{pointer-events:auto}
-    .sheet{width:8.5in;max-width:100%;min-height:11in;background:white;color:var(--paperText);border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0.4in 0.5in;overflow:visible;margin:auto;transform:scale(0.75);transform-origin:top center}
+    .sheet{width:8.5in;max-width:100%;min-height:11in;height:auto;background:white;color:var(--paperText);border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0.4in 0.5in;overflow:visible;margin:auto;transform:scale(0.75);transform-origin:top center}
   @media (max-width:768px){
     .modal{align-items:flex-start;padding:10px}
-    .modal .sheet{width:100%;height:auto;max-height:90vh;padding:16px;box-sizing:border-box}
+    .modal .sheet{width:100%;height:auto;max-height:none;padding:16px;box-sizing:border-box;overflow:visible}
   }
     .sheet.a4{width:210mm;min-height:277mm}
     .sheet.multipage{display:flex;flex-direction:column;gap:20px;height:auto}
@@ -182,6 +184,11 @@
       #printChooser{display:none!important}
       #songPoolFlyout{display:none!important}
       .print-fab{display:none!important}
+      .file-menu-container{display:none!important}
+      .date-header{display:none!important}
+      .stage-modal{display:none!important}
+      #notesModal{display:none!important}
+      #stageModal{display:none!important}
       
       /* Show only modal content */
       .modal{position:static!important;display:none;background:none!important;padding:0!important;margin:0!important;visibility:visible!important;opacity:1!important}
@@ -190,42 +197,52 @@
       /* Setlist print layout */
       .sheet{
         box-shadow:none!important;
-        height:10.5in!important;
-        min-height:10.5in!important;
+        height:auto!important;
+        max-height:none!important;
         overflow:visible!important;
         padding:0.15in 0.25in!important;
         margin:0!important;
         width:100%!important;
         max-width:100%!important;
-        display:flex!important;
-        flex-direction:column!important;
+        display:block!important;
         transform:none!important;
         visibility:visible!important;
         opacity:1!important;
         background:white!important;
       }
-      .sheet.multipage{gap:0!important;height:auto!important}
+      .sheet:not(.multipage){
+        height:10.5in!important;
+        max-height:10.5in!important;
+        display:flex!important;
+        flex-direction:column!important;
+        page-break-inside:avoid!important;
+      }
+      .sheet.multipage{gap:0!important;height:auto!important;max-height:none!important;overflow:visible!important}
       .sheet-page{
         box-shadow:none!important;
         padding:0.15in 0.25in!important;
         margin:0!important;
-        page-break-after:always;
-        page-break-inside:avoid;
+        page-break-after:always!important;
+        page-break-inside:avoid!important;
         height:10.5in!important;
         min-height:10.5in!important;
+        max-height:10.5in!important;
+        overflow:hidden!important;
         display:flex!important;
         flex-direction:column!important;
+        background:white!important;
       }
-      .sheet-page:last-child{page-break-after:auto}
+      .sheet-page:last-child{page-break-after:auto!important}
       .hdr{flex-shrink:0!important}
       .songs{
-        height:100%!important;
-        min-height:0!important;
         flex:1!important;
-        display:flex!important;
-        flex-direction:column!important;
+        display:block!important;
+        overflow:hidden!important;
       }
-      .total-time{flex-shrink:0!important;margin-top:auto!important}
+      .songs .line, .songs .break{
+        display:flex!important;
+      }
+      .total-time{margin-top:auto!important}
       .break.pagebreak{page-break-after:always}
       
       /* Stage plot and tech table sizing */
@@ -256,19 +273,19 @@
 
   /* Fullscreen Stage Editor */
   /* Inline stage editor (converted from fullscreen) */
-  .stage-modal{position:static;background:transparent;display:none;z-index:auto;margin-top:12px}
+  .stage-modal{position:static;background:transparent;display:none;z-index:auto;margin-top:12px;max-width:min(1600px,98vw);margin-left:auto;margin-right:auto}
   .stage-modal.open{display:flex}
-  .stage-editor{display:grid;grid-template-columns:340px 1fr;gap:16px;background:#fff;width:100%;min-height:640px}
+  .stage-editor{display:grid;grid-template-columns:300px 1fr;gap:16px;background:#fff;width:100%;min-height:640px;max-width:100%}
   .stage-pane{padding:10px 12px 16px;overflow:hidden;border-right:1px solid #e5e7eb}
   .stage-pane .tool{white-space:nowrap}
   .stage-pane .toolbox-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
   .stage-pane .toolbox-actions button{padding:6px 10px;font-size:12px}
   .stage-canvas{padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:auto;position:relative}
-  /* Preserve full-size stage canvas on desktop; limit height on tablets/phones */
-  #stageSvgFull{width:100% !important;height:auto !important;aspect-ratio:1500/900;flex:0 0 auto;max-height:70vh}
+  /* Reduce stage canvas size - smaller on desktop, much smaller on mobile */
+  #stageSvgFull{width:100% !important;height:auto !important;aspect-ratio:1500/900;flex:0 0 auto;max-height:50vh}
   #stageFrame{max-width:100%;overflow:visible}
   @media (max-width:900px){
-    #stageSvgFull{max-height:55vh;max-width:100%;aspect-ratio:1500/900!important;height:auto!important}
+    #stageSvgFull{max-height:35vh;max-width:100%;aspect-ratio:1500/900!important;height:auto!important}
     #stageFrame{max-width:calc(100vw - 48px)}
     .stage-canvas{padding:6px}
   }
@@ -367,6 +384,8 @@
   .brand-bar a{color:inherit;text-decoration:none}
   .brand-bar a:hover{text-decoration:underline}
   /* Keep global actions visible in live mode to prevent layout jump */
+  .global-actions{display:flex;align-items:center;gap:0;padding:0;margin:0}
+  
   /* Live fullscreen lyrics */
   .live-lyrics-overlay{position:fixed;inset:0;background:#020617;color:#e5e7eb;z-index:90;display:none;flex-direction:column}
   .live-lyrics-overlay.open{display:flex}
@@ -396,6 +415,17 @@
   /* Live mode: hide brand bar and any open stage/notes modals for distraction-free view */
   body.live-mode .brand-bar{display:none}
   body.live-mode #stageModal, body.live-mode #notesModal{display:none !important}
+  
+  /* File menu dropdown - fixed at top left */
+  .file-menu-container{position:fixed;top:8px;left:12px;z-index:200}
+  .file-menu-btn{padding:4px 8px;background:#065f46;border:1px solid #064e3b;color:#fff;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;transition:background 0.2s}
+  .file-menu-btn:hover{background:#047857}
+  .file-menu-dropdown{display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#fff;border:1px solid #d1d5db;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.25);min-width:200px;z-index:201}
+  .file-menu-dropdown.open{display:block}
+  .file-menu-item{padding:10px 16px;cursor:pointer;font-size:14px;color:#1f2937;border-bottom:1px solid #f3f4f6;transition:background 0.15s}
+  .file-menu-item:last-child{border-bottom:none}
+  .file-menu-item:hover{background:#f0f9ff}
+  .file-menu-separator{height:1px;background:#e5e7eb;margin:4px 0}
   
   /* Global date selector header strip */
   .date-header{
@@ -815,8 +845,27 @@
   </style>
 </head>
 <body>
+  <!-- Fixed File Menu at top left -->
+  <div class="file-menu-container">
+    <button class="file-menu-btn" id="fileMenuBtn" title="File Menu">⚙️</button>
+    <div class="file-menu-dropdown" id="fileMenuDropdown">
+      <div class="file-menu-item" id="openPrintOptionsTop">🖨️ Print...</div>
+      <div class="file-menu-item" id="shareBtn">📤 Share</div>
+      <div class="file-menu-separator"></div>
+      <div class="file-menu-item" id="saveProfile">Save Profile (.BAND)</div>
+      <div class="file-menu-item" id="loadProfile">Load Profile (.BAND)</div>
+      <div class="file-menu-separator"></div>
+      <div class="file-menu-item" id="saveSet">Save .SET</div>
+      <div class="file-menu-item" id="loadSet">Load .SET</div>
+      <div class="file-menu-separator"></div>
+      <div class="file-menu-item" id="helpBtn">❓ Help</div>
+    </div>
+    <input type="file" id="loadProfileFile" accept=".band,application/json" style="display:none" />
+    <input type="file" id="loadSetFile" accept=".set,application/json" style="display:none" />
+  </div>
+
   <!-- Global date selector strip: permanently visible across top -->
-  <div class="date-header">
+  <div class="date-header" style="padding-left:50px">
     <span class="act-selector" id="actSelector" style="cursor:pointer;font-weight:600;color:#60a5fa;padding:4px 12px;border-radius:6px" title="Click to switch band">Select Band...</span>
     <div class="date-boxes-container" id="dateBoxesContainer">
       <!-- Date boxes populated by JS -->
@@ -824,23 +873,8 @@
   </div>
   
   <div class="wrap" style="padding-bottom:28px">
-    <!-- Global sticky actions: always available top-left -->
-    <div class="global-actions">
-      <button class="btn" id="gearBtn" title="Show save/load tools" style="background:#065f46;border-color:#064e3b">⚙️</button>
-      <button class="btn" id="openPrintOptionsTop" title="Print…" style="background:#065f46;border-color:#064e3b">Print…</button>
-      <button class="btn" id="shareBtn" title="Share Database" style="background:#065f46;border-color:#064e3b">📤 Share</button>
-      <button class="btn" id="helpBtn" title="Help / Tutorial" style="background:#065f46;border-color:#064e3b">?</button>
-      <div id="gearPanel" style="display:none;gap:8px;flex-wrap:wrap;margin-left:12px">
-        <button class="btn" id="saveProfile" style="background:#065f46;border-color:#064e3b">Save Profile (.BAND)</button>
-        <button class="btn" id="loadProfile" style="background:#065f46;border-color:#064e3b">Load Profile (.BAND)</button>
-        <input type="file" id="loadProfileFile" accept=".band,application/json" style="display:none" />
-        <button class="btn" id="saveSet" style="background:#065f46;border-color:#064e3b">Save .SET</button>
-        <button class="btn" id="loadSet" style="background:#065f46;border-color:#064e3b">Load .SET</button>
-        <input type="file" id="loadSetFile" accept=".set,application/json" style="display:none" />
-      </div>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:8px;margin:16px 0">
+    <!-- Tabs row -->
+    <div style="display:flex;align-items:center;gap:12px;margin:16px 0">
       <div class="tabs" style="margin:0;flex:1">
         <button class="tab active" data-tab="tour">Calendar</button>
         <button class="tab" data-tab="db">Song Database</button>
@@ -861,7 +895,7 @@
           </div>
         </div>
         <h2>Song Database</h2>
-          <div style="margin:12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="margin:12px 0 16px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <input type="text" id="dbSearch" placeholder="Search songs..." style="flex:1 1 200px;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px">
             <label style="font-size:12px;color:#64748b">Sort by:</label>
             <select id="dbSort" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:4px">
@@ -929,13 +963,13 @@
 
       <!-- Combined Setlist + Generator Tab -->
       <div class="card" id="set" style="display:none;grid-column:1 / -1;width:100%;overflow:auto;max-height:calc(100vh - 140px)">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-          <h2 style="margin:0">Setlist</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <h2>Setlist</h2>
           <button id="saveSetlistPresetBtn" class="btn" style="padding:6px 12px;font-size:13px;background:#c2410c;color:#fff" title="Save current setlist as a reusable preset">⭐ Preset</button>
         </div>
-        <div id="setlistLayout" style="display:flex;flex-wrap:nowrap;gap:24px;align-items:flex-start;margin-top:12px;width:100%">
+        <div id="setlistLayout" style="display:flex;flex-wrap:nowrap;gap:24px;align-items:flex-start;margin-top:0;width:100%">
           <div id="poolCol" style="flex:0 0 260px;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
-            <h3 style="margin:0">Song Pool</h3>
+            <h3>Song Pool</h3>
             <div id="poolControls" style="display:flex;flex-direction:column;gap:6px;width:100%">
               <input type="text" id="poolSearch" placeholder="Search songs..." style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -987,7 +1021,7 @@
                   <path d="M18 8.5a2 2 0 0 1 2 2v1.5c0 4.5-3 8-8 8s-6-3-7-5l-2.5-4a1.5 1.5 0 0 1 2.5-1.5L7 12" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
-              <div class="sheet" id="sheetInline" style="overflow:auto;flex:1 1 auto;height:auto;max-height:calc(100vh - 100px)">
+              <div class="sheet" id="sheetInline" style="overflow:auto;flex:1 1 auto;height:auto;max-height:none">
                 <div class="hdr" id="hdrInline"></div>
                 <div class="songs" id="songsInline"></div>
               </div>
@@ -1106,10 +1140,11 @@
         </div>
       </div>
 
-      <div id="adv" style="display:none;padding-top:6px;margin-top:8px">
-        <div class="row" style="gap:8px;margin-bottom:4px;padding:0 4px">
+      <div id="adv" style="display:none;padding-top:0;margin-top:12px">
+        <h2 style="margin-bottom:12px">Tech / Stage</h2>
+        <div class="row" style="gap:8px;margin-bottom:12px;padding:0">
           <button class="btn" id="stageToggle" onclick="toggleStageAndNotes()">Stage Plot</button>
-          <button class="btn" id="stagePresetBtnTop" style="padding:4px 10px;font-size:12px;background:#065f46;color:#f9fafb;border:1px solid #064e3b">PRESET</button>
+          <button class="btn" id="stagePresetBtnTop" style="padding:6px 12px;font-size:13px;background:#065f46;color:#f9fafb;border:1px solid #064e3b">PRESET</button>
         </div>
       </div>
 
@@ -1117,12 +1152,12 @@
       <div id="tour" style="display:none;grid-column:1 / -1;width:100%;margin-top:12px">
         
         <!-- Large Date/Venue Header with Day Navigation -->
-        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:16px">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:20px">
             <!-- Large Date and Venue Display -->
             <div style="flex:1">
-              <div id="tourHeaderDate" style="font-size:32px;font-weight:700;color:#111827;line-height:1.2;margin-bottom:4px">Select a date</div>
-              <div id="tourHeaderVenue" style="font-size:24px;font-weight:500;color:#64748b;line-height:1.3">No venue</div>
+              <div id="tourHeaderDate" style="font-size:28px;font-weight:700;color:#111827;line-height:1.2;margin-bottom:4px">Select a date</div>
+              <div id="tourHeaderVenue" style="font-size:20px;font-weight:500;color:#64748b;line-height:1.3">No venue</div>
             </div>
             
             <!-- Previous / Next / Today buttons -->
@@ -1373,8 +1408,8 @@
 
       <!-- Live Mode: full-screen, touch-first setlist + lyrics viewer -->
       <div id="live" style="display:none;grid-column:1 / -1;width:100%;margin-top:12px">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-              <h2 style="margin:0">Live Mode</h2>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <h2>Live Mode</h2>
               <button id="liveThemeToggle" type="button" title="Toggle light/dark" style="margin-left:auto;border-radius:999px;border:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#0f172a;color:#fbbf24;cursor:pointer">🌙</button>
             </div>
         <div id="liveFlex" style="display:flex;gap:12px;min-height:60vh">
@@ -2457,12 +2492,26 @@
         if(e.target===helpModal){ helpModal.classList.remove('open'); helpModal.style.display='none'; }
       });
     }
-    const gearBtn=document.getElementById('gearBtn');
-    const gearPanel=document.getElementById('gearPanel');
-    if(gearBtn && gearPanel){
-      gearBtn.addEventListener('click',()=>{
-        const show=gearPanel.style.display==='none' || !gearPanel.style.display;
-        gearPanel.style.display= show ? 'flex' : 'none';
+    
+    // File menu dropdown
+    const fileMenuBtn=document.getElementById('fileMenuBtn');
+    const fileMenuDropdown=document.getElementById('fileMenuDropdown');
+    if(fileMenuBtn && fileMenuDropdown){
+      fileMenuBtn.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        fileMenuDropdown.classList.toggle('open');
+      });
+      // Close menu when clicking outside
+      document.addEventListener('click',(e)=>{
+        if(!fileMenuDropdown.contains(e.target) && e.target !== fileMenuBtn){
+          fileMenuDropdown.classList.remove('open');
+        }
+      });
+      // Close menu when any menu item is clicked
+      fileMenuDropdown.querySelectorAll('.file-menu-item').forEach(item=>{
+        item.addEventListener('click',()=>{
+          fileMenuDropdown.classList.remove('open');
+        });
       });
     }
 
@@ -9856,77 +9905,103 @@
       }
 
       function fitToPage(songsContainer){
-        // Allow passing in a specific songs container, or use the global one
-        const songs = songsContainer || document.querySelector('#sheetInline .songs');
+        const songs = songsContainer || document.getElementById(isInline ? 'songsInline' : 'songs');
         if(!songs) return;
-        // Get the actual container (sheet or sheet-page)
         const container = songs.closest('.sheet-page') || songs.closest('.sheet') || sheet;
         const totalEl = songs.querySelector('.total-time');
+        const allItems = Array.from(songs.querySelectorAll('.line, .break'));
+        const lineCount = allItems.length;
+        if(lineCount === 0) return;
         
-        // Remove any transform scaling - fit naturally
         songs.style.transform = 'none';
         songs.style.width = '100%';
         
-        // Ensure songs stretch vertically
-        songs.style.height = '100%';
+        const isPrintMode = !isInline;
         
-        // Start with larger font, maximize text size - start at 15pt for better use of space
-        let tSize=15;
-        for(let i=0;i<30;i++){
-          songs.style.setProperty('--t', tSize);
-          Array.from(songs.querySelectorAll('.title')).forEach(d=> d.style.fontSize = tSize+'pt');
-          const minor = Math.max(7, tSize-4);
-          Array.from(songs.querySelectorAll('.key,.time,.no')).forEach(d=> d.style.fontSize = minor+'pt');
-          if(container.scrollHeight<=container.clientHeight) return; // fits
-          tSize -= 0.2; if(tSize<6.5) break; // lower bound
-        }
-  // If still overflowing, reduce subnotes
-  let sSize=7;
-        for(let i=0;i<8 && container.scrollHeight>container.clientHeight;i++){
-          Array.from(songs.querySelectorAll('.subnotes')).forEach(d=> d.style.fontSize = sSize+'pt');
-          sSize -= 0.3; if(sSize<5) break;
-        }
-        // Reduce vertical gaps/padding progressively
-        const gapSteps=['1.5px','1px','0.5px'];
-        for(const g of gapSteps){
-          if(container.scrollHeight<=container.clientHeight) break;
-          songs.style.gap=g;
-          Array.from(songs.querySelectorAll('.line')).forEach(d=> d.style.padding = '0.5px 0');
-        }
-        // Shrink break banners
-        if(container.scrollHeight>container.clientHeight){
-          let bSize=10;
-          for(let i=0;i<6 && container.scrollHeight>container.clientHeight;i++){
-            bSize-=0.5; if(bSize<6) break;
-            Array.from(songs.querySelectorAll('.break')).forEach(d=>{ d.style.fontSize=bSize+'pt'; d.style.padding='2px 4px'; });
+        if(isPrintMode){
+          // PRINT MODE: Fill the entire page with songs evenly distributed
+          // Letter paper usable area for songs: ~620pt (accounting for header, margins, total)
+          const TOTAL_HEIGHT = 620;
+          
+          // Include +1 for the Total line at bottom
+          const totalItems = lineCount + 1;
+          
+          // Each item (song + total) gets equal slot
+          const slotHeight = TOTAL_HEIGHT / totalItems;
+          
+          // Font is 65% of slot - BIGGER text
+          const baseFontSize = Math.min(28, Math.max(11, slotHeight * 0.65));
+          
+          // Line content height
+          const lineHeight = baseFontSize * 1.15;
+          
+          // Gap is remaining space in each slot
+          const gapPerItem = Math.max(2, slotHeight - lineHeight);
+          
+          // Apply font sizes - BIGGER
+          const titleSize = baseFontSize + 'pt';
+          const numSize = Math.max(9, baseFontSize * 0.65) + 'pt';
+          const timeSize = Math.max(9, baseFontSize * 0.6) + 'pt';
+          const noteSize = Math.max(8, baseFontSize * 0.55) + 'pt';
+          
+          Array.from(songs.querySelectorAll('.title')).forEach(d => d.style.fontSize = titleSize);
+          Array.from(songs.querySelectorAll('.no')).forEach(d => d.style.fontSize = numSize);
+          Array.from(songs.querySelectorAll('.time')).forEach(d => d.style.fontSize = timeSize);
+          Array.from(songs.querySelectorAll('.key')).forEach(d => d.style.fontSize = timeSize);
+          Array.from(songs.querySelectorAll('.notePrint')).forEach(d => d.style.fontSize = noteSize);
+          
+          // Apply margin-bottom to each item
+          allItems.forEach(item => {
+            item.style.padding = '0';
+            item.style.margin = '0';
+            item.style.marginBottom = gapPerItem + 'pt';
+            item.style.lineHeight = '1.15';
+            if(item.classList.contains('break')){
+              item.style.fontSize = Math.max(10, baseFontSize * 0.8) + 'pt';
+              item.style.padding = '2pt 6pt';
+            }
+          });
+          
+          // Container - simple block flow
+          songs.style.display = 'block';
+          songs.style.height = 'auto';
+          
+          // Total time - same gap above it
+          if(totalEl){
+            totalEl.style.fontSize = timeSize;
+            totalEl.style.marginTop = '0';
+            totalEl.style.paddingTop = '0';
           }
-        }
-        // If still overflowing, elide subnotes text more aggressively
-        if(sheet.scrollHeight>sheet.clientHeight){
-          Array.from(songs.querySelectorAll('.subnotes')).forEach(d=>{
-            if(d.textContent.length>25) d.textContent=d.textContent.slice(0,22)+'…';
+        } else {
+          // PREVIEW MODE
+          const containerHeight = container.clientHeight || 600;
+          const availableHeight = Math.max(300, containerHeight - 140);
+          const totalItems = lineCount + 1;
+          const slotHeight = availableHeight / totalItems;
+          const baseFontSize = Math.min(18, Math.max(9, slotHeight * 0.6));
+          const lineHeight = baseFontSize * 1.15;
+          const gapPerItem = Math.max(2, slotHeight - lineHeight);
+          
+          const titleSize = baseFontSize + 'pt';
+          const numSize = Math.max(7, baseFontSize * 0.6) + 'pt';
+          
+          Array.from(songs.querySelectorAll('.title')).forEach(d => d.style.fontSize = titleSize);
+          Array.from(songs.querySelectorAll('.no,.time,.key')).forEach(d => d.style.fontSize = numSize);
+          Array.from(songs.querySelectorAll('.notePrint')).forEach(d => d.style.fontSize = Math.max(6, baseFontSize * 0.5) + 'pt');
+          
+          allItems.forEach(item => {
+            item.style.padding = '0';
+            item.style.margin = '0';
+            item.style.marginBottom = gapPerItem + 'pt';
+            item.style.lineHeight = '1.15';
           });
-        }
-        // Shrink total time footer
-        if(sheet.scrollHeight>sheet.clientHeight && totalEl){
-          totalEl.style.fontSize='7pt';
-          totalEl.style.marginTop='0px';
-          totalEl.style.paddingTop='1px';
-        }
-        // Last resort: shrink everything more for setlists <=35 songs
-        if(sheet.scrollHeight>sheet.clientHeight && setlist.filter(x=>x.type==='song').length<=35){
-          Array.from(songs.querySelectorAll('.title')).forEach(d=>{
-            const currentSize=parseFloat(d.style.fontSize)||10;
-            if(currentSize>5.5) d.style.fontSize = Math.max(5.5, currentSize-1.2)+'pt';
-          });
-          Array.from(songs.querySelectorAll('.key,.time,.no')).forEach(d=>{
-            const currentSize=parseFloat(d.style.fontSize)||8;
-            if(currentSize>4.5) d.style.fontSize = Math.max(4.5, currentSize-0.8)+'pt';
-          });
-          Array.from(songs.querySelectorAll('.break')).forEach(d=>{
-            d.style.fontSize='6pt';
-            d.style.padding='1px 2px';
-          });
+          
+          songs.style.display = 'block';
+          
+          if(totalEl){
+            totalEl.style.fontSize = numSize;
+            totalEl.style.marginTop = '0';
+          }
         }
       }
       
@@ -12646,7 +12721,9 @@
                 if(pos==='br'){ newW=startW+dx; newH=startH+dy; }
                 if(pos==='bl'){ newW=startW-dx; newH=startH+dy; }
                 newW=Math.max(600,newW); newH=Math.max(360,newH);
-                frame.style.width=newW+'px'; frame.style.height=newH+'px'; full.style.width=newW+'px'; full.style.height=newH+'px';
+                frame.style.width=newW+'px'; frame.style.height=newH+'px'; 
+                full.style.width=newW+'px'; full.style.height=newH+'px';
+                full.setAttribute('viewBox', '0 0 '+newW+' '+newH);
               }
               function up(){ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); saveAll(); }
               document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
@@ -12663,7 +12740,9 @@
                 if(pos==='br'){ newW=startW+dx; newH=startH+dy; }
                 if(pos==='bl'){ newW=startW-dx; newH=startH+dy; }
                 newW=Math.max(600,newW); newH=Math.max(360,newH);
-                frame.style.width=newW+'px'; frame.style.height=newH+'px'; full.style.width=newW+'px'; full.style.height=newH+'px';
+                frame.style.width=newW+'px'; frame.style.height=newH+'px'; 
+                full.style.width=newW+'px'; full.style.height=newH+'px';
+                full.setAttribute('viewBox', '0 0 '+newW+' '+newH);
                 ev.preventDefault();
               }
               function touchEnd(){ document.removeEventListener('touchmove',touchMove); document.removeEventListener('touchend',touchEnd); saveAll(); }
@@ -13783,8 +13862,6 @@ function closeStageModal(){
     async function printSetOnce(){ 
       console.log('🖨️ SETLIST PRINT - OS:', isWindows() ? 'Windows' : isIOS() ? 'iOS' : isAndroid() ? 'Android' : 'Other');
       
-      // Build sheet to match preview exactly (not auto-pagination)
-      buildSheet('sheet'); 
       const modal=document.getElementById('modal'); 
       const sheet=document.getElementById('sheet');
       
@@ -13794,6 +13871,8 @@ function closeStageModal(){
       const printChooser=document.getElementById('printChooser');
       const stageModal=document.getElementById('stageModal');
       const notesModal=document.getElementById('notesModal');
+      const fileMenuContainer=document.querySelector('.file-menu-container');
+      const dateHeader=document.querySelector('.date-header');
       
       // Hide everything except modal content for all platforms
       if(wrap) wrap.style.display='none';
@@ -13801,26 +13880,47 @@ function closeStageModal(){
       if(printChooser) printChooser.style.display='none';
       if(stageModal) stageModal.style.display='none';
       if(notesModal) notesModal.style.display='none';
+      if(fileMenuContainer) fileMenuContainer.style.display='none';
+      if(dateHeader) dateHeader.style.display='none';
       
       modal.classList.add('open'); 
       modal.style.display='flex'; // Force visible
       modal.style.position='static'; // Ensure in document flow for mobile
       
+      // Set sheet to print dimensions BEFORE building (remove preview scale)
+      if(sheet) {
+        sheet.style.transform = 'none';
+        sheet.style.width = '8.5in';
+        sheet.style.padding = '0.15in 0.25in';
+      }
+      
       await printPromise();
+      
+      // NOW build the sheet at print dimensions so fitToPage calculates correctly
+      buildSheet('sheet');
       
       // Platform-specific handling
       if(sheet) {
         sheet.style.opacity='1';
         sheet.style.visibility='visible';
         
+        // For multipage, let CSS handle page breaks; for single page, fix height
+        const isMultiPage = sheet.classList.contains('multipage');
+        if(isMultiPage){
+          sheet.style.height = 'auto';
+          sheet.style.minHeight = 'auto';
+          sheet.style.overflow = 'visible';
+        } else {
+          sheet.style.height = '10.5in';
+          sheet.style.minHeight = '10.5in';
+          sheet.style.overflow = 'hidden';
+        }
+        
         // Prepare content for printing (convert SVGs if needed)
         await preparePrintContent(modal, sheet);
         
-        // Force multiple layout recalculations for mobile
-        sheet.style.display='none'; 
-        sheet.offsetHeight; // trigger reflow
-        sheet.style.display='flex';
-        sheet.offsetHeight; // trigger reflow again
+        // Force layout recalculation
+        sheet.offsetHeight;
       }
       
       // Extra wait for mobile devices
@@ -13837,12 +13937,23 @@ function closeStageModal(){
       modal.style.display=''; // Reset
       modal.style.position=''; // Reset
       
+      // Reset sheet styles for preview mode
+      if(sheet) {
+        sheet.style.transform = '';
+        sheet.style.width = '';
+        sheet.style.minHeight = '';
+        sheet.style.height = '';
+        sheet.style.padding = '';
+      }
+      
       // Restore visibility
       if(wrap) wrap.style.display='';
       if(brandBar) brandBar.style.display='';
       if(printChooser) printChooser.style.display='';
       if(stageModal) stageModal.style.display='';
       if(notesModal) notesModal.style.display='';
+      if(fileMenuContainer) fileMenuContainer.style.display='';
+      if(dateHeader) dateHeader.style.display='';
       
       await printPromise();
       console.log('✅ Setlist print complete');
@@ -14308,7 +14419,28 @@ function closeStageModal(){
       var stageEl=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
       const stage = stageEl ? stageEl.outerHTML : '';
       const dbOut = db.map(s=>{ const {audioData, ...rest}=s||{}; return rest; });
-      const data={version:3,type:'fastfast-band', db:dbOut, setlist, gig, gearSummary, techNotes, stage};
+      // Save EVERYTHING - complete backup
+      const data={
+        version:4,
+        type:'fastfast-band',
+        db:dbOut,
+        setlist,
+        gig,
+        gearSummary,
+        techNotes,
+        stage,
+        setlistColumns,
+        pageLayout,
+        tourDates,
+        tourCustomSearchTerms,
+        customSearchButtons,
+        selectedTourDateId,
+        bandPresets,
+        currentBandPresetId,
+        stagePresets,
+        setlistPresets,
+        lastUsedSetlist
+      };
       const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=((gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'profile.band'); a.click(); URL.revokeObjectURL(a.href);
     }); }
@@ -14339,6 +14471,11 @@ function closeStageModal(){
               const fields=['band','date','venue','address','contact','notes','font','logo'];
               fields.forEach(k=>{ if(!gig[k] && obj.gig[k]) gig[k]=obj.gig[k]; });
               if(obj.gig.headerFlags){ gig.headerFlags=Object.assign({band:true,venue:true,sub:true,notes:true}, gig.headerFlags, obj.gig.headerFlags); }
+              if(obj.gig.customMoods){ gig.customMoods=obj.gig.customMoods; }
+              if(obj.gig.customImages){ gig.customImages=obj.gig.customImages; }
+              if(obj.gig.hiddenIcons){ gig.hiddenIcons=obj.gig.hiddenIcons; }
+              if(obj.gig.liveDark !== undefined){ gig.liveDark=obj.gig.liveDark; }
+              if(obj.gig.customColumns){ gig.customColumns=obj.gig.customColumns; }
               // hydrate UI
               if(gig.band) document.getElementById('gBand').value=gig.band;
               if(gig.date) document.getElementById('gDate').value=gig.date;
@@ -14353,6 +14490,18 @@ function closeStageModal(){
             }
             // hydrate gear and stage if present
             if(obj && 'gearSummary' in obj){ gearSummary = obj.gearSummary || ''; const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value=gearSummary; }
+            if(obj && 'techNotes' in obj && typeof obj.techNotes === 'object'){ techNotes = obj.techNotes; }
+            if(obj && obj.setlistColumns){ setlistColumns = Object.assign({artist:false, capo:true, key:true, notes:false, bpm:false, lyrics:false}, obj.setlistColumns); }
+            if(obj && obj.pageLayout){ pageLayout = Object.assign({format:'letter', pageCount:1, songsPerPage:25}, obj.pageLayout); }
+            if(obj && Array.isArray(obj.tourDates)){ tourDates = obj.tourDates; }
+            if(obj && typeof obj.tourCustomSearchTerms === 'string'){ tourCustomSearchTerms = obj.tourCustomSearchTerms; }
+            if(obj && Array.isArray(obj.customSearchButtons)){ customSearchButtons = obj.customSearchButtons; }
+            if(obj && obj.selectedTourDateId){ selectedTourDateId = obj.selectedTourDateId; }
+            if(obj && Array.isArray(obj.bandPresets)){ bandPresets = obj.bandPresets; }
+            if(obj && obj.currentBandPresetId){ currentBandPresetId = obj.currentBandPresetId; }
+            if(obj && Array.isArray(obj.stagePresets)){ stagePresets = obj.stagePresets; }
+            if(obj && Array.isArray(obj.setlistPresets)){ setlistPresets = obj.setlistPresets; }
+            if(obj && obj.lastUsedSetlist){ lastUsedSetlist = obj.lastUsedSetlist; }
             if(obj && obj.stage){
               const container=document.getElementById('stageStore');
               if(container){
@@ -14405,9 +14554,26 @@ function closeStageModal(){
     // Zoom control for stage (applies to small canvas)
     // No inline zoom control anymore
 
-    // Save .SET (export setlist only)
+    // Save .SET (export setlist with full song details including lyrics for phone viewing)
     const saveSetBtn=document.getElementById('saveSet'); if(saveSetBtn){ saveSetBtn.addEventListener('click',()=>{
-      const data={version:1,type:'fastfast-set',setlist};
+      // Enrich setlist with full song data including lyrics
+      const enrichedSetlist = setlist.map(item => {
+        if(item.type === 'song'){
+          const baseSong = findSongById(item.id) || findSongByTitle(item.title);
+          if(baseSong){
+            return {
+              ...item,
+              lyrics: baseSong.lyrics || item.lyrics || '',
+              artist: item.artist || baseSong.artist || 'Original',
+              key: item.key || baseSong.key || '',
+              capo: item.capo !== undefined ? item.capo : baseSong.capo,
+              bpm: item.bpm || baseSong.bpm
+            };
+          }
+        }
+        return item;
+      });
+      const data={version:2,type:'fastfast-set',setlist:enrichedSetlist,gig:{band:gig.band,venue:gig.venue,date:gig.date}};
       const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(gig.band? gig.band.replace(/\s+/g,'_')+'_' : '')+'setlist.set'; a.click(); URL.revokeObjectURL(a.href);
     }); }
