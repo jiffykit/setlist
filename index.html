@@ -283,11 +283,11 @@
   .stage-pane .toolbox-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
   .stage-pane .toolbox-actions button{padding:6px 10px;font-size:12px}
   .stage-canvas{padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:auto;position:relative}
-  /* Reduce stage canvas size - smaller on desktop, much smaller on mobile */
-  #stageSvgFull{width:100% !important;height:auto !important;aspect-ratio:1500/900;flex:0 0 auto;max-height:50vh}
-  #stageFrame{max-width:100%;overflow:visible}
+  /* Stage SVG sizing - controlled by JS, CSS provides layout constraints only */
+  #stageSvgFull{display:block;flex:0 0 auto;max-width:100%;max-height:70vh;overflow:hidden}
+  #stageFrame{max-width:100%;overflow:hidden;display:inline-block}
   @media (max-width:900px){
-    #stageSvgFull{max-height:35vh;max-width:100%;aspect-ratio:1500/900!important;height:auto!important}
+    #stageSvgFull{max-height:50vh;max-width:calc(100vw - 48px)}
     #stageFrame{max-width:calc(100vw - 48px)}
     .stage-canvas{padding:6px}
   }
@@ -1882,10 +1882,10 @@
           <button class="btn" id="dupSel" type="button" disabled>Duplicate</button>
         </div>
         <div style="position:relative;display:inline-block;">
-          <div id="stageFrame" style="position:relative;display:inline-block;">
-            <svg id="stageSvgFull" class="bw" viewBox="0 0 1500 900" xmlns="http://www.w3.org/2000/svg" style="display:block;">
-              <rect class="stage-bg" x="1" y="1" width="1498" height="898"/>
-              <text x="750" y="50" text-anchor="middle" font-size="26" font-weight="bold" id="stageTitleFull">Band • Date</text>
+          <div id="stageFrame" style="position:relative;display:inline-block;width:1000px;height:600px;">
+            <svg id="stageSvgFull" class="bw" viewBox="0 0 1000 600" data-stage-width="1000" data-stage-height="600" width="1000" height="600" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+              <rect class="stage-bg" x="1" y="1" width="998" height="598"/>
+              <text x="500" y="40" text-anchor="middle" font-size="22" font-weight="bold" id="stageTitleFull">Band • Date</text>
             </svg>
             <div class="stage-handle tl" data-handle="tl"></div>
             <div class="stage-handle tr" data-handle="tr"></div>
@@ -1999,7 +1999,7 @@
 
   <!-- Hidden storage for Stage SVG (used for save/print) -->
   <div id="stageStore" style="display:none">
-    <svg id="stageSvg" class="bw" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+    <svg id="stageSvg" class="bw" viewBox="0 0 1000 600" data-stage-width="1000" data-stage-height="600" xmlns="http://www.w3.org/2000/svg">
       <rect class="stage-bg" x="1" y="1" width="998" height="598"/>
       <text x="500" y="36" text-anchor="middle" font-size="22" font-weight="bold" id="stageTitle">Band • Date</text>
     </svg>
@@ -5772,6 +5772,35 @@
         // Restore stage - always load the date's stage (blank if no stage)
         const container = document.getElementById('stageStore');
         const fullSvg = document.getElementById('stageSvgFull');
+        const frame = document.getElementById('stageFrame');
+        
+        // Default stage dimensions
+        const DEFAULT_STAGE_W = 1000;
+        const DEFAULT_STAGE_H = 600;
+        const MIN_SIZE = 300;
+        const MAX_SIZE = 1500;
+        
+        // Helper to apply stage dimensions
+        function applyLoadedStageDimensions(svg, stageW, stageH){
+          if(!svg) return;
+          // Clamp to valid range
+          stageW = Math.max(MIN_SIZE, Math.min(MAX_SIZE, stageW || DEFAULT_STAGE_W));
+          stageH = Math.max(MIN_SIZE, Math.min(MAX_SIZE, stageH || DEFAULT_STAGE_H));
+          
+          svg.dataset.stageWidth = String(stageW);
+          svg.dataset.stageHeight = String(stageH);
+          svg.setAttribute('viewBox', '0 0 1500 1500');
+          
+          // Update background rect
+          let bgRect = svg.querySelector('rect.stage-bg');
+          if(bgRect){
+            bgRect.setAttribute('x', '1');
+            bgRect.setAttribute('y', '1');
+            bgRect.setAttribute('width', String(stageW - 2));
+            bgRect.setAttribute('height', String(stageH - 2));
+          }
+        }
+        
         if(tourDate.stage && tourDate.stage.length > 0){
           // Has stage data - load it
           if(container){
@@ -5780,6 +5809,8 @@
             if(svg){
               svg.id = 'stageSvg';
               svg.classList.add('bw');
+              // Ensure viewBox is canonical
+              svg.setAttribute('viewBox', '0 0 1500 1500');
               try{ refreshCables(svg); }catch(e){}
             }
           }
@@ -5789,6 +5820,21 @@
             tempDiv.innerHTML = tourDate.stage;
             const srcSvg = tempDiv.querySelector('svg');
             if(srcSvg){
+              // Restore dimensions from loaded stage
+              const loadedW = parseInt(srcSvg.dataset.stageWidth || '0', 10) || DEFAULT_STAGE_W;
+              const loadedH = parseInt(srcSvg.dataset.stageHeight || '0', 10) || DEFAULT_STAGE_H;
+              
+              // Apply dimensions to full SVG
+              applyLoadedStageDimensions(fullSvg, loadedW, loadedH);
+              fullSvg.setAttribute('width', loadedW);
+              fullSvg.setAttribute('height', loadedH);
+              
+              // Apply dimensions to frame
+              if(frame){
+                frame.style.width = loadedW + 'px';
+                frame.style.height = loadedH + 'px';
+              }
+              
               // Clear existing draggables
               fullSvg.querySelectorAll('g[data-draggable]').forEach(n => n.remove());
               // Copy draggables from stored stage and enable drag
@@ -5803,11 +5849,19 @@
             }
           }
         } else {
-          // No stage data - show blank stage
+          // No stage data - show blank stage with default dimensions
           if(container){
-            container.innerHTML = '<svg id="stageSvg" class="bw" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg"><rect class="stage-bg" x="1" y="1" width="498" height="298"/><text x="250" y="40" text-anchor="middle" font-size="16" font-weight="bold" id="stageTitle">Band • Date</text></svg>';
+            container.innerHTML = '<svg id="stageSvg" class="bw" viewBox="0 0 1000 600" data-stage-width="1000" data-stage-height="600" xmlns="http://www.w3.org/2000/svg"><rect class="stage-bg" x="1" y="1" width="998" height="598"/><text x="500" y="40" text-anchor="middle" font-size="16" font-weight="bold" id="stageTitle">Band • Date</text></svg>';
           }
           if(fullSvg){
+            // Reset to default dimensions
+            applyLoadedStageDimensions(fullSvg, DEFAULT_STAGE_W, DEFAULT_STAGE_H);
+            fullSvg.setAttribute('width', DEFAULT_STAGE_W);
+            fullSvg.setAttribute('height', DEFAULT_STAGE_H);
+            if(frame){
+              frame.style.width = DEFAULT_STAGE_W + 'px';
+              frame.style.height = DEFAULT_STAGE_H + 'px';
+            }
             // Clear all draggables from full editor
             fullSvg.querySelectorAll('g[data-draggable]').forEach(n => n.remove());
           }
@@ -11089,24 +11143,22 @@
     }
     // ========================= END CONNECTION VALIDATION =========================
     
-    // Allowed routing targets by source type (for legacy compatibility and UI hints)
+    // Allowed routing targets by source type (routeTo). 'channel' is represented by selecting a channel directly, not via routeTo.
     const ROUTE_TARGETS={
-      drum:['mic','di','channel','monitor'], // drums go to mic or direct to DI/channel
-      cymbal:['mic','di','channel','monitor'], // cymbals same as drums
-      mic:['di','fx','channel','monitor'], // mics go forward to DI/FX/channel only
-      di:['di','fx','channel','monitor'], // DI can chain to another DI, FX, or endpoint
-      fx:['di','fx','channel','monitor'], // FX can go to DI, another FX, or endpoint
-      amp:['mic'], // guitar amps ONLY go to mics (bass amp handled in effectiveTargets)
-      acoustic:['mic','di','fx','channel','monitor'], // acoustic instruments can go to mic, DI, or direct
-      electric:['amp','di','fx'], // electric instruments go to amp, DI, or FX (not direct to channel typically)
-      deck:['di','fx','channel','monitor'], // DJ decks go to DI/FX/channel
-      sampler:['di','fx','channel','monitor'], // samplers like decks
-      keys:['di','fx','amp','channel','monitor'], // keys can go to amp or direct
-      sax:['mic','di','channel','monitor'], // sax like acoustic
-      monitor:['channel'], // monitors are endpoints
-      label:[], // display-only, no routing
-      arrow:[], // display-only, no routing
-      other:['di','fx','channel','monitor','mic'], // custom items flexible
+      drum:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','monitor'], // can connect to everything except utility
+      cymbal:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','monitor'],
+      mic:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'], // mics can NOT connect to other mics
+      di:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // can connect to everything except utility
+      fx:['di','channel','sampler','fx','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // FX intermediates can connect between any items
+      amp:['mic','di','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'], // amps can connect to mics
+      acoustic:['di','mic','channel','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
+      electric:['fx','amp','di','channel','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
+      deck:['fx','di','channel','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
+      sampler:['fx','di','channel','sampler','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
+      keys:['sampler','di','mic','channel','fx','amp','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
+      sax:['mic','channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor'],
+      monitor:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'],
+      other:['channel','di','fx','amp','sampler','acoustic','electric','deck','keys','sax','drum','cymbal','monitor','mic'], // custom can connect to anything
     };
 
     // Effective per-node targets (adds key-specific rules, e.g., bass amp can go direct to channel)
@@ -11250,11 +11302,19 @@
       const customSpec=(gig.customImages||[]).find(ci=>ci.key===key);
       const svg=document.getElementById('stageSvgFull');
       const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-      const x = (at && typeof at.x==='number') ? at.x : 100, y = (at && typeof at.y==='number') ? at.y : 120;
-      // Compute initial scale so the visible icon is ~100px wide on screen
-      const vbw = (svg && svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width) ? svg.viewBox.baseVal.width : 1500;
-      const pxPerUnit = svg ? (svg.getBoundingClientRect().width / vbw) : (1000/1500);
-      const targetPx = (key==='tom' ? 50 : 100); const baseUnits = 60; // image width set below; toms default to 50% size
+      
+      // Get stage dimensions for default placement (viewBox matches stage dimensions)
+      const stageW = parseInt(svg?.dataset.stageWidth || '1000', 10);
+      const stageH = parseInt(svg?.dataset.stageHeight || '600', 10);
+      const x = (at && typeof at.x==='number') ? at.x : Math.round(stageW * 0.1);
+      const y = (at && typeof at.y==='number') ? at.y : Math.round(stageH * 0.2);
+      
+      // Compute initial scale - viewBox matches stage dimensions (1:1 with display when at 100%)
+      // For consistent sizing, use a fixed scale based on typical stage size
+      const rect = svg?.getBoundingClientRect();
+      const displayW = rect?.width || stageW;
+      const pxPerUnit = displayW / stageW; // Now 1:1 when display matches stage
+      const targetPx = (key==='tom' ? 50 : 100); const baseUnits = 60;
       let initScale = targetPx / (baseUnits * Math.max(0.01, pxPerUnit));
       initScale = Math.max(0.3, Math.min(5, initScale));
       g.dataset.x=String(x); g.dataset.y=String(y); g.dataset.scale=String(initScale);
@@ -11327,19 +11387,44 @@
       return simple;
     }
 
-    // Helper: connect source->target using strict validation rules
+    // Helper: connect source->target if allowed, otherwise try reverse (legacy logic)
     function connectEitherDirection(source, target){
       if(!source || !target || source===target) return false;
       
-      const svg = source.closest('svg');
+      // Determine connection priority based on type hierarchy: instruments → amps → mics → channels
+      const getConnectionPriority=(node)=>{
+        const type=node.dataset.type||'other';
+        if(type==='acoustic' || type==='electric' || type==='keys' || type==='sax' || type==='deck' || type==='drum' || type==='cymbal') return 0; // instruments
+        if(type==='amp') return 1; // amps
+        if(type==='mic') return 2; // mics
+        if(type==='di') return 1.5; // DI
+        if(type==='fx') return 1.7; // FX
+        if(type==='sampler') return 0.5; // samplers
+        return 3; // others/endpoints
+      };
       
-      // Use the new validation system
-      const direction = determineConnectionDirection(source, target, svg);
-      if (!direction) return false; // Connection not allowed in either direction
+      const sPriority=getConnectionPriority(source);
+      const tPriority=getConnectionPriority(target);
+      const sAllowed=effectiveTargets(source);
+      const tAllowed=effectiveTargets(target);
+      const sCanTarget=sAllowed.includes(target.dataset.type||'other');
+      const tCanTarget=tAllowed.includes(source.dataset.type||'other');
       
-      // Make the connection
-      direction.from.dataset.routeTo = direction.to.dataset.id;
-      return true;
+      // If both directions are valid, choose based on priority (lower priority → higher priority)
+      if(sCanTarget && tCanTarget){
+        if(sPriority < tPriority){ 
+          source.dataset.routeTo=target.dataset.id; 
+          return true; 
+        } else { 
+          target.dataset.routeTo=source.dataset.id; 
+          return true; 
+        }
+      }
+      
+      // Only one direction is valid
+      if(sCanTarget){ source.dataset.routeTo=target.dataset.id; return true; }
+      if(tCanTarget){ target.dataset.routeTo=source.dataset.id; return true; }
+      return false;
     }
     // Helper: find chain endpoint (following valid routeTo)
     function resolveEndpoint(start){
@@ -11350,6 +11435,8 @@
         seen.add(cur);
         const nid=cur.dataset.routeTo||''; if(!nid) break;
         const nxt=nodes.find(n=> n.dataset.id===nid); if(!nxt) break;
+        const allowed=effectiveTargets(cur);
+        if(allowed.indexOf(nxt.dataset.type||'other')===-1) break;
         cur=nxt;
       }
       return cur||start;
@@ -11394,8 +11481,26 @@
       let start=null; let orig=null;
       // Long-press cable drag state
       let lpTimer=null; let lpActive=false; let lpLine=null; let lpSource=null; let lpTouchId=null;
+      
+      // Helper: get scale factor for converting screen pixels to SVG coordinates
+      function getSvgScale(){
+        const svg = node.closest('svg');
+        if(!svg) return 1;
+        const rect = svg.getBoundingClientRect();
+        // Parse viewBox to get the coordinate space dimensions
+        const vb = svg.getAttribute('viewBox') || '0 0 1000 600';
+        const parts = vb.split(/\s+/).map(Number);
+        const viewBoxW = parts[2] || 1000;
+        const viewBoxH = parts[3] || 600;
+        // Scale is how many SVG units per screen pixel
+        const scaleX = viewBoxW / (rect.width || 1);
+        const scaleY = viewBoxH / (rect.height || 1);
+        // Use average scale (should be similar if aspect ratio is preserved)
+        return (scaleX + scaleY) / 2;
+      }
+      
         node.addEventListener('mousedown',e=>{ if(e.button===2){ return; } if(isStageLocked()){ e.preventDefault(); return; } bringToFront(node); start={x:e.clientX,y:e.clientY}; orig={x:parseFloat(node.dataset.x||'0'), y:parseFloat(node.dataset.y||'0')}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); e.preventDefault(); selectNode(node); });
-      function move(e){ if(!start || isStageLocked()) return; var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(e.clientX-start.x)/zoom, dy=(e.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); }
+      function move(e){ if(!start || isStageLocked()) return; const scale = getSvgScale(); const dx=(e.clientX-start.x)*scale, dy=(e.clientY-start.y)*scale; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); }
         function up(e){ start=null; document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); if(e && typeof e.clientX==='number' && !isStageLocked()){ autoConnectOnPoint(node, e.clientX, e.clientY); } saveAll(); snapshotStage(); }
       // rename on double click (desktop only - avoid on mobile to prevent keyboard popup after drag)
       node.addEventListener('dblclick',()=>{
@@ -11436,7 +11541,7 @@
             if(!lpActive && lpTimer){ const dx=Math.abs(t.clientX-start.x), dy=Math.abs(t.clientY-start.y); if(dx>8 || dy>8){ clearTimeout(lpTimer); lpTimer=null; }
             }
             if(lpActive && lpLine){ const svg=node.closest('svg'); if(svg){ const pt=svg.createSVGPoint(); pt.x=t.clientX; pt.y=t.clientY; const p=pt.matrixTransform(svg.getScreenCTM().inverse()); lpLine.setAttribute('x2',p.x); lpLine.setAttribute('y2',p.y); } e.preventDefault(); break; }
-            var zEl=document.getElementById('stageZoom'); const zoom=parseFloat((zEl&&zEl.value)||'1'); const dx=(t.clientX-start.x)/zoom, dy=(t.clientY-start.y)/zoom; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); e.preventDefault(); break; } }
+            const scale = getSvgScale(); const dx=(t.clientX-start.x)*scale, dy=(t.clientY-start.y)*scale; node.dataset.x=String((orig.x||0)+dx); node.dataset.y=String((orig.y||0)+dy); applyTransform(node); const svg=node.closest('svg'); if(svg && svg.id==='stageSvgFull'){ refreshCables(svg); } queueSave(); e.preventDefault(); break; } }
       }, {passive:false});
       node.addEventListener('touchend',e=>{
         if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; }
@@ -11586,9 +11691,13 @@
       
       const labelMove=(e)=>{
         if(!labelStart) return;
-        const zoom=parseFloat(document.getElementById('stageZoom')?.value||'1');
-        const dx=(e.clientX-labelStart.x)/zoom;
-        const dy=(e.clientY-labelStart.y)/zoom;
+        // Calculate scale factor for screen-to-SVG coordinate conversion
+        const svg = node.closest('svg');
+        const rect = svg?.getBoundingClientRect();
+        const viewBoxW = 1500;
+        const scale = viewBoxW / (rect?.width || 1000);
+        const dx=(e.clientX-labelStart.x)*scale;
+        const dy=(e.clientY-labelStart.y)*scale;
         node.dataset.labelOffsetX=String(clampOffset((labelOrig.x||0)+dx));
         node.dataset.labelOffsetY=String(clampOffset((labelOrig.y||0)+dy));
         applyLabelTransform(node);
@@ -11619,9 +11728,13 @@
         if(labelTouchId==null) return;
         for(const t of e.touches){
           if(t.identifier===labelTouchId){
-            const zoom=parseFloat(document.getElementById('stageZoom')?.value||'1');
-            const dx=(t.clientX-labelStart.x)/zoom;
-            const dy=(t.clientY-labelStart.y)/zoom;
+            // Calculate scale factor for screen-to-SVG coordinate conversion
+            const svg = node.closest('svg');
+            const rect = svg?.getBoundingClientRect();
+            const viewBoxW = 1500;
+            const scale = viewBoxW / (rect?.width || 1000);
+            const dx=(t.clientX-labelStart.x)*scale;
+            const dy=(t.clientY-labelStart.y)*scale;
             node.dataset.labelOffsetX=String(clampOffset((labelOrig.x||0)+dx));
             node.dataset.labelOffsetY=String(clampOffset((labelOrig.y||0)+dy));
             applyLabelTransform(node);
@@ -12630,53 +12743,147 @@
         if(full && !full.classList.contains('bw')) full.classList.add('bw');
         const bg=full && full.querySelector('rect.stage-bg');
         if(bg){ bg.setAttribute('fill','#fff'); bg.setAttribute('stroke','#000'); bg.setAttribute('stroke-width','2'); }
-        // initialize resize handles (corner-only interaction) and apply stored size
+        
+        // STAGE SIZE PERSISTENCE: Restore dimensions from stored SVG data attributes
+        // The viewBox MATCHES the stage dimensions (stageW x stageH).
+        // When the stage is resized, elements keep their absolute coordinates but the
+        // viewable area changes. Elements may be clipped if outside the new bounds.
         (function initStageResize(){
           const frame=document.getElementById('stageFrame'); if(!frame||!full) return;
-          // default size if not previously set
-          const prevW=parseInt(full.style.width||'0',10); const prevH=parseInt(full.style.height||'0',10);
-            if(prevW>0 && prevH>0){ frame.style.width=prevW+'px'; frame.style.height=prevH+'px'; }
-            else { frame.style.width='1000px'; frame.style.height='600px'; full.style.width='1000px'; full.style.height='600px'; }
+          
+          // Stage dimension constants
+          const MIN_SIZE = 300;
+          const MAX_SIZE = 1500;
+          const DEFAULT_W = 1000;
+          const DEFAULT_H = 600;
+          
+          // Restore size: Priority is 1) stored SVG data attributes, 2) defaults
+          let stageW = parseInt(store?.dataset.stageWidth || full.dataset.stageWidth || '0', 10);
+          let stageH = parseInt(store?.dataset.stageHeight || full.dataset.stageHeight || '0', 10);
+          
+          // Enforce limits or use defaults
+          if(stageW < MIN_SIZE || stageW > MAX_SIZE) stageW = DEFAULT_W;
+          if(stageH < MIN_SIZE || stageH > MAX_SIZE) stageH = DEFAULT_H;
+          
+          // Apply restored dimensions to frame, SVG, and viewBox
+          function applyStageDimensions(w, h){
+            // Clamp to limits
+            w = Math.max(MIN_SIZE, Math.min(MAX_SIZE, w));
+            h = Math.max(MIN_SIZE, Math.min(MAX_SIZE, h));
+            
+            // Update frame container
+            frame.style.width = w + 'px';
+            frame.style.height = h + 'px';
+            
+            // Update SVG - viewBox matches dimensions for 1:1 coordinate mapping
+            full.setAttribute('width', w);
+            full.setAttribute('height', h);
+            full.setAttribute('viewBox', `0 0 ${w} ${h}`);
+            full.dataset.stageWidth = String(w);
+            full.dataset.stageHeight = String(h);
+            
+            // Update background rect to match
+            const bgRect = full.querySelector('rect.stage-bg');
+            if(bgRect){
+              bgRect.setAttribute('x', '1');
+              bgRect.setAttribute('y', '1');
+              bgRect.setAttribute('width', String(w - 2));
+              bgRect.setAttribute('height', String(h - 2));
+            }
+            
+            // Update title position
+            const titleEl = full.querySelector('#stageTitleFull');
+            if(titleEl){
+              titleEl.setAttribute('x', String(Math.round(w / 2)));
+            }
+          }
+          
+          // Apply initial dimensions
+          applyStageDimensions(stageW, stageH);
+          
+          // Resize handles - only change canvas size, NEVER scale elements
           const handles=frame.querySelectorAll('.stage-handle');
           handles.forEach(h=>{
             h.addEventListener('mousedown',e=>{
               if(e.button!==0) return; e.preventDefault();
-              const startX=e.clientX, startY=e.clientY; const startW=frame.offsetWidth, startH=frame.offsetHeight; const pos=h.dataset.handle;
+              const startX=e.clientX, startY=e.clientY;
+              const startW=parseInt(full.dataset.stageWidth || DEFAULT_W, 10);
+              const startH=parseInt(full.dataset.stageHeight || DEFAULT_H, 10);
+              const pos=h.dataset.handle;
+              
               function move(ev){
-                let dx=ev.clientX-startX, dy=ev.clientY-startY; let newW=startW, newH=startH;
+                let dx=ev.clientX-startX, dy=ev.clientY-startY;
+                let newW=startW, newH=startH;
                 if(pos==='tr'){ newW=startW+dx; newH=startH-dy; }
                 if(pos==='tl'){ newW=startW-dx; newH=startH-dy; }
                 if(pos==='br'){ newW=startW+dx; newH=startH+dy; }
                 if(pos==='bl'){ newW=startW-dx; newH=startH+dy; }
-                newW=Math.max(600,newW); newH=Math.max(360,newH);
-                frame.style.width=newW+'px'; frame.style.height=newH+'px'; 
-                full.style.width=newW+'px'; full.style.height=newH+'px';
-                full.setAttribute('viewBox', '0 0 '+newW+' '+newH);
+                applyStageDimensions(newW, newH);
               }
-              function up(){ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); saveAll(); }
+              function up(){ 
+                document.removeEventListener('mousemove',move); 
+                document.removeEventListener('mouseup',up);
+                // Sync to stored SVG and save
+                syncStageToStore();
+                saveAll(); 
+              }
               document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
             });
+            
             // Touch support for handles
             h.addEventListener('touchstart',e=>{
               e.preventDefault(); const t=e.touches[0]; if(!t) return;
-              const startX=t.clientX, startY=t.clientY; const startW=frame.offsetWidth, startH=frame.offsetHeight; const pos=h.dataset.handle;
+              const startX=t.clientX, startY=t.clientY;
+              const startW=parseInt(full.dataset.stageWidth || DEFAULT_W, 10);
+              const startH=parseInt(full.dataset.stageHeight || DEFAULT_H, 10);
+              const pos=h.dataset.handle;
+              
               function touchMove(ev){
                 const tt=ev.touches[0]; if(!tt) return;
-                let dx=tt.clientX-startX, dy=tt.clientY-startY; let newW=startW, newH=startH;
+                let dx=tt.clientX-startX, dy=tt.clientY-startY;
+                let newW=startW, newH=startH;
                 if(pos==='tr'){ newW=startW+dx; newH=startH-dy; }
                 if(pos==='tl'){ newW=startW-dx; newH=startH-dy; }
                 if(pos==='br'){ newW=startW+dx; newH=startH+dy; }
                 if(pos==='bl'){ newW=startW-dx; newH=startH+dy; }
-                newW=Math.max(600,newW); newH=Math.max(360,newH);
-                frame.style.width=newW+'px'; frame.style.height=newH+'px'; 
-                full.style.width=newW+'px'; full.style.height=newH+'px';
-                full.setAttribute('viewBox', '0 0 '+newW+' '+newH);
+                applyStageDimensions(newW, newH);
                 ev.preventDefault();
               }
-              function touchEnd(){ document.removeEventListener('touchmove',touchMove); document.removeEventListener('touchend',touchEnd); saveAll(); }
+              function touchEnd(){ 
+                document.removeEventListener('touchmove',touchMove); 
+                document.removeEventListener('touchend',touchEnd);
+                syncStageToStore();
+                saveAll(); 
+              }
               document.addEventListener('touchmove',touchMove,{passive:false}); document.addEventListener('touchend',touchEnd);
             },{passive:false});
           });
+          
+          // Helper to sync full editor SVG to stored SVG (preserving dimensions)
+          window.syncStageToStore = function(){
+            const fullSvg = document.getElementById('stageSvgFull');
+            const storeSvg = document.getElementById('stageSvg');
+            if(!fullSvg || !storeSvg) return;
+            
+            // Copy dimension data attributes and viewBox
+            const storeW = parseInt(fullSvg.dataset.stageWidth || '1000', 10);
+            const storeH = parseInt(fullSvg.dataset.stageHeight || '600', 10);
+            storeSvg.dataset.stageWidth = String(storeW);
+            storeSvg.dataset.stageHeight = String(storeH);
+            storeSvg.setAttribute('viewBox', `0 0 ${storeW} ${storeH}`);
+            
+            // Update store's background rect
+            let storeBg = storeSvg.querySelector('rect.stage-bg');
+            if(!storeBg){
+              storeBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+              storeBg.classList.add('stage-bg');
+              storeSvg.insertBefore(storeBg, storeSvg.firstChild);
+            }
+            storeBg.setAttribute('x', '1');
+            storeBg.setAttribute('y', '1');
+            storeBg.setAttribute('width', String(storeW - 2));
+            storeBg.setAttribute('height', String(storeH - 2));
+          };
         })();
         if(!full){ throw new Error('Stage SVG not found'); }
         // reset children (keep first two nodes: bg rect and title)
@@ -12750,28 +12957,65 @@
 function closeStageModal(){
   const full=document.getElementById('stageSvgFull');
   let small=document.getElementById('stageSvg');
+  
   if(full){
+    // First, sync dimensions from full editor to store
+    if(typeof syncStageToStore === 'function'){
+      syncStageToStore();
+    }
+    
     if(!small){
       const store=document.getElementById('stageStore');
       if(store){ small=full.cloneNode(true); small.id='stageSvg'; small.classList.add('bw'); store.appendChild(small); }
     }
     if(small){
+      // Sync dimensions
+      small.dataset.stageWidth = full.dataset.stageWidth;
+      small.dataset.stageHeight = full.dataset.stageHeight;
+      small.setAttribute('viewBox', '0 0 1500 1500');
+      
+      // Update background rect in small SVG
+      const stageW = parseInt(full.dataset.stageWidth || '1000', 10);
+      const stageH = parseInt(full.dataset.stageHeight || '600', 10);
+      let bgRect = small.querySelector('rect.stage-bg');
+      if(bgRect){
+        bgRect.setAttribute('x', '1');
+        bgRect.setAttribute('y', '1');
+        bgRect.setAttribute('width', String(stageW - 2));
+        bgRect.setAttribute('height', String(stageH - 2));
+        bgRect.setAttribute('fill','#fff');
+        bgRect.setAttribute('stroke','#000');
+        bgRect.setAttribute('stroke-width','2');
+      }
+      
+      // Copy draggables
       Array.from(small.querySelectorAll('g[data-draggable]')).forEach(n=> n.remove());
       Array.from(full.querySelectorAll('g[data-draggable]')).forEach(g=> small.appendChild(g.cloneNode(true)));
       Array.from(small.querySelectorAll('g[data-draggable]')).forEach(enableSvgDrag);
       Array.from(small.querySelectorAll('g[data-draggable]')).forEach(gr=>{ const lbl=findText(gr); if(lbl){ lbl.style.display = gr.dataset.showLabel==='1' ? 'block':'none'; } });
       ensureStageMarkers(small); refreshCables(small);
+      
+      // Sync title
       const fullTitle=document.getElementById('stageTitleFull');
       let smallTitle=document.getElementById('stageTitle');
       if(!smallTitle && small){ smallTitle=small.querySelector('#stageTitle'); }
       if(fullTitle){
-        if(smallTitle){ smallTitle.textContent=fullTitle.textContent; }
-        else {
+        if(smallTitle){ 
+          smallTitle.textContent=fullTitle.textContent;
+          // Update title position based on stage width
+          smallTitle.setAttribute('x', String(Math.round(stageW / 2)));
+        } else {
           const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-          t.setAttribute('id','stageTitle'); t.setAttribute('x','500'); t.setAttribute('y','36'); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','22'); t.setAttribute('font-weight','bold'); t.textContent=fullTitle.textContent; small.appendChild(t);
+          t.setAttribute('id','stageTitle'); 
+          t.setAttribute('x', String(Math.round(stageW / 2))); 
+          t.setAttribute('y','36'); 
+          t.setAttribute('text-anchor','middle'); 
+          t.setAttribute('font-size','22'); 
+          t.setAttribute('font-weight','bold'); 
+          t.textContent=fullTitle.textContent; 
+          small.appendChild(t);
         }
       }
-      const bg=small.querySelector('rect.stage-bg'); if(bg){ bg.setAttribute('fill','#fff'); bg.setAttribute('stroke','#000'); bg.setAttribute('stroke-width','2'); }
     }
   }
   
@@ -12903,14 +13147,46 @@ function closeStageModal(){
     function loadStagePreset(preset){
       if(!preset || !preset.stage) return;
       const svg = document.getElementById('stageSvgFull');
+      const frame = document.getElementById('stageFrame');
       if(!svg) return;
-      const parent = svg.parentNode;
+      
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = preset.stage;
-      const newSvg = tempDiv.querySelector('svg');
-      if(!newSvg) return;
-      newSvg.id = 'stageSvgFull';
-      parent.replaceChild(newSvg, svg);
+      const srcSvg = tempDiv.querySelector('svg');
+      if(!srcSvg) return;
+      
+      // Get dimensions from preset
+      const stageW = parseInt(srcSvg.dataset.stageWidth || '1000', 10);
+      const stageH = parseInt(srcSvg.dataset.stageHeight || '600', 10);
+      
+      // Apply dimensions to current SVG
+      svg.dataset.stageWidth = String(stageW);
+      svg.dataset.stageHeight = String(stageH);
+      svg.setAttribute('width', stageW);
+      svg.setAttribute('height', stageH);
+      svg.setAttribute('viewBox', '0 0 1500 1500');
+      
+      // Update frame
+      if(frame){
+        frame.style.width = stageW + 'px';
+        frame.style.height = stageH + 'px';
+      }
+      
+      // Update background rect
+      let bgRect = svg.querySelector('rect.stage-bg');
+      if(bgRect){
+        bgRect.setAttribute('x', '1');
+        bgRect.setAttribute('y', '1');
+        bgRect.setAttribute('width', String(stageW - 2));
+        bgRect.setAttribute('height', String(stageH - 2));
+      }
+      
+      // Clear and copy draggables
+      svg.querySelectorAll('g[data-draggable]').forEach(n => n.remove());
+      srcSvg.querySelectorAll('g[data-draggable]').forEach(g => {
+        svg.appendChild(g.cloneNode(true));
+      });
+      
       if(preset.gearSummary !== undefined){
         gearSummary = preset.gearSummary;
         const gearEl = document.getElementById('gear');
@@ -13571,9 +13847,19 @@ function closeStageModal(){
       const src=getStageSource();
       // Clear any selection highlight before export so no blue glow prints
       document.querySelectorAll('g[data-draggable].selected').forEach(el=> el.classList.remove('selected'));
+      
+      // Create main container for centered layout
+      const container = document.createElement('div');
+      container.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100%;padding:0.3in 0;gap:0.25in;';
+      
+      // Channel table section
       const legend=document.createElement('table'); legend.className='tech-table';
+      legend.style.cssText = 'margin:0 auto;';
       const thead=document.createElement('thead'); thead.innerHTML='<tr><th>Channel</th><th>Chain</th></tr>';
       const tbody=document.createElement('tbody');
+      
+      let unconnectedRows = [];
+      
       if(src){
         const rows=Array.from(src.querySelectorAll('g[data-draggable]'));
         const isStereo=n=> (n.dataset.key||'')==='stereoPair';
@@ -13594,14 +13880,10 @@ function closeStageModal(){
           const root=findRoot(end); chainCell.textContent = buildChain(root);
           tr.append(chCell, chainCell); tbody.appendChild(tr);
         }
-      }
-      legend.append(thead,tbody);
-      // Add unconnected items section to print legend
-      if(src){
-        const rows=Array.from(src.querySelectorAll('g[data-draggable]'));
-        const typeOf=n=> n.dataset.type||'other';
+        
+        // Collect unconnected items for bottom section
         const UTILITY_TYPES=['label','arrow'];
-        const unconnectedRows = rows.filter(g=>{
+        unconnectedRows = rows.filter(g=>{
           const t=typeOf(g);
           if(UTILITY_TYPES.includes(t)) return false;
           const hasRouteTo = (g.dataset.routeTo||'').trim().length>0;
@@ -13609,59 +13891,113 @@ function closeStageModal(){
           const routedTo = rows.some(r=> (r.dataset.routeTo===g.dataset.id) && effectiveTargets(r).includes(t));
           return !hasRouteTo && !hasChannel && !routedTo;
         });
-        if(unconnectedRows.length>0){
-          const dividerRow=document.createElement('tr');
-          const dividerCell=document.createElement('td'); dividerCell.colSpan=2;
-          dividerCell.style.cssText='border-top:2px solid #000;padding-top:8px;padding-bottom:4px;font-weight:600;font-size:11pt';
-          dividerCell.textContent='Unconnected Items (acoustic/props): ';
-          const itemNames = unconnectedRows.map(g=>{
-            const tEl=g.querySelector('text[data-role="label"]')||g.querySelector('text');
-            const key=g.dataset.key||'';
-            const icon=ICON_ITEMS.find(x=>x.key===key);
-            return (tEl && tEl.textContent) || (icon?icon.label:'Item');
-          });
-          const boldSpan=document.createElement('span');
-          boldSpan.style.fontWeight='bold';
-          boldSpan.textContent=itemNames.join(', ');
-          dividerCell.appendChild(boldSpan);
-          dividerRow.appendChild(dividerCell);
-          tbody.appendChild(dividerRow);
-        }
       }
-      stageOut.appendChild(legend);
+      legend.append(thead,tbody);
+      container.appendChild(legend);
+      
+      // Stage SVG section - centered
       if(src){
+        const stageWrapper = document.createElement('div');
+        stageWrapper.style.cssText = 'display:flex;justify-content:center;align-items:center;flex:1;width:100%;';
+        
         const clone=src.cloneNode(true); 
         clone.removeAttribute('id'); 
+        clone.classList.add('bw'); // Ensure bw class for styling
         clone.setAttribute('preserveAspectRatio','xMidYMid meet');
-        // Ensure viewBox is set properly for consistent scaling
-        if(!clone.hasAttribute('viewBox')){
-          const vb=src.viewBox && src.viewBox.baseVal;
-          if(vb) clone.setAttribute('viewBox', `0 0 ${vb.width} ${vb.height}`);
-          else clone.setAttribute('viewBox', '0 0 1500 900');
+        
+        // Get actual stage dimensions from data attributes
+        const stageW = parseInt(src.dataset.stageWidth || '1000', 10);
+        const stageH = parseInt(src.dataset.stageHeight || '600', 10);
+        
+        // viewBox matches stage dimensions - same coordinate space as editor
+        clone.setAttribute('viewBox', `0 0 ${stageW} ${stageH}`);
+        
+        // Add clipPath to hide elements outside stage bounds
+        let defs = clone.querySelector('defs');
+        if(!defs){
+          defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+          clone.insertBefore(defs, clone.firstChild);
         }
-        clone.style.width='100%'; 
-        clone.style.height='auto'; 
-        clone.style.maxHeight='6.5in';
-        clone.style.maxWidth='100%';
-        clone.style.display='block';
-        try{ 
-          const vb=clone.viewBox && clone.viewBox.baseVal; 
-          if(vb){ 
-            const br=document.createElementNS('http://www.w3.org/2000/svg','rect'); 
-            br.setAttribute('x','1.5'); 
-            br.setAttribute('y','1.5'); 
-            br.setAttribute('width', String(vb.width-3)); 
-            br.setAttribute('height', String(vb.height-3)); 
-            br.setAttribute('fill','none'); 
-            br.setAttribute('stroke','#000'); 
-            br.setAttribute('stroke-width','3'); 
-            br.setAttribute('pointer-events','none'); 
-            br.setAttribute('data-print-border','1'); 
-            clone.appendChild(br); 
-          } 
-        }catch(_){ }
-        stageOut.appendChild(clone);
+        const clipId = 'stageClipPrint';
+        let clipPath = defs.querySelector('#' + clipId);
+        if(!clipPath){
+          clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+          clipPath.setAttribute('id', clipId);
+          const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          clipRect.setAttribute('x', '0');
+          clipRect.setAttribute('y', '0');
+          clipRect.setAttribute('width', String(stageW));
+          clipRect.setAttribute('height', String(stageH));
+          clipPath.appendChild(clipRect);
+          defs.appendChild(clipPath);
+        }
+        
+        // Wrap all content (except defs) in a clipped group
+        const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        wrapper.setAttribute('clip-path', `url(#${clipId})`);
+        const children = Array.from(clone.childNodes);
+        children.forEach(child => {
+          if(child.nodeName.toLowerCase() !== 'defs'){
+            wrapper.appendChild(child);
+          }
+        });
+        clone.appendChild(wrapper);
+        
+        // Ensure background rect exists with proper styling for print
+        let bgRect = wrapper.querySelector('rect.stage-bg');
+        if(!bgRect){
+          bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          bgRect.classList.add('stage-bg');
+          wrapper.insertBefore(bgRect, wrapper.firstChild);
+        }
+        bgRect.setAttribute('x', '2');
+        bgRect.setAttribute('y', '2');
+        bgRect.setAttribute('width', String(stageW - 4));
+        bgRect.setAttribute('height', String(stageH - 4));
+        bgRect.setAttribute('fill', '#ffffff');
+        bgRect.setAttribute('stroke', '#000000');
+        bgRect.setAttribute('stroke-width', '3');
+        
+        // Calculate print size maintaining aspect ratio
+        const maxPrintWidth = 7; // inches
+        const maxPrintHeight = 5.5; // inches (smaller to leave room for other sections)
+        const aspectRatio = stageW / stageH;
+        
+        let displayW, displayH;
+        if(aspectRatio > (maxPrintWidth / maxPrintHeight)){
+          displayW = maxPrintWidth;
+          displayH = maxPrintWidth / aspectRatio;
+        } else {
+          displayH = maxPrintHeight;
+          displayW = maxPrintHeight * aspectRatio;
+        }
+        
+        clone.style.width = displayW + 'in'; 
+        clone.style.height = displayH + 'in';
+        clone.style.maxWidth = maxPrintWidth + 'in';
+        clone.style.maxHeight = maxPrintHeight + 'in';
+        clone.style.display = 'block';
+        clone.style.margin = '0 auto';
+        
+        stageWrapper.appendChild(clone);
+        container.appendChild(stageWrapper);
       }
+      
+      // Unconnected items section at bottom
+      if(unconnectedRows.length > 0){
+        const unconnectedDiv = document.createElement('div');
+        unconnectedDiv.style.cssText = 'width:100%;text-align:center;padding:0.15in 0.5in;border-top:1px solid #ccc;margin-top:auto;font-size:10pt;';
+        const itemNames = unconnectedRows.map(g=>{
+          const tEl=g.querySelector('text[data-role="label"]')||g.querySelector('text');
+          const key=g.dataset.key||'';
+          const icon=ICON_ITEMS.find(x=>x.key===key);
+          return (tEl && tEl.textContent) || (icon?icon.label:'Item');
+        });
+        unconnectedDiv.innerHTML = '<span style="color:#92400e;font-weight:600;">Unconnected Items (acoustic/props):</span> <strong>' + itemNames.join(', ') + '</strong>';
+        container.appendChild(unconnectedDiv);
+      }
+      
+      stageOut.appendChild(container);
       return stageOut;
     }
     async function inlineStageImages(svg){
