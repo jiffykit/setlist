@@ -855,6 +855,16 @@
   @media print{
     .date-header{display:none}
   }
+  /* Keep calendar strip pinned to top across all tabs */
+  .date-header{
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    background: #0f172a;
+    padding: 8px 8px 12px 50px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .date-boxes-container{ position: relative; }
   </style>
 </head>
 <body>
@@ -4044,21 +4054,31 @@
           customColInputs[cc.key] = custInput;
         });
         
-        // Mood submenu (hoverable)
-        const moodEmojis = {upbeat:'⚡',happy:'😊',energetic:'🔥',mellow:'😌',sad:'😢'};
-        let topMood = '';
-        if(s.isUpbeat) topMood = '⚡';
-        else if(s.isHappy) topMood = '😊';
-        else if(s.isEnergetic) topMood = '🔥';
-        else if(s.isMellow) topMood = '😌';
-        else if(s.isSad) topMood = '😢';
-        else if(s.customMoods && s.customMoods.length>0) topMood = '🎵';
-        const moodBtn=document.createElement('button'); moodBtn.textContent=topMood||'♫'; moodBtn.type='button'; moodBtn.title='Moods'; moodBtn.style.cssText='padding:2px 6px;border:1px solid #d1d5db;border-radius:3px;background:#fff;cursor:pointer;position:relative;font-size:14px;width:28px;height:24px';
+        // Mood display: show first mood text (no emojis)
+        const moodNames = {upbeat:'Upbeat',happy:'Happy',energetic:'Energetic',mellow:'Mellow',sad:'Sad'};
+        let topMoodName = '';
+        if(s.isUpbeat) topMoodName = moodNames.upbeat;
+        else if(s.isHappy) topMoodName = moodNames.happy;
+        else if(s.isEnergetic) topMoodName = moodNames.energetic;
+        else if(s.isMellow) topMoodName = moodNames.mellow;
+        else if(s.isSad) topMoodName = moodNames.sad;
+        else if(s.customMoods && s.customMoods.length>0) topMoodName = (s.customMoods[0]||'').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+        const moodBtn=document.createElement('button'); moodBtn.textContent=topMoodName||'Set Mood'; moodBtn.type='button'; moodBtn.title='Click to set mood'; moodBtn.style.cssText='padding:2px 6px;border:1px solid #d1d5db;border-radius:3px;background:#fff;cursor:pointer;position:relative;font-size:12px;min-width:72px;height:24px;text-align:center';
         const moodMenu=document.createElement('div'); moodMenu.style.cssText='display:none;position:absolute;z-index:100;background:#fff;border:1px solid #d1d5db;border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:140px;top:100%;left:0;margin-top:2px;text-align:left';
-        const moodChecks=['upbeat','happy','energetic','mellow','sad'].map(m=>{ const lbl=document.createElement('label'); lbl.style.cssText='display:block;margin:4px 0;white-space:nowrap;text-align:left'; const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=s['is'+m.charAt(0).toUpperCase()+m.slice(1)]; chk.addEventListener('change',()=>{ s['is'+m.charAt(0).toUpperCase()+m.slice(1)]=chk.checked; saveAll(); }); lbl.appendChild(chk); lbl.appendChild(document.createTextNode(' '+m.charAt(0).toUpperCase()+m.slice(1))); return lbl; });
+        const updateMoodButton = ()=>{
+          let name='';
+          if(s.isUpbeat) name=moodNames.upbeat;
+          else if(s.isHappy) name=moodNames.happy;
+          else if(s.isEnergetic) name=moodNames.energetic;
+          else if(s.isMellow) name=moodNames.mellow;
+          else if(s.isSad) name=moodNames.sad;
+          else if(s.customMoods && s.customMoods.length>0) name=(s.customMoods[0]||'').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+          moodBtn.textContent = name || 'Set Mood';
+        };
+        const moodChecks=['upbeat','happy','energetic','mellow','sad'].map(m=>{ const lbl=document.createElement('label'); lbl.style.cssText='display:block;margin:4px 0;white-space:nowrap;text-align:left'; const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=s['is'+m.charAt(0).toUpperCase()+m.slice(1)]; chk.addEventListener('change',()=>{ s['is'+m.charAt(0).toUpperCase()+m.slice(1)]=chk.checked; saveAll(); updateMoodButton(); }); lbl.appendChild(chk); lbl.appendChild(document.createTextNode(' '+m.charAt(0).toUpperCase()+m.slice(1))); return lbl; });
         moodChecks.forEach(c=>moodMenu.appendChild(c));
         // Add custom moods
-        (gig.customMoods||[]).forEach(m=>{ const lbl=document.createElement('label'); lbl.style.cssText='display:block;margin:4px 0;white-space:nowrap;text-align:left'; const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=(s.customMoods||[]).includes(m); chk.addEventListener('change',()=>{ if(!s.customMoods) s.customMoods=[]; const idx=s.customMoods.indexOf(m); if(chk.checked && idx===-1){ s.customMoods.push(m); } else if(!chk.checked && idx>-1){ s.customMoods.splice(idx,1); } saveAll(); }); lbl.appendChild(chk); lbl.appendChild(document.createTextNode(' '+m.charAt(0).toUpperCase()+m.slice(1))); moodMenu.appendChild(lbl); });
+        (gig.customMoods||[]).forEach(m=>{ const lbl=document.createElement('label'); lbl.style.cssText='display:block;margin:4px 0;white-space:nowrap;text-align:left'; const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=(s.customMoods||[]).includes(m); chk.addEventListener('change',()=>{ if(!s.customMoods) s.customMoods=[]; const idx=s.customMoods.indexOf(m); if(chk.checked && idx===-1){ s.customMoods.push(m); } else if(!chk.checked && idx>-1){ s.customMoods.splice(idx,1); } saveAll(); updateMoodButton(); }); lbl.appendChild(chk); lbl.appendChild(document.createTextNode(' '+m.charAt(0).toUpperCase()+m.slice(1))); moodMenu.appendChild(lbl); });
         // Add "+ Add Mood" button at bottom of mood menu
         const addMoodDiv=document.createElement('div'); addMoodDiv.style.cssText='margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb';
         const addMoodBtn=document.createElement('button'); addMoodBtn.type='button'; addMoodBtn.textContent='+ Add Mood'; addMoodBtn.style.cssText='width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;font-size:12px;font-weight:500;color:#0f172a';
@@ -4097,10 +4117,31 @@
         addMoodDiv.appendChild(addMoodBtn);
         moodMenu.appendChild(addMoodDiv);
         moodBtn.appendChild(moodMenu);
-        moodBtn.addEventListener('mouseenter',()=>{ moodMenu.style.display='block'; });
-        moodBtn.addEventListener('mouseleave',()=>{ moodMenu.style.display='none'; });
-        moodMenu.addEventListener('mouseenter',()=>{ moodMenu.style.display='block'; });
-        moodMenu.addEventListener('mouseleave',()=>{ moodMenu.style.display='none'; });
+        
+        // Store reference to this specific menu for cleanup
+        let currentlyOpenMenu = moodMenu;
+        
+        // Click to toggle mood popup (not hover)
+        moodBtn.addEventListener('click',(e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Close all other mood menus first
+          document.querySelectorAll('[data-mood-menu]').forEach(menu => {
+            if(menu !== moodMenu) menu.style.display = 'none';
+          });
+          
+          const isOpen = moodMenu.style.display === 'block';
+          moodMenu.style.display = isOpen ? 'none' : 'block';
+        });
+        
+        // Mark this as a mood menu for easy identification
+        moodMenu.setAttribute('data-mood-menu', 'true');
+        
+        // Prevent menu from closing when clicking inside it
+        moodMenu.addEventListener('click',(e)=>{
+          e.stopPropagation();
+        });
         // Lyrics / chords quick edit (collapsed textarea)
         const lyricsWrap=document.createElement('div'); lyricsWrap.style.cssText='display:flex;flex-direction:row;gap:6px;align-items:center;flex:1 1 auto;min-width:100px;max-width:180px';
         const lyrBtn=document.createElement('button'); lyrBtn.textContent='Lyrics'; lyrBtn.className='btn'; lyrBtn.type='button'; lyrBtn.style.cssText='padding:2px 6px;font-size:10px;border-radius:3px;flex-shrink:0;background:#3b82f6;color:#f9fafb;border-color:#2563eb'; lyrBtn.title='Edit lyrics / chords for this song';
@@ -4239,6 +4280,21 @@
         list.appendChild(audioBox);
       });
       try{ renderSongPool(); }catch(_){ }
+      
+      // Add single global click handler to close all mood menus when clicking outside
+      // Remove any existing handler first to avoid duplicates
+      if(window._moodMenuGlobalHandler){
+        document.removeEventListener('click', window._moodMenuGlobalHandler, true);
+      }
+      window._moodMenuGlobalHandler = (e) => {
+        const clickedMoodButton = e.target.closest('[data-mood-menu]')?.previousElementSibling;
+        if(!clickedMoodButton || clickedMoodButton.tagName !== 'BUTTON'){
+          document.querySelectorAll('[data-mood-menu]').forEach(menu => {
+            menu.style.display = 'none';
+          });
+        }
+      };
+      document.addEventListener('click', window._moodMenuGlobalHandler, true);
     }
 
     // Generate fresh set each click (ignores current setlist)
@@ -15864,6 +15920,17 @@ function closeStageModal(){
             updateDropSpinner(`No supported files in ${droppedFiles.length} items.`);
             if(spinner){ spinner.style.display = 'none'; }
             return;
+          }
+
+          // If user dropped a single audio file, recommend using a folder for best experience
+          if(validFiles.length === 1){
+            const single = validFiles[0];
+            const isAudio = /\.(mp3|wav|flac|m4a|aac|ogg|wma)$/i.test(single.name);
+            if(isAudio){
+              const msg = 'Tip: For optimal performance, keep all your backing tracks and audio files inside one folder to ARM ALL tracks in LIVE mode.';
+              try { alert(msg); } catch(_) {}
+              updateDropSpinner(msg);
+            }
           }
           
           // Create a DataTransfer to simulate file input
