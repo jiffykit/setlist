@@ -14971,6 +14971,19 @@ function closeStageModal(){
       function detectCapo(str){ const m=str.match(/capo\s*(\d{1,2})/i); if(m){ const v=parseInt(m[1],10); if(Number.isInteger(v) && v>=0 && v<=24) return v; } return 0; }
       function detectKey(str){ // first standalone musical key token
         const m=str.match(/\b([A-G](?:#|b)?m?(?:aj|in|ajor|inor)?)\b/i); return m? m[1] : ''; }
+      // Validate if a title looks legitimate (not garbage)
+      function isValidTitle(title){
+        if(!title || title.length < 2) return false;
+        // Reject if mostly numbers or special characters
+        const alphaCount = (title.match(/[a-zA-Z]/g) || []).length;
+        if(alphaCount < 2) return false;
+        // Reject if too many consecutive non-alphabetic chars (like "98y9ng9ggg98higug")
+        if(/[^a-zA-Z]{5,}/.test(title)) return false;
+        // Reject if ratio of letters to total chars is too low
+        const ratio = alphaCount / title.length;
+        if(ratio < 0.4) return false;
+        return true;
+      }
       function parseSongLines(text){
         const out=[]; const lines=text.split(/\r?\n/);
         for(let raw of lines){ 
@@ -15020,6 +15033,9 @@ function closeStageModal(){
           // Skip if title is too short or just a key/number
           if(title.length < 2) continue;
           if(/^[A-G](?:#|b)?m?$/i.test(title)) continue;
+          
+          // Validate title is not garbage
+          if(!isValidTitle(title)) continue;
           
           if(title) out.push({title, key, capo, length:3.5, artist:'Original'}); 
         }
@@ -15354,6 +15370,12 @@ function closeStageModal(){
                 
                 if(!artist || artist.length < 2) artist = 'Original';
                 
+                // Validate title
+                if(!isValidTitle(title)){
+                  const fileName = f.name.replace(/\.[^.]+$/, '');
+                  title = fileName;
+                }
+                
                 // Get duration using HTML5 Audio API
                 const audio = new Audio();
                 const url = URL.createObjectURL(f);
@@ -15370,6 +15392,7 @@ function closeStageModal(){
                     key: '',
                     capo: 0,
                     bpm: 0,
+                    isCover: artist && artist.toLowerCase() !== 'original',
                     _audioFile: f,          // Keep reference to original audio file
                     audioFileName: f.name   // Store the filename
                   });
@@ -15385,6 +15408,7 @@ function closeStageModal(){
                     key: '',
                     capo: 0,
                     bpm: 0,
+                    isCover: artist && artist.toLowerCase() !== 'original',
                     _audioFile: f,          // Keep reference to original audio file
                     audioFileName: f.name   // Store the filename
                   });
@@ -15423,6 +15447,7 @@ function closeStageModal(){
                     key: '',
                     capo: 0,
                     bpm: 0,
+                    isCover: artist && artist.toLowerCase() !== 'original',
                     _audioFile: f,          // Keep reference to original audio file
                     audioFileName: f.name   // Store the filename
                   });
@@ -15437,6 +15462,7 @@ function closeStageModal(){
                     key: '',
                     capo: 0,
                     bpm: 0,
+                    isCover: artist && artist.toLowerCase() !== 'original',
                     _audioFile: f,          // Keep reference to original audio file
                     audioFileName: f.name   // Store the filename
                   });
