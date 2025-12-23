@@ -865,6 +865,41 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   }
   .date-boxes-container{ position: relative; }
+  
+  /* Toast notification */
+  .toast{
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    max-width: 400px;
+    z-index: 999;
+    font-size: 14px;
+    line-height: 1.4;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.show{
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .toast.info{
+    background: #3b82f6;
+  }
+  .toast.warning{
+    background: #f59e0b;
+    color: #1f2937;
+  }
+  .toast.error{
+    background: #dc2626;
+  }
   </style>
 </head>
 <body>
@@ -1185,22 +1220,68 @@
               <div id="tourNoSelection" style="color:#64748b;font-size:12px">Select or add a date</div>
               <div id="tourDateDetails" style="display:none">
                 <div style="display:flex;flex-direction:column;gap:6px">
-                  <input type="date" id="tourDate" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
-                  <input type="text" id="tourVenue" placeholder="Venue name" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
-                  <input type="text" id="tourAddress" placeholder="Address" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-                    <input type="time" id="tourLoadIn" placeholder="Load-In" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
-                    <input type="time" id="tourShowTime" placeholder="Show Time" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  <div>
+                    <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px">DATE</div>
+                    <input type="date" id="tourDate" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
                   </div>
-                  <input type="text" id="tourBand" placeholder="Band/Artist (click header to switch)" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
-                  <select id="tourSetlistSelect" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px">
-                    <option value="current">Use Current Setlist</option>
-                    <option value="custom">Custom Setlist</option>
-                  </select>
-                  <select id="tourStagePlotSelect" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px">
-                    <option value="current">Use Current Stage</option>
-                    <option value="custom">Custom Stage</option>
-                  </select>
+                  <div>
+                    <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px">VENUE</div>
+                    <input type="text" id="tourVenue" placeholder="Venue name" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  </div>
+                  <div>
+                    <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px">ADDRESS</div>
+                    <input type="text" id="tourAddress" placeholder="Address" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                        <div style="font-size:10px;font-weight:600;color:#64748b">LOAD-IN</div>
+                        <div id="tourLoadInLabel" style="font-size:10px;color:#111827"></div>
+                      </div>
+                      <input type="text" id="tourLoadIn" placeholder="e.g. 4, 4:30, 16:00" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                    </div>
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                        <div style="font-size:10px;font-weight:600;color:#64748b">SOUNDCHECK</div>
+                        <div id="tourSoundcheckLabel" style="font-size:10px;color:#111827"></div>
+                      </div>
+                      <input type="text" id="tourSoundcheck" placeholder="e.g. 5, 5:30, 17:30" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                        <div style="font-size:10px;font-weight:600;color:#64748b">DOORS / SHOW</div>
+                        <div id="tourShowTimeLabel" style="font-size:10px;color:#111827"></div>
+                      </div>
+                      <input type="text" id="tourShowTime" placeholder="e.g. 7, 7:30, 19:30" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                    </div>
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                        <div style="font-size:10px;font-weight:600;color:#64748b">LOAD-OUT</div>
+                        <div id="tourLoadOutLabel" style="font-size:10px;color:#111827"></div>
+                      </div>
+                      <input type="text" id="tourLoadOut" placeholder="e.g. 11, 23:00" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px">BAND / ARTIST</div>
+                    <input type="text" id="tourBand" placeholder="Click header to switch act" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px" />
+                  </div>
+                  <div>
+                    <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px">SETLIST</div>
+                    <select id="tourSetlistSelect" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px">
+                      <option value="current">Use Current Setlist</option>
+                      <option value="custom">Custom Setlist</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:2px">STAGE PLOT</div>
+                    <select id="tourStagePlotSelect" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px">
+                      <option value="current">Use Current Stage</option>
+                      <option value="custom">Custom Stage</option>
+                    </select>
+                  </div>
                   <div style="display:flex;gap:6px;margin-top:4px">
                     <button id="tourSaveDate" class="btn primary" style="flex:1;padding:6px;font-size:12px">Save</button>
                     <button id="tourDeleteDate" class="btn danger" style="padding:6px;font-size:12px">Delete</button>
@@ -1244,10 +1325,16 @@
                 <div style="margin-bottom:8px">
                   <div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:600">GIG DAY</div>
                   <div style="display:flex;gap:3px;flex-wrap:wrap">
-                    <div class="activity-chip" draggable="true" data-activity="rehearsal" data-duration="120" data-color="#8b5cf6" style="padding:4px 8px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:4px;font-size:10px;cursor:move">🎸 Rehearsal</div>
-                    <div class="activity-chip" draggable="true" data-activity="soundcheck" data-duration="60" data-color="#3b82f6" style="padding:4px 8px;background:#dbeafe;border:1px solid #93c5fd;border-radius:4px;font-size:10px;cursor:move">🎚️ Soundcheck</div>
-                    <div class="activity-chip" draggable="true" data-activity="loadin" data-duration="45" data-color="#6366f1" style="padding:4px 8px;background:#e0e7ff;border:1px solid #a5b4fc;border-radius:4px;font-size:10px;cursor:move">📦 Load-In</div>
-                    <div class="activity-chip" draggable="true" data-activity="gig" data-duration="180" data-color="#ec4899" style="padding:4px 8px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:4px;font-size:10px;cursor:move">🎤 Gig</div>
+                    <div class="activity-chip" draggable="true" data-activity="rehearsal" data-label="Rehearsal" data-duration="120" data-color="#8b5cf6" style="padding:4px 8px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:4px;font-size:10px;cursor:move">🎸 Rehearsal</div>
+                    <div class="activity-chip" draggable="true" data-activity="loadin" data-label="Load-In" data-duration="45" data-color="#6366f1" style="padding:4px 8px;background:#e0e7ff;border:1px solid #a5b4fc;border-radius:4px;font-size:10px;cursor:move">📦 Load-In</div>
+                    <div class="activity-chip" draggable="true" data-activity="soundcheck" data-label="Soundcheck" data-duration="60" data-color="#3b82f6" style="padding:4px 8px;background:#dbeafe;border:1px solid #93c5fd;border-radius:4px;font-size:10px;cursor:move">🎚️ Soundcheck</div>
+                    <div class="activity-chip" draggable="true" data-activity="doors" data-label="Doors" data-duration="30" data-color="#22c55e" style="padding:4px 8px;background:#dcfce7;border:1px solid #4ade80;border-radius:4px;font-size:10px;cursor:move">🚪 Doors</div>
+                    <div class="activity-chip" draggable="true" data-activity="firstact" data-label="First Act" data-duration="45" data-color="#f97316" style="padding:4px 8px;background:#ffedd5;border:1px solid #fdba74;border-radius:4px;font-size:10px;cursor:move">🎵 First Act</div>
+                    <div class="activity-chip" draggable="true" data-activity="showtime" data-label="Show Time" data-duration="90" data-color="#ec4899" style="padding:4px 8px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:4px;font-size:10px;cursor:move">🎤 Show Time</div>
+                    <div class="activity-chip" draggable="true" data-activity="intermission" data-label="Intermission" data-duration="20" data-color="#eab308" style="padding:4px 8px;background:#fef9c3;border:1px solid #facc15;border-radius:4px;font-size:10px;cursor:move">⏸️ Intermission</div>
+                    <div class="activity-chip" draggable="true" data-activity="headliner" data-label="Headliner" data-duration="90" data-color="#6366f1" style="padding:4px 8px;background:#e0e7ff;border:1px solid #a5b4fc;border-radius:4px;font-size:10px;cursor:move">⭐ Headliner</div>
+                    <div class="activity-chip" draggable="true" data-activity="greenroom" data-label="Green Room" data-duration="30" data-color="#0ea5e9" style="padding:4px 8px;background:#e0f2fe;border:1px solid #7dd3fc;border-radius:4px;font-size:10px;cursor:move">💚 Green Room</div>
+                    <div class="activity-chip" draggable="true" data-activity="loadout" data-label="Load-Out" data-duration="45" data-color="#dc2626" style="padding:4px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;font-size:10px;cursor:move">📦 Load-Out</div>
                   </div>
                 </div>
                 
@@ -1279,6 +1366,12 @@
                     <div class="activity-chip" draggable="true" data-activity="meeting" data-duration="60" data-color="#06b6d4" style="padding:4px 8px;background:#cffafe;border:1px solid#67e8f9;border-radius:4px;font-size:10px;cursor:move">💼 Meeting</div>
                     <div class="activity-chip" draggable="true" data-activity="party" data-duration="180" data-color="#d946ef" style="padding:4px 8px;background:#fae8ff;border:1px solid #f0abfc;border-radius:4px;font-size:10px;cursor:move">🎉 Party</div>
                   </div>
+                </div>
+                
+                <!-- Custom Activities -->
+                <div style="margin-bottom:8px">
+                  <div style="font-size:10px;color:#64748b;margin-bottom:2px;font-weight:500">CUSTOM (drag an itinerary item here to save as a chip)</div>
+                  <div id="customActivityChips" style="display:flex;gap:3px;flex-wrap:wrap;min-height:22px;padding:2px;border:1px dashed #d1d5db;border-radius:4px;background:#f9fafb"></div>
                 </div>
                 
                 <!-- Places Search -->
@@ -2063,6 +2156,50 @@
   let tourViewMode = 'month'; // 'week' | 'month' | 'year'
   let tourViewDate = new Date(); // Current view period anchor
   let tourCustomSearchTerms = ''; // User-defined search terms
+  
+  // Toast notification system
+  function showToast(message, type = 'info', duration = 5000){
+    // Remove existing toast if any
+    const existing = document.querySelector('.toast');
+    if(existing) existing.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    // Auto-hide
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+  
+  // Song length helpers: store minutes as numbers, display as mm:ss
+  function formatMinutesToMmSs(mins){
+    const v = parseFloat(mins);
+    if(!isFinite(v) || v <= 0) return '';
+    const totalSeconds = Math.round(v * 60);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return m + ':' + (s < 10 ? '0' + s : String(s));
+  }
+
+  function parseLengthInputToMinutes(value){
+    const str = String(value || '').trim();
+    if(!str) return 0;
+    if(str.includes(':')){
+      const parts = str.split(':');
+      const m = parseInt(parts[0], 10) || 0;
+      const s = parseInt(parts[1], 10) || 0;
+      return m + (s > 0 ? s / 60 : 0);
+    }
+    const v = parseFloat(str);
+    return isFinite(v) && v > 0 ? v : 0;
+  }
   let currentDateDirty = false; // Track unsaved changes for current date
   // Setlist display column preferences
   let setlistColumns = {artist:false, capo:true, key:true, notes:false, bpm:false, lyrics:false};
@@ -2092,6 +2229,7 @@
 
   // No-op stubs for missing helpers (keeps UI stable without external modules)
   let customSearchButtons = [];
+  let customActivityChips = [];
   let saveTourDateData = ()=>{};
   let renderTourPreviews = ()=>{};
   let updateActDisplay = ()=>{};
@@ -2359,7 +2497,7 @@
       if(setlist && setlist.length > 0){
         lastUsedSetlist = {setlist: JSON.parse(JSON.stringify(setlist)), gig: JSON.parse(JSON.stringify(gig)), date: new Date().toISOString()};
       }
-      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,selectedTourDateId,activeTab:previousTab,bandPresets,currentBandPresetId,stagePresets,setlistPresets,lastUsedSetlist};
+      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,customActivityChips,selectedTourDateId,activeTab:previousTab,bandPresets,currentBandPresetId,stagePresets,setlistPresets,lastUsedSetlist};
       localStorage.setItem(STORE_KEY, JSON.stringify(payload));
     }catch(e){ console.error('saveAll failed', e); }
   }
@@ -2647,7 +2785,7 @@
   function loadAll(){
     try{
       const raw=localStorage.getItem(STORE_KEY); if(!raw) return;
-    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn,bandPresets:bandPresetsIn,currentBandPresetId:currentBandPresetIdIn,stagePresets:stagePresetsIn,setlistPresets:setlistPresetsIn,lastUsedSetlist:lastUsedSetlistIn}=JSON.parse(raw);
+    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,customSearchButtons:customSearchButtonsIn,customActivityChips:customActivityChipsIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn,bandPresets:bandPresetsIn,currentBandPresetId:currentBandPresetIdIn,stagePresets:stagePresetsIn,setlistPresets:setlistPresetsIn,lastUsedSetlist:lastUsedSetlistIn}=JSON.parse(raw);
       if(Array.isArray(dbIn)) db.push(...dbIn);
       if(Array.isArray(setIn)) setlist=setIn;
       if(gigIn) gig=Object.assign(gig,gigIn);
@@ -2666,6 +2804,8 @@
   if(pageLayoutIn && typeof pageLayoutIn==='object') { pageLayout = Object.assign(pageLayout, pageLayoutIn); }
   if(Array.isArray(tourIn)) { tourDates = tourIn; }
   if(typeof tourSearchIn === 'string') { tourCustomSearchTerms = tourSearchIn; }
+  if(Array.isArray(customSearchButtonsIn)) { customSearchButtons = customSearchButtonsIn; }
+  if(Array.isArray(customActivityChipsIn)) { customActivityChips = customActivityChipsIn; }
   if(selectedIdIn) { selectedTourDateId = selectedIdIn; }
   if(activeTabIn) { previousTab = activeTabIn; }
   if(Array.isArray(bandPresetsIn)) { bandPresets = bandPresetsIn; }
@@ -4021,9 +4161,24 @@
         const artist=document.createElement('input'); artist.placeholder='Artist'; artist.value=(s.isCover? (s.artist||'') : ''); artist.style.cssText='width:120px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:13px;opacity:'+(s.isCover?'1':'0.5'); artist.disabled=!s.isCover;
         artist.addEventListener('change',()=>{ s.artist = coverChk.checked ? (artist.value.trim()||s.artist||'') : 'Original'; saveAll(); });
         
-        // Length (5 chars width)
-        const len=document.createElement('input'); len.type='number'; len.step='0.5'; len.min='0.5'; len.value=String(s.length||3.5); len.title='Length (min)'; len.style.cssText='width:58px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center;color:#0f172a';
-        len.addEventListener('change',()=>{ const v=parseFloat(len.value); if(v>0) s.length=v; saveAll(); buildSheet('sheetInline'); });
+        // Length (display as mm:ss, store as minutes)
+        const len=document.createElement('input');
+        len.type='text';
+        const curMinutes = (typeof s.length === 'number' && s.length > 0)
+          ? s.length
+          : parseLengthInputToMinutes(s.length);
+        len.value = formatMinutesToMmSs(curMinutes || 3.5);
+        len.title='Length (mm:ss or minutes)';
+        len.style.cssText='width:58px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center;color:#0f172a';
+        len.addEventListener('change',()=>{
+          const v = parseLengthInputToMinutes(len.value);
+          if(v > 0){
+            s.length = v;
+            len.value = formatMinutesToMmSs(v);
+            saveAll();
+            buildSheet('sheetInline');
+          }
+        });
         
         // Key (3 chars width)
         const key=document.createElement('input'); key.placeholder='Key'; key.value=s.key||''; key.style.cssText='width:35px;padding:2px 3px;border:1px solid #d1d5db;border-radius:3px;font-size:12px;text-align:center';
@@ -5652,7 +5807,13 @@
       const tourVenueInput = document.getElementById('tourVenue');
       const tourAddressInput = document.getElementById('tourAddress');
       const tourLoadInInput = document.getElementById('tourLoadIn');
+      const tourSoundcheckInput = document.getElementById('tourSoundcheck');
       const tourShowTimeInput = document.getElementById('tourShowTime');
+      const tourLoadOutInput = document.getElementById('tourLoadOut');
+      const tourLoadInLabel = document.getElementById('tourLoadInLabel');
+      const tourSoundcheckLabel = document.getElementById('tourSoundcheckLabel');
+      const tourShowTimeLabel = document.getElementById('tourShowTimeLabel');
+      const tourLoadOutLabel = document.getElementById('tourLoadOutLabel');
       const tourBandInput = document.getElementById('tourBand');
       const tourSetlistSelect = document.getElementById('tourSetlistSelect');
       const tourStagePlotSelect = document.getElementById('tourStagePlotSelect');
@@ -5683,8 +5844,12 @@
       
       // Utility: Generate unique ID
       function generateId(){ return 'tour_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
+      function makeActivitySlug(title){
+        const base = String(title || '').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+        return base ? ('custom-' + base) : ('custom-' + Date.now());
+      }
       
-      // Helper: Parse time string (e.g. "4pm", "16:00", "4:30pm") to 24h format
+      // Helper: Parse time string (e.g. "4pm", "16:00", "4:30pm", "730") to 24h format
       function parseTimeToHHMM(timeStr){
         if(!timeStr) return null;
         const cleaned = timeStr.toLowerCase().replace(/\s/g, '');
@@ -5696,8 +5861,13 @@
         if(match1){
           hours = parseInt(match1[1]);
           minutes = parseInt(match1[2]);
-          if(match1[3] === 'pm' && hours < 12) hours += 12;
-          if(match1[3] === 'am' && hours === 12) hours = 0;
+          const suffix = match1[3];
+          if(suffix === 'pm' && hours < 12) hours += 12;
+          else if(suffix === 'am' && hours === 12) hours = 0;
+          else if(!suffix && hours >= 1 && hours <= 11){
+            // Default to evening if no am/pm specified
+            hours += 12;
+          }
         } else if(match2){
           const num = match2[1];
           if(num.length <= 2){
@@ -5707,8 +5877,13 @@
             hours = parseInt(num.slice(0, -2));
             minutes = parseInt(num.slice(-2));
           }
-          if(match2[2] === 'pm' && hours < 12) hours += 12;
-          if(match2[2] === 'am' && hours === 12) hours = 0;
+          const suffix = match2[2];
+          if(suffix === 'pm' && hours < 12) hours += 12;
+          else if(suffix === 'am' && hours === 12) hours = 0;
+          else if(!suffix && hours >= 1 && hours <= 11){
+            // Default to evening if no am/pm specified
+            hours += 12;
+          }
         } else {
           return null;
         }
@@ -5717,14 +5892,118 @@
         return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`;
       }
       
-      // Helper: Sync times to itinerary - creates/updates itinerary entries for load-in, soundcheck, showtime
+      // Helper: Parse load-out time relative to showtime, handling after-midnight cases
+      function parseLoadOutToHHMM(loadOutStr, showTimeStr){
+        if(!loadOutStr) return null;
+        const cleaned = String(loadOutStr).toLowerCase().trim();
+        if(!cleaned) return null;
+        
+        // If user explicitly writes am/pm, defer to normal parsing
+        if(/am|pm/.test(cleaned)){
+          return parseTimeToHHMM(loadOutStr);
+        }
+        
+        const showParsed = parseTimeToHHMM(showTimeStr || '');
+        if(!showParsed){
+          // No reliable showtime context; fall back to default rules
+          return parseTimeToHHMM(loadOutStr);
+        }
+        const [showH] = showParsed.split(':').map(Number);
+        
+        // Only apply "after the show" heuristics if showtime is in the afternoon/evening
+        if(showH < 12) return parseTimeToHHMM(loadOutStr);
+        
+        const compact = cleaned.replace(/\s/g, '');
+        let hours = null, minutes = null;
+        let m;
+        
+        // h:mm (no am/pm)
+        m = compact.match(/^(\d{1,2}):(\d{2})$/);
+        if(m){
+          hours = parseInt(m[1], 10);
+          minutes = parseInt(m[2], 10);
+        } else {
+          // h, hh, hmm, hhmm (no am/pm)
+          m = compact.match(/^(\d{1,4})$/);
+          if(!m) return parseTimeToHHMM(loadOutStr);
+          const num = m[1];
+          if(num.length <= 2){
+            hours = parseInt(num, 10);
+            minutes = 0;
+          } else {
+            hours = parseInt(num.slice(0, -2), 10);
+            minutes = parseInt(num.slice(-2), 10);
+          }
+        }
+        if(isNaN(hours) || isNaN(minutes)) return parseTimeToHHMM(loadOutStr);
+        
+        // Heuristic: after a PM show, bare 12,1-5 mean after-midnight next day
+        if(hours === 12){
+          hours = 0; // 12 -> 00:00
+        } else if(hours >= 1 && hours <= 5){
+          // 1–5 treated as 1am–5am
+        } else if(hours >= 6 && hours <= 11){
+          // 6–11 assumed to be evening same day (18:00–23:00)
+          hours += 12;
+        }
+        
+        if(hours >= 24) hours = hours % 24;
+        minutes = Math.max(0, Math.min(59, minutes));
+        return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`;
+      }
+
+      // Helper: Format HH:MM (24h) into a friendly label like "3pm", "3:30pm", "midnight"
+      function formatHHMMToLabel(hhmm){
+        if(!hhmm || typeof hhmm !== 'string') return '';
+        const parts = hhmm.split(':');
+        if(parts.length !== 2) return '';
+        let h = parseInt(parts[0], 10);
+        let m = parseInt(parts[1], 10);
+        if(isNaN(h) || isNaN(m)) return '';
+        
+        if(h === 0 && m === 0) return 'midnight';
+        if(h === 12 && m === 0) return 'noon';
+        
+        const suffix = h >= 12 ? 'pm' : 'am';
+        let displayH = h % 12;
+        if(displayH === 0) displayH = 12;
+        const displayM = m === 0 ? '' : ':' + String(m).padStart(2,'0');
+        return `${displayH}${displayM}${suffix}`;
+      }
+
+      function updateGigTimeLabels(){
+        // Load-In
+        if(tourLoadInLabel){
+          const t = parseTimeToHHMM(tourLoadInInput && tourLoadInInput.value);
+          tourLoadInLabel.textContent = t ? formatHHMMToLabel(t) : '';
+        }
+        // Soundcheck
+        if(tourSoundcheckLabel){
+          const t = parseTimeToHHMM(tourSoundcheckInput && tourSoundcheckInput.value);
+          tourSoundcheckLabel.textContent = t ? formatHHMMToLabel(t) : '';
+        }
+        // Doors / Show
+        if(tourShowTimeLabel){
+          const t = parseTimeToHHMM(tourShowTimeInput && tourShowTimeInput.value);
+          tourShowTimeLabel.textContent = t ? formatHHMMToLabel(t) : '';
+        }
+        // Load-Out (after-midnight aware)
+        if(tourLoadOutLabel){
+          const rawLo = tourLoadOutInput && tourLoadOutInput.value;
+          const rawShow = tourShowTimeInput && tourShowTimeInput.value;
+          const t = parseLoadOutToHHMM(rawLo, rawShow);
+          tourLoadOutLabel.textContent = t ? formatHHMMToLabel(t) : '';
+        }
+      }
+      
+      // Helper: Sync times to itinerary - creates/updates itinerary entries for load-in, soundcheck, showtime, load-out
       function syncTimesToItinerary(tourDate){
         if(!tourDate) return;
         if(!tourDate.itinerary) tourDate.itinerary = [];
-        
+
         // Remove existing auto-generated entries (we'll recreate them)
         tourDate.itinerary = tourDate.itinerary.filter(item => !item.autoGenerated);
-        
+
         // Add load-in time
         if(tourDate.loadIn){
           const time = parseTimeToHHMM(tourDate.loadIn);
@@ -5739,7 +6018,7 @@
             });
           }
         }
-        
+
         // Add showtime
         if(tourDate.showTime){
           const time = parseTimeToHHMM(tourDate.showTime);
@@ -5754,41 +6033,51 @@
             });
           }
         }
-        
-        // Parse soundcheck from gig notes if present (pattern: "Soundcheck 5pm" or "SC 5pm")
-        if(tourDate.gig && tourDate.gig.notes){
+
+        // Soundcheck time - prefer explicit field, fallback to parsing gig notes if present (pattern: "Soundcheck 5pm" or "SC 5pm")
+        let soundcheckTimeStr = tourDate.soundcheck;
+        if(!soundcheckTimeStr && tourDate.gig && tourDate.gig.notes){
           const scMatch = tourDate.gig.notes.match(/sound\s*check\s*[@:]?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
           if(scMatch){
-            const time = parseTimeToHHMM(scMatch[1]);
-            if(time){
-              tourDate.itinerary.push({
-                time: time,
-                title: '🎤 Soundcheck',
-                notes: '',
-                duration: 60,
-                color: '#f59e0b',
-                autoGenerated: true
-              });
-            }
-          }
-          
-          // Parse load-out (pattern: "Load-out 11pm" or "LO 11pm")
-          const loMatch = tourDate.gig.notes.match(/load[\s-]*out\s*[@:]?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
-          if(loMatch){
-            const time = parseTimeToHHMM(loMatch[1]);
-            if(time){
-              tourDate.itinerary.push({
-                time: time,
-                title: '📦 Load-Out',
-                notes: '',
-                duration: 45,
-                color: '#dc2626',
-                autoGenerated: true
-              });
-            }
+            soundcheckTimeStr = scMatch[1];
           }
         }
-        
+        if(soundcheckTimeStr){
+          const time = parseTimeToHHMM(soundcheckTimeStr);
+          if(time){
+            tourDate.itinerary.push({
+              time: time,
+              title: '🎤 Soundcheck',
+              notes: '',
+              duration: 60,
+              color: '#f59e0b',
+              autoGenerated: true
+            });
+          }
+        }
+
+        // Load-out time - prefer explicit field, fallback to parsing gig notes (pattern: "Load-out 11pm" or "LO 11pm")
+        let loadOutTimeStr = tourDate.loadOut;
+        if(!loadOutTimeStr && tourDate.gig && tourDate.gig.notes){
+          const loMatch = tourDate.gig.notes.match(/load[\s-]*out\s*[@:]?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
+          if(loMatch){
+            loadOutTimeStr = loMatch[1];
+          }
+        }
+        if(loadOutTimeStr){
+          const time = parseLoadOutToHHMM(loadOutTimeStr, tourDate.showTime);
+          if(time){
+            tourDate.itinerary.push({
+              time: time,
+              title: '📦 Load-Out',
+              notes: '',
+              duration: 45,
+              color: '#dc2626',
+              autoGenerated: true
+            });
+          }
+        }
+
         // Sort itinerary by time
         tourDate.itinerary.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
       }
@@ -6147,7 +6436,9 @@
           address: address,
           city: address.split(',')[0].trim(), // Extract city from address
           loadIn: '',
+          soundcheck: '',
           showTime: '',
+          loadOut: '',
           band: gig.band || '',
           setlist: copyData ? [...setlist] : [],
           stage: copyData ? getStageHTML() : '',
@@ -6301,7 +6592,9 @@
                   venue: '',
                   address: '',
                   loadIn: '',
+                  soundcheck: '',
                   showTime: '',
+                  loadOut: '',
                   band: sourceTd.band || gig.band || '',
                   setlistType: 'custom',
                   stagePlotType: 'custom',
@@ -6391,7 +6684,9 @@
                 venue: '',
                 address: '',
                 loadIn: '',
+                soundcheck: '',
                 showTime: '',
+                loadOut: '',
                 band: gig.band || '',
                 setlistType: 'custom',
                 stagePlotType: 'custom',
@@ -6428,7 +6723,7 @@
             
             // Wizard: Prompt for gig details
             if(!td.venue || td.venue.trim() === ''){
-              const venueInput = prompt('Step 1/5: Enter venue name:', '');
+              const venueInput = prompt('Step 1/6: Enter venue name:', '');
               if(venueInput && venueInput.trim()){
                 td.venue = venueInput.trim();
                 if(td.gig) td.gig.venue = venueInput.trim();
@@ -6436,7 +6731,7 @@
             }
             
             if(!td.address || td.address.trim() === ''){
-              const addressInput = prompt('Step 2/5: Enter venue address (optional):', '');
+              const addressInput = prompt('Step 2/6: Enter venue address (optional):', '');
               if(addressInput && addressInput.trim()){
                 td.address = addressInput.trim();
                 if(td.gig) td.gig.address = addressInput.trim();
@@ -6444,7 +6739,7 @@
             }
             
             if(!td.loadIn || td.loadIn.trim() === ''){
-              const loadInInput = prompt('Step 3/5: Enter load-in time (e.g., 4pm):', '');
+              const loadInInput = prompt('Step 3/6: Enter load-in time (e.g., 4, 4:30, 16:00):', '');
               if(loadInInput && loadInInput.trim()){
                 td.loadIn = loadInInput.trim();
                 if(td.gig) td.gig.loadIn = loadInInput.trim();
@@ -6452,19 +6747,27 @@
             }
             
             if(!td.showTime || td.showTime.trim() === ''){
-              const showTimeInput = prompt('Step 4/5: Enter start time (e.g., 7pm):', '');
+              const showTimeInput = prompt('Step 4/6: Enter start time (e.g., 7, 7:30, 19:30):', '');
               if(showTimeInput && showTimeInput.trim()){
                 td.showTime = showTimeInput.trim();
                 if(td.gig) td.gig.showTime = showTimeInput.trim();
               }
             }
             
-            // Optional: Soundcheck/Load-out in notes or itinerary
-            const additionalTimes = prompt('Step 5/5: Add soundcheck/load-out times? (e.g., "Soundcheck 5pm, Load-out 11pm") Leave blank to skip:', '');
-            if(additionalTimes && additionalTimes.trim()){
-              if(!td.gig) td.gig = {};
-              if(!td.gig.notes) td.gig.notes = '';
-              td.gig.notes += (td.gig.notes ? '\n' : '') + additionalTimes.trim();
+            // Optional: Soundcheck time
+            if(!td.soundcheck || td.soundcheck.trim() === ''){
+              const scInput = prompt('Step 5/6: Enter soundcheck time (optional, e.g., 5, 5:30, 17:30). Leave blank to skip:', '');
+              if(scInput && scInput.trim()){
+                td.soundcheck = scInput.trim();
+              }
+            }
+
+            // Optional: Load-out time
+            if(!td.loadOut || td.loadOut.trim() === ''){
+              const loInput = prompt('Step 6/6: Enter load-out time (optional, e.g., 11, 23:00). Leave blank to skip:', '');
+              if(loInput && loInput.trim()){
+                td.loadOut = loInput.trim();
+              }
             }
             
             // Sync times to itinerary
@@ -7097,7 +7400,9 @@
                 venue: '',
                 address: '',
                 loadIn: '',
+                soundcheck: '',
                 showTime: '',
+                loadOut: '',
                 band: currentBandName,
                 setlistType: 'current',
                 stagePlotType: 'current',
@@ -7153,10 +7458,10 @@
         if(tourDateInput) tourDateInput.value = tourDate.date || '';
         if(tourVenueInput) tourVenueInput.value = tourDate.venue || '';
         if(tourAddressInput) tourAddressInput.value = tourDate.address || '';
-        // Only set time inputs if value is valid HH:mm format (prevents console warnings)
-        const validTimeFormat = /^\d{2}:\d{2}$/;
-        if(tourLoadInInput) tourLoadInInput.value = (tourDate.loadIn && validTimeFormat.test(tourDate.loadIn)) ? tourDate.loadIn : '';
-        if(tourShowTimeInput) tourShowTimeInput.value = (tourDate.showTime && validTimeFormat.test(tourDate.showTime)) ? tourDate.showTime : '';
+        if(tourLoadInInput) tourLoadInInput.value = tourDate.loadIn || '';
+        if(tourSoundcheckInput) tourSoundcheckInput.value = tourDate.soundcheck || '';
+        if(tourShowTimeInput) tourShowTimeInput.value = tourDate.showTime || '';
+        if(tourLoadOutInput) tourLoadOutInput.value = tourDate.loadOut || '';
         if(tourBandInput) tourBandInput.value = tourDate.band || gig.band || '';
         if(tourSetlistSelect) tourSetlistSelect.value = tourDate.setlistType || 'current';
         if(tourStagePlotSelect) tourStagePlotSelect.value = tourDate.stagePlotType || 'current';
@@ -7166,6 +7471,9 @@
         renderDateHeader(preserveHeaderScroll);
         renderTourPreviews(tourDate);
         renderAdjacentDays(tourDate);
+
+        // Update time labels under the Gig Details fields
+        updateGigTimeLabels();
         
         // Update large header display
         const headerDate = document.getElementById('tourHeaderDate');
@@ -7320,7 +7628,7 @@
       // Mark form inputs as dirty on change and update map with delay
       let mapLoadTimer = null;
       let autoSaveTimer = null;
-      [tourVenueInput, tourAddressInput, tourLoadInInput, tourShowTimeInput, tourBandInput].forEach(input => {
+      [tourVenueInput, tourAddressInput, tourLoadInInput, tourSoundcheckInput, tourShowTimeInput, tourLoadOutInput, tourBandInput].forEach(input => {
         if(input){
           input.addEventListener('input', () => {
             currentDateDirty = true;
@@ -7332,6 +7640,23 @@
                 saveTourDateData();
               }
             }, 1000);
+
+            // Immediately sync key time fields to itinerary so timeline reflects changes right away
+            const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+            if(tourDate){
+              tourDate.venue = tourVenueInput?.value || tourDate.venue || '';
+              tourDate.address = tourAddressInput?.value || tourDate.address || '';
+              tourDate.loadIn = tourLoadInInput?.value || '';
+              tourDate.soundcheck = tourSoundcheckInput?.value || '';
+              tourDate.showTime = tourShowTimeInput?.value || '';
+              tourDate.loadOut = tourLoadOutInput?.value || '';
+              tourDate.band = tourBandInput?.value || tourDate.band || '';
+              syncTimesToItinerary(tourDate);
+              renderItinerary(tourDate);
+            }
+
+            // Keep the human-readable time labels in sync as the user types
+            updateGigTimeLabels();
             
             // Don't auto-load maps; user must click to load to avoid extra API calls
           });
@@ -7411,7 +7736,9 @@
         tourDate.venue = tourVenueInput?.value || '';
         tourDate.address = tourAddressInput?.value || '';
         tourDate.loadIn = tourLoadInInput?.value || '';
+        tourDate.soundcheck = tourSoundcheckInput?.value || '';
         tourDate.showTime = tourShowTimeInput?.value || '';
+        tourDate.loadOut = tourLoadOutInput?.value || '';
         tourDate.band = tourBandInput?.value || '';
         tourDate.setlistType = tourSetlistSelect?.value || 'current';
         tourDate.stagePlotType = tourStagePlotSelect?.value || 'current';
@@ -8148,7 +8475,9 @@
               venue: '',
               address: '',
               loadIn: '',
+              soundcheck: '',
               showTime: '',
+              loadOut: '',
               band: gig.band || '',
               setlistType: 'current',
               stagePlotType: 'current',
@@ -8403,7 +8732,9 @@
           tourDate.venue = tourVenueInput?.value || '';
           tourDate.address = tourAddressInput?.value || '';
           tourDate.loadIn = tourLoadInInput?.value || '';
+          tourDate.soundcheck = tourSoundcheckInput?.value || '';
           tourDate.showTime = tourShowTimeInput?.value || '';
+          tourDate.loadOut = tourLoadOutInput?.value || '';
           tourDate.band = tourBandInput?.value || '';
           tourDate.setlistType = tourSetlistSelect?.value || 'current';
           tourDate.stagePlotType = tourStagePlotSelect?.value || 'current';
@@ -8437,7 +8768,7 @@
         tourLockCalendar.addEventListener('change', () => {
           const isLocked = tourLockCalendar.checked;
           // Disable all form inputs when locked
-          [tourDateInput, tourVenueInput, tourAddressInput, tourLoadInInput, tourShowTimeInput, tourBandInput, tourSetlistSelect, tourStagePlotSelect].forEach(input => {
+          [tourDateInput, tourVenueInput, tourAddressInput, tourLoadInInput, tourSoundcheckInput, tourShowTimeInput, tourLoadOutInput, tourBandInput, tourSetlistSelect, tourStagePlotSelect].forEach(input => {
             if(input) input.disabled = isLocked;
           });
           if(tourSaveDateBtn) tourSaveDateBtn.disabled = isLocked;
@@ -9237,14 +9568,17 @@
         const stored = localStorage.getItem(STORE_KEY);
         if(stored){
           const data = JSON.parse(stored);
-          customSearchButtons = Array.isArray(data.customSearchButtons) ? data.customSearchButtons : [];
+          if(Array.isArray(data.customSearchButtons)) customSearchButtons = data.customSearchButtons;
+          if(Array.isArray(data.customActivityChips)) customActivityChips = data.customActivityChips;
         }
       } catch(e) {
         customSearchButtons = [];
+        customActivityChips = [];
       }
       
       // Ensure it's always an array before rendering
       if(!Array.isArray(customSearchButtons)) customSearchButtons = [];
+      if(!Array.isArray(customActivityChips)) customActivityChips = [];
       
       // Render custom search buttons
       function renderCustomSearchButtons() {
@@ -9290,6 +9624,27 @@
           });
         });
       }
+      
+      function renderCustomActivityChips(){
+        const container = document.getElementById('customActivityChips');
+        if(!container) return;
+        container.innerHTML = '';
+        if(!Array.isArray(customActivityChips)) customActivityChips = [];
+        customActivityChips.forEach((chip, idx) => {
+          const el = document.createElement('div');
+          el.className = 'activity-chip';
+          el.draggable = true;
+          el.dataset.activity = chip.activity || ('custom_' + idx);
+          el.dataset.color = chip.color || '#10b981';
+          el.dataset.label = chip.label || 'Custom';
+          el.dataset.duration = chip.defaultDuration != null ? String(chip.defaultDuration) : '30';
+          el.dataset.custom = '1';
+          el.style.cssText = 'padding:4px 8px;background:#ecfdf3;border:1px solid #86efac;border-radius:4px;font-size:10px;cursor:move';
+          el.textContent = chip.label || 'Custom';
+          if(typeof attachChipDragHandlers === 'function') attachChipDragHandlers(el);
+          container.appendChild(el);
+        });
+       }
       
       // Add custom search button
       const tourAddCustomBtn = document.getElementById('tourAddCustomBtn');
@@ -9352,8 +9707,120 @@
         });
       });
       
-      // Initialize custom buttons
+      // Initialize custom buttons and custom activity chips
       renderCustomSearchButtons();
+      renderCustomActivityChips();
+      
+      // Allow dropping itinerary items into the custom chip tray to create reusable chips
+      const customChipTray = document.getElementById('customActivityChips');
+      if(customChipTray){
+        customChipTray.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          customChipTray.style.background = '#eff6ff';
+        });
+        customChipTray.addEventListener('dragleave', () => {
+          customChipTray.style.background = '#f9fafb';
+        });
+        customChipTray.addEventListener('drop', (e) => {
+          e.preventDefault();
+          customChipTray.style.background = '#f9fafb';
+          const idxStr = e.dataTransfer.getData('itemIndex');
+          if(!idxStr && idxStr !== '0') return;
+          const idx = parseInt(idxStr, 10);
+          if(isNaN(idx)) return;
+          const tourDate = tourDates.find(td => td.id === selectedTourDateId);
+          if(!tourDate || !tourDate.itinerary || !tourDate.itinerary[idx]) return;
+          const item = tourDate.itinerary[idx];
+          if(!item || !item.title) return;
+          const label = String(item.title).trim();
+          if(!label) return;
+          const color = (item.chipData && item.chipData.color) || '#10b981';
+          const duration = item.duration || 30;
+          const activity = makeActivitySlug(label);
+          customActivityChips.push({
+            id: generateId(),
+            label,
+            activity,
+            color,
+            defaultDuration: duration
+          });
+          saveAll();
+          renderCustomActivityChips();
+        });
+        
+        // Long-press (2s) inside tray on a custom chip to delete it
+        let customTrayHoldTimer = null;
+        let customTrayHoldTarget = null;
+        let customTrayHoldStart = {x:0,y:0};
+        const HOLD_MS = 2000;
+        const MOVE_TOL = 8;
+
+        function cancelCustomTrayHold(){
+          if(customTrayHoldTimer){
+            clearTimeout(customTrayHoldTimer);
+            customTrayHoldTimer = null;
+          }
+          customTrayHoldTarget = null;
+        }
+
+        function startCustomTrayHold(e, point){
+          cancelCustomTrayHold();
+          const chip = (e.target && e.target.closest) ? e.target.closest('.activity-chip') : null;
+          if(!chip || chip.dataset.custom !== '1') return;
+          customTrayHoldTarget = chip;
+          customTrayHoldStart = {x: point.x, y: point.y};
+          customTrayHoldTimer = setTimeout(() => {
+            customTrayHoldTimer = null;
+            if(!customTrayHoldTarget || customTrayHoldTarget.dataset.custom !== '1') return;
+            const label = customTrayHoldTarget.dataset.label || customTrayHoldTarget.textContent || 'this chip';
+            if(confirm(`Delete custom chip "${label}" forever?`)){
+              const activity = customTrayHoldTarget.dataset.activity;
+              const idx = customActivityChips.findIndex(c => c.activity === activity);
+              if(idx !== -1){
+                customActivityChips.splice(idx, 1);
+                saveAll();
+                renderCustomActivityChips();
+                // Also clear any active chip drag so no ghost clone remains
+                if(typeof cleanupChipDrag === 'function'){
+                  cleanupChipDrag();
+                } else if(chipDragState && chipDragState.visualClone){
+                  try{ chipDragState.visualClone.remove(); }catch(_){ }
+                  chipDragState = null;
+                }
+              }
+            }
+          }, HOLD_MS);
+        }
+
+        customChipTray.addEventListener('mousedown', (e) => {
+          if(e.button !== 0) return; // left-click only
+          startCustomTrayHold(e, {x:e.clientX, y:e.clientY});
+        });
+        customChipTray.addEventListener('mousemove', (e) => {
+          if(!customTrayHoldTarget || !customTrayHoldTimer) return;
+          const dx = e.clientX - customTrayHoldStart.x;
+          const dy = e.clientY - customTrayHoldStart.y;
+          if(Math.abs(dx) > MOVE_TOL || Math.abs(dy) > MOVE_TOL) cancelCustomTrayHold();
+        });
+        customChipTray.addEventListener('mouseup', cancelCustomTrayHold);
+        customChipTray.addEventListener('mouseleave', cancelCustomTrayHold);
+        customChipTray.addEventListener('dragstart', cancelCustomTrayHold);
+
+        customChipTray.addEventListener('touchstart', (e) => {
+          if(!e.touches || !e.touches[0]) return;
+          const t = e.touches[0];
+          startCustomTrayHold(e, {x:t.clientX, y:t.clientY});
+        }, {passive:true});
+        customChipTray.addEventListener('touchmove', (e) => {
+          if(!customTrayHoldTarget || !customTrayHoldTimer || !e.touches || !e.touches[0]) return;
+          const t = e.touches[0];
+          const dx = t.clientX - customTrayHoldStart.x;
+          const dy = t.clientY - customTrayHoldStart.y;
+          if(Math.abs(dx) > MOVE_TOL || Math.abs(dy) > MOVE_TOL) cancelCustomTrayHold();
+        }, {passive:true});
+        customChipTray.addEventListener('touchend', cancelCustomTrayHold);
+        customChipTray.addEventListener('touchcancel', cancelCustomTrayHold);
+      }
       
 
       
@@ -9443,59 +9910,50 @@
       // UNIFIED Activity Chip Drag-to-Itinerary System
       // User drags chip to timeline slot (start time), pauses to stick, then stretches downward to set end time
       
-      let chipDragState = null; // {type: 'mouse'|'touch', chipData: {...}, phase: 'dragging'|'stuck'|'stretching', startSlot: element, startTime: string, endSlot: element, endTime: string, visualClone: element, previewBlock: element}
+      let chipDragState = null; // {type: 'mouse'|'touch', chipData: {...}, phase: 'pending'|'dragging'|'stuck'|'stretching', startSlot: element, startTime: string, endSlot: element, endTime: string, visualClone: element, previewBlock: element, startX:number, startY:number}
+      const CHIP_DRAG_TOL = 5; // pixels before treating mouse as a drag
       
-      function initActivityChips(){
-        const chips = document.querySelectorAll('.activity-chip');
-        chips.forEach(chip => {
-          
-          // === MOUSE DRAG SYSTEM ===
-          chip.addEventListener('mousedown', (e) => {
+      function attachChipDragHandlers(chip){
+        if(!chip) return;
+        
+        // === MOUSE DRAG SYSTEM ===
+        chip.addEventListener('mousedown', (e) => {
             e.preventDefault();
             
             const chipData = {
               activity: chip.dataset.activity,
               color: chip.dataset.color,
-              text: chip.textContent.trim()
+              text: chip.textContent.trim(),
+              label: chip.dataset.label || undefined
             };
-            
-            // Create visual clone
-            const clone = chip.cloneNode(true);
-            clone.classList.add('touch-dragging');
-            clone.style.cssText = `
-              position:fixed;
-              z-index:99999;
-              pointer-events:none;
-              opacity:0.9;
-              transform:scale(1.05);
-              box-shadow:0 8px 24px rgba(0,0,0,0.3);
-              left:${e.clientX - 40}px;
-              top:${e.clientY - 15}px;
-            `;
-            document.body.appendChild(clone);
-            chip.style.opacity = '0.3';
-            
+
+            // Start in a 'pending' state; only create the floating chip
+            // once the mouse has moved a few pixels so simple clicks/holds
+            // (like long-press delete in the custom tray) don't spawn a ghost.
             chipDragState = {
               type: 'mouse',
               chipData,
-              phase: 'dragging',
-              visualClone: clone,
-              sourceChip: chip
+              phase: 'pending',
+              visualClone: null,
+              sourceChip: chip,
+              startX: e.clientX,
+              startY: e.clientY
             };
             
             document.addEventListener('mousemove', handleMouseMove);
             document.addEventListener('mouseup', handleMouseUp);
           });
-          
-          // === TOUCH DRAG SYSTEM ===
-          chip.addEventListener('touchstart', (e) => {
+        
+        // === TOUCH DRAG SYSTEM ===
+        chip.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
             
             const chipData = {
               activity: chip.dataset.activity,
               color: chip.dataset.color,
-              text: chip.textContent.trim()
+              text: chip.textContent.trim(),
+              label: chip.dataset.label || undefined
             };
             
             // Create visual clone
@@ -9525,17 +9983,52 @@
             document.addEventListener('touchmove', handleTouchMove, {passive: false});
             document.addEventListener('touchend', handleTouchEnd);
           }, {passive: false});
-        });
+      }
+      
+      function initActivityChips(){
+        const chips = document.querySelectorAll('.activity-chip');
+        chips.forEach(chip => attachChipDragHandlers(chip));
       }
       
       function handleMouseMove(e){
         if(!chipDragState || chipDragState.type !== 'mouse') return;
         
-        // Update clone position
-        chipDragState.visualClone.style.left = (e.clientX - 40) + 'px';
-        chipDragState.visualClone.style.top = (e.clientY - 15) + 'px';
+        // If we're still pending, only start a drag once the mouse
+        // has moved far enough to be intentional.
+        if(chipDragState.phase === 'pending'){
+          const dx = e.clientX - (chipDragState.startX || 0);
+          const dy = e.clientY - (chipDragState.startY || 0);
+          if(Math.abs(dx) < CHIP_DRAG_TOL && Math.abs(dy) < CHIP_DRAG_TOL) return;
+          
+          const chip = chipDragState.sourceChip;
+          if(!chip) return;
+          
+          const clone = chip.cloneNode(true);
+          clone.classList.add('touch-dragging');
+          clone.style.cssText = `
+            position:fixed;
+            z-index:99999;
+            pointer-events:none;
+            opacity:0.9;
+            transform:scale(1.05);
+            box-shadow:0 8px 24px rgba(0,0,0,0.3);
+            left:${e.clientX - 40}px;
+            top:${e.clientY - 15}px;
+          `;
+          document.body.appendChild(clone);
+          chip.style.opacity = '0.3';
+          
+          chipDragState.visualClone = clone;
+          chipDragState.phase = 'dragging';
+        }
         
-        updateDragPhase(e.clientX, e.clientY);
+        if(chipDragState.phase === 'dragging' && chipDragState.visualClone){
+          // Update clone position
+          chipDragState.visualClone.style.left = (e.clientX - 40) + 'px';
+          chipDragState.visualClone.style.top = (e.clientY - 15) + 'px';
+          
+          updateDragPhase(e.clientX, e.clientY);
+        }
       }
       
       function handleTouchMove(e){
@@ -9667,7 +10160,10 @@
             const endIdx = getSlotIndex(chipDragState.endSlot);
             const durationMin = Math.max(15, (endIdx - startIdx + 1) * 15);
             
-            let title = chipDragState.chipData.activity.charAt(0).toUpperCase() + chipDragState.chipData.activity.slice(1);
+            let title = chipDragState.chipData.label
+              || (chipDragState.chipData.activity
+                    ? chipDragState.chipData.activity.charAt(0).toUpperCase() + chipDragState.chipData.activity.slice(1)
+                    : 'Activity');
             
             if(!tourDate.itinerary) tourDate.itinerary = [];
             tourDate.itinerary.push({
@@ -9996,7 +10492,12 @@
         row.append(title);
         // Right side no longer shows key/capo/bpm - empty for now
         row.append(el('div','key', ''));
-        row.append(el('div','time', `${it.length}m`));
+        // Songs: display length as mm:ss; other items fallback to minutes
+        if(it.type === 'song'){
+          row.append(el('div','time', formatMinutesToMmSs(it.length)));
+        } else {
+          row.append(el('div','time', `${it.length}m`));
+        }
         lines.push(row); sinceBreak++;
       });
 
@@ -10262,7 +10763,8 @@
         }
         const showArtist = s.isCover && s.artist && s.artist!=='Original';
         chip.textContent = showArtist ? `${s.artist} - ${s.title}` : s.title;
-        chip.title=`${s.artist} • ${s.length}m${s.key? ' • '+s.key:''}`;
+        const lenText = formatMinutesToMmSs(s.length);
+        chip.title=`${s.artist} • ${lenText || (s.length ? s.length+'m' : '')}${s.key? ' • '+s.key:''}`;
         chip.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', String(s.id)); });
         chip.addEventListener('touchstart',ev=>{ const t=ev.touches[0]; if(!t) return; activePoolTouch={kind:'song', id:s.id, startX:t.clientX, startY:t.clientY, x:t.clientX, y:t.clientY}; chip.classList.add('drag-touch'); ev.preventDefault(); ev.stopPropagation(); }, {passive:false});
         chip.addEventListener('touchend',ev=>{ chip.classList.remove('drag-touch'); });
@@ -14797,6 +15299,7 @@ function closeStageModal(){
         tourDates,
         tourCustomSearchTerms,
         customSearchButtons,
+        customActivityChips,
         selectedTourDateId,
         bandPresets,
         currentBandPresetId,
@@ -14859,6 +15362,7 @@ function closeStageModal(){
             if(obj && Array.isArray(obj.tourDates)){ tourDates = obj.tourDates; }
             if(obj && typeof obj.tourCustomSearchTerms === 'string'){ tourCustomSearchTerms = obj.tourCustomSearchTerms; }
             if(obj && Array.isArray(obj.customSearchButtons)){ customSearchButtons = obj.customSearchButtons; }
+            if(obj && Array.isArray(obj.customActivityChips)){ customActivityChips = obj.customActivityChips; }
             if(obj && obj.selectedTourDateId){ selectedTourDateId = obj.selectedTourDateId; }
             if(obj && Array.isArray(obj.bandPresets)){ bandPresets = obj.bandPresets; }
             if(obj && obj.currentBandPresetId){ currentBandPresetId = obj.currentBandPresetId; }
@@ -15065,8 +15569,23 @@ function closeStageModal(){
           // BPM
           const tdBpm=document.createElement('td'); const inpBpm=document.createElement('input'); inpBpm.type='number'; inpBpm.min='0'; inpBpm.max='300'; inpBpm.value=String(s.bpm||0); inpBpm.placeholder='BPM'; inpBpm.style.cssText='width:50px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px'; inpBpm.addEventListener('change',()=>{ let v=parseInt(inpBpm.value,10); if(!Number.isInteger(v)||v<0) v=0; s.bpm=v; }); tdBpm.style.padding='4px 6px'; tdBpm.appendChild(inpBpm);
           
-          // Length
-          const tdLen=document.createElement('td'); const inpLen=document.createElement('input'); inpLen.type='number'; inpLen.min='0.5'; inpLen.step='0.5'; inpLen.value=String(s.length||3.5); inpLen.style.cssText='width:50px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px'; inpLen.addEventListener('change',()=>{ let v=parseFloat(inpLen.value); if(!isFinite(v)||v<=0) v=3.5; s.length=v; inpLen.value=String(v); }); tdLen.style.padding='4px 6px'; tdLen.appendChild(inpLen);
+          // Length (use mm:ss display, store as minutes)
+          const tdLen=document.createElement('td');
+          const inpLen=document.createElement('input');
+          inpLen.type='text';
+          const curLenMin = (typeof s.length === 'number' && s.length > 0)
+            ? s.length
+            : parseLengthInputToMinutes(s.length);
+          inpLen.value = formatMinutesToMmSs(curLenMin || 3.5);
+          inpLen.style.cssText='width:50px;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:12px';
+          inpLen.addEventListener('change',()=>{
+            let v = parseLengthInputToMinutes(inpLen.value);
+            if(!isFinite(v) || v<=0) v = 3.5;
+            s.length = v;
+            inpLen.value = formatMinutesToMmSs(v);
+          });
+          tdLen.style.padding='4px 6px';
+          tdLen.appendChild(inpLen);
           
           // Audio file indicator
           const tdAudio=document.createElement('td'); tdAudio.style.cssText='padding:4px 6px;text-align:center';
@@ -15943,7 +16462,20 @@ function closeStageModal(){
           updateDropSpinner(`Found ${droppedFiles.length} files, ${validFiles.length} supported.`);
           
           if(validFiles.length === 0){
-            updateDropSpinner(`No supported files in ${droppedFiles.length} items.`);
+            // Special-case: some browsers expose a dropped folder as a single "file" item
+            // with no extension and no readable contents via the drag API.
+            const single = droppedFiles[0];
+            const looksLikeFolder = (
+              droppedFiles.length === 1 &&
+              single &&
+              (!single.type || single.type === '') &&
+              !/\.[^./]+$/.test(single.name)
+            );
+            if(looksLikeFolder){
+              showToast('Looks like you dropped a folder. This browser may not allow reading folder contents via drag-and-drop. Tip: tick "Folder" and use "Choose Files…" to scan the whole folder.', 'warning', 8000);
+            } else {
+              updateDropSpinner(`No supported files in ${droppedFiles.length} items.`);
+            }
             if(spinner){ spinner.style.display = 'none'; }
             return;
           }
