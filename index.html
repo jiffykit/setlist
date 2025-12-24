@@ -19861,24 +19861,43 @@ function closeStageModal(){
             meta.textContent=parts.join(' • ');
             sheet.appendChild(meta);
 
-            const grid=document.createElement('div');
-            grid.style.display='flex';
-            grid.style.flexWrap='wrap';
-            grid.style.gap='8px';
-            grid.style.marginTop='12px';
+            // Layout tickets as 10 per page (2 columns × 5 rows),
+            // sized so they fit on a standard 8.5x11" sheet at 100%.
+            const pages=[];
+            let currentPage=null;
+            let grid=null;
 
-            ticketsArr.forEach(tix=>{
+            ticketsArr.forEach((tix, idx)=>{
+              // Start a new physical page every 10 tickets
+              if(idx % 10 === 0){
+                currentPage=document.createElement('div');
+                currentPage.style.pageBreakAfter='always';
+                currentPage.style.paddingTop = idx === 0 ? '12px' : '16px';
+                sheet.appendChild(currentPage);
+
+                grid=document.createElement('div');
+                grid.style.display='flex';
+                grid.style.flexWrap='wrap';
+                grid.style.gap='0.15in';
+                grid.style.marginTop='0';
+                currentPage.appendChild(grid);
+                pages.push(currentPage);
+              }
+
               const card=document.createElement('div');
               card.style.border='1px solid #d1d5db';
               card.style.borderRadius='6px';
-              card.style.padding='10px 12px';
+              card.style.padding='0.25in';
               card.style.width='48%';
-              card.style.fontSize='12px';
+              card.style.height='1.8in';
+              card.style.boxSizing='border-box';
+              card.style.fontSize='11px';
               card.style.display='flex';
               card.style.flexDirection='row';
               card.style.alignItems='stretch';
               card.style.justifyContent='space-between';
-              card.style.gap='8px';
+              card.style.gap='0.15in';
+              card.style.pageBreakInside='avoid';
 
               const infoCol=document.createElement('div');
               infoCol.style.flex='1 1 auto';
@@ -19977,9 +19996,13 @@ function closeStageModal(){
               infoCol.append(...children);
 
               card.append(infoCol, qrCol);
-              grid.appendChild(card);
+              if(grid) grid.appendChild(card);
             });
-            sheet.appendChild(grid);
+
+            // Avoid an extra blank page at the end
+            if(pages.length){
+              pages[pages.length-1].style.pageBreakAfter='auto';
+            }
           });
         });
       };
