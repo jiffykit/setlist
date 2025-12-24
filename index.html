@@ -8025,7 +8025,7 @@
       
       // Global date header
       const dateBoxesContainer = document.getElementById('dateBoxesContainer');
-      let currentDateView = 14; // Always show 14 days or until first gig
+      let currentDateView = 14; // Number of days roughly visible at once
       
       // Utility: Generate unique ID
       function generateId(){ return 'tour_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
@@ -8658,29 +8658,81 @@
         requestAnimationFrame(()=>{
           renderDateHeaderScheduled = false;
           if(!dateBoxesContainer) return;
-          
+
           // Save current scroll position before re-rendering
           const savedScrollLeft = preserveScroll ? dateBoxesContainer.scrollLeft : 0;
-          
+
           dateBoxesContainer.innerHTML = '';
           const today = new Date();
           today.setHours(0,0,0,0);
-          
-          // Always generate 120 days for scrolling (30 days before today, 90 after)
-          // But only 14 are visible at a time
-          const daysToShow = 120;
-          const daysBefore = 30; // Days to show before today
-          
-          // Calculate box width so exactly 14 fit in the container
+
+          // Determine the full range we actually need to show
+          // Include: today, all existing tour dates, and the currently selected gig date
+          const referenceDates = [];
+
+          if(Array.isArray(tourDates) && tourDates.length){
+            tourDates.forEach(td => {
+              if(td && td.date){
+                const d = new Date(td.date + 'T12:00:00');
+                if(!isNaN(d.getTime())) referenceDates.push(d);
+              }
+            });
+          }
+
+          if(gig && gig.date){
+            const gd = new Date(gig.date + 'T12:00:00');
+            if(!isNaN(gd.getTime())) referenceDates.push(gd);
+          }
+
+          // Always include today as an anchor
+          referenceDates.push(new Date(today));
+
+          // Find min/max across all reference dates
+          let minDate = new Date(today);
+          let maxDate = new Date(today);
+          referenceDates.forEach(d => {
+            if(d < minDate) minDate = new Date(d);
+            if(d > maxDate) maxDate = new Date(d);
+          });
+
+          // Add a margin so you can create gigs slightly before/after the current run
+          const marginDays = 30;
+          minDate.setHours(0,0,0,0);
+          maxDate.setHours(0,0,0,0);
+          minDate.setDate(minDate.getDate() - marginDays);
+          maxDate.setDate(maxDate.getDate() + marginDays);
+
+          // Ensure the calendar has no practical "end" in the future:
+          // always extend at least ~250 years ahead of today so far-future dates
+          // like 2236 are reachable just by scrolling.
+          const futureYearFloor = today.getFullYear() + 250;
+          if(maxDate.getFullYear() < futureYearFloor){
+            maxDate.setFullYear(futureYearFloor, 11, 31);
+          }
+
+          const startDate = new Date(minDate);
+          const endDate = new Date(maxDate);
+          const daysToShow = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+          // Calculate box width so approximately currentDateView days fit in the container
           const containerWidth = dateBoxesContainer.offsetWidth || dateBoxesContainer.parentElement.offsetWidth || 1000;
           const gap = 4; // Gap between boxes
-          const boxWidth = Math.floor((containerWidth - (13 * gap)) / 14); // 13 gaps between 14 boxes
+          const visibleDays = Math.max(currentDateView, 7); // At least a week visible
+          const boxWidth = Math.floor((containerWidth - ((visibleDays - 1) * gap)) / visibleDays);
           const finalBoxWidth = Math.max(boxWidth, 50); // Minimum 50px
-          
-          // Generate date range starting from daysBefore days ago
-          const startDate = new Date(today);
-          startDate.setDate(startDate.getDate() - daysBefore);
-          
+
+          // ROYGBIV month palette (repeats across the 12 months)
+          const monthPalette = [
+            { weekday:'#fee2e2', weekend:'#fecaca', borderWeekday:'#b91c1c', borderWeekend:'#7f1d1d' }, // Red
+            { weekday:'#ffedd5', weekend:'#fed7aa', borderWeekday:'#c2410c', borderWeekend:'#7c2d12' }, // Orange
+            { weekday:'#fef9c3', weekend:'#fef08a', borderWeekday:'#a16207', borderWeekend:'#854d0e' }, // Yellow
+            { weekday:'#dcfce7', weekend:'#bbf7d0', borderWeekday:'#15803d', borderWeekend:'#14532d' }, // Green
+            { weekday:'#dbeafe', weekend:'#bfdbfe', borderWeekday:'#1d4ed8', borderWeekend:'#1e3a8a' }, // Blue
+            { weekday:'#e0e7ff', weekend:'#c7d2fe', borderWeekday:'#4f46e5', borderWeekend:'#3730a3' }, // Indigo
+            { weekday:'#f3e8ff', weekend:'#e9d5ff', borderWeekday:'#7e22ce', borderWeekend:'#581c87' }  // Violet
+          ];
+
+          // Generate date range from minDate to maxDate (with margin)
           for(let i = 0; i < daysToShow; i++){
             const date = new Date(startDate);
             date.setDate(date.getDate() + i);
@@ -9015,7 +9067,10 @@
           
           const dayNum = date.getDate();
           const monthAbbr = date.toLocaleDateString('en-US', {month:'short'});
-          
+          const monthIndex = date.getMonth();
+          const dayOfWeek = date.getDay();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+
           let contentHtml = '';
           if(tourDate && tourDate.tourType){
             const tourType = tourDate.tourType;
@@ -9049,6 +9104,21 @@
           }
           
           box.innerHTML = contentHtml;
+
+          // Apply month-based ROYGBIV coloring, with weekends a darker shade
+          const palette = monthPalette[monthIndex % monthPalette.length];
+          const bgColor = isWeekend ? (palette.weekend || palette.weekday) : palette.weekday;
+          const borderColor = isWeekend ? (palette.borderWeekend || palette.borderWeekday) : palette.borderWeekday;
+
+          // Keep special status/today/active highlight styling dominant
+          const isCancelled = box.classList.contains('status-cancelled');
+          const isTodayStatus = box.classList.contains('status-today');
+          const isActive = box.classList.contains('active');
+
+          if(!isCancelled && !isTodayStatus && !isActive){
+            box.style.backgroundColor = bgColor;
+            box.style.borderColor = borderColor;
+          }
           
           // Single click: preview only and center on selected date
           box.addEventListener('click', (e) => {
