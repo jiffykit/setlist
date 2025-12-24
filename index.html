@@ -4281,6 +4281,7 @@
       const host=document.getElementById('merchQuickButtons');
       if(!host) return;
       host.innerHTML='';
+      const isTouchCapable = (typeof window!=='undefined' && ('ontouchstart' in window || (navigator && navigator.maxTouchPoints>0)));
       try{
         host.style.display='grid';
         host.style.gridTemplateColumns='repeat(auto-fill,minmax(160px,1fr))';
@@ -4399,6 +4400,46 @@
           e.dataTransfer.effectAllowed='copy';
           try{ e.dataTransfer.setData('text/x-merch-id', item.id); }catch(_){ }
         });
+        if(isTouchCapable){
+          const cartArea=document.getElementById('merchCartArea');
+          let touchOverCart=false;
+          const updateCartHighlight=(over)=>{
+            if(!cartArea) return;
+            if(over){
+              cartArea.style.backgroundColor='#eff6ff';
+              cartArea.style.borderTopColor='#3b82f6';
+            }else{
+              cartArea.style.backgroundColor='';
+              cartArea.style.borderTopColor='#e5e7eb';
+            }
+          };
+          chip.addEventListener('touchstart',()=>{
+            touchOverCart=false;
+          },{passive:true});
+          chip.addEventListener('touchmove',e=>{
+            if(!cartArea) return;
+            const t=e.touches && e.touches[0];
+            if(!t) return;
+            const rect=cartArea.getBoundingClientRect();
+            const over = t.clientX>=rect.left && t.clientX<=rect.right && t.clientY>=rect.top && t.clientY<=rect.bottom;
+            if(over!==touchOverCart){
+              touchOverCart=over;
+              updateCartHighlight(over);
+            }
+            e.preventDefault();
+          },{passive:false});
+          chip.addEventListener('touchend',e=>{
+            if(!cartArea) return;
+            updateCartHighlight(false);
+            const t=e.changedTouches && e.changedTouches[0];
+            if(!t) return;
+            const rect=cartArea.getBoundingClientRect();
+            const over = t.clientX>=rect.left && t.clientX<=rect.right && t.clientY>=rect.top && t.clientY<=rect.bottom;
+            if(over && item.id){
+              addMerchToCart(item.id,1);
+            }
+          });
+        }
         host.appendChild(chip);
       });
       renderMerchCart();
