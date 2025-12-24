@@ -8688,27 +8688,30 @@
           referenceDates.push(new Date(today));
 
           // Find min/max across all reference dates
-          let minDate = new Date(today);
-          let maxDate = new Date(today);
+          let minRef = new Date(today);
+          let maxRef = new Date(today);
           referenceDates.forEach(d => {
-            if(d < minDate) minDate = new Date(d);
-            if(d > maxDate) maxDate = new Date(d);
+            if(d < minRef) minRef = new Date(d);
+            if(d > maxRef) maxRef = new Date(d);
           });
 
           // Add a margin so you can create gigs slightly before/after the current run
-          const marginDays = 30;
-          minDate.setHours(0,0,0,0);
-          maxDate.setHours(0,0,0,0);
-          minDate.setDate(minDate.getDate() - marginDays);
-          maxDate.setDate(maxDate.getDate() + marginDays);
+          const marginPast = 30;
+          const marginFuture = 30;
 
-          // Ensure the calendar has no practical "end" in the future:
-          // always extend at least ~250 years ahead of today so far-future dates
-          // like 2236 are reachable just by scrolling.
-          const futureYearFloor = today.getFullYear() + 250;
-          if(maxDate.getFullYear() < futureYearFloor){
-            maxDate.setFullYear(futureYearFloor, 11, 31);
-          }
+          minRef.setHours(0,0,0,0);
+          maxRef.setHours(0,0,0,0);
+
+          const minDate = new Date(minRef);
+          minDate.setDate(minDate.getDate() - marginPast);
+
+          let maxDate = new Date(maxRef);
+          maxDate.setDate(maxDate.getDate() + marginFuture);
+
+          // Guarantee at least one full year into the future from today
+          const oneYearAhead = new Date(today);
+          oneYearAhead.setDate(oneYearAhead.getDate() + 365);
+          if(maxDate < oneYearAhead) maxDate = oneYearAhead;
 
           const startDate = new Date(minDate);
           const endDate = new Date(maxDate);
@@ -11431,14 +11434,49 @@
           });
         }).catch(error => {
           console.error('Search error:', error);
-          const errorMsg = error.message.includes('Rate limit') 
-            ? '⏱️ Rate limit reached. Please wait 10 seconds and try again.'
-            : 'Error loading results. Please try again.';
-          searchResults.innerHTML = `<div style="width:100%;text-align:center;color:#dc2626;padding:20px;font-size:13px">${errorMsg}</div>`;
+
+          const isCorsOrNetwork =
+            (error && typeof error === 'object' && (
+              error.name === 'TypeError' ||
+              /Failed to fetch/i.test(error.message || '') ||
+              /CORS/i.test(error.message || '')
+            ));
+
+          if (isCorsOrNetwork) {
+            // Browser blocked live OpenStreetMap search (common for file:// apps).
+            // Fall back to realistic local mock results so the UI stays useful.
+            const fallback = generateMockResults(searchTerm, addressToUse);
+            searchResults.innerHTML = '';
+            searchResults.appendChild(document.createElement('div')).outerHTML =
+              `<div style="width:100%;text-align:center;color:#64748b;padding:10px 16px;font-size:12px">Live map search is blocked by this browser. Showing approximate nearby suggestions instead.</div>`;
+            fallback.forEach(result => {
+              const chip = createInterestChip(result);
+              searchResults.appendChild(chip);
+            });
+
+            // Also clear any stuck spinner in the map embed
+            const mapEmbed = document.getElementById('tourMapEmbed');
+            if (mapEmbed && !mapEmbed.querySelector('iframe')) {
+              const query = encodeURIComponent(searchTerm + ' near ' + addressToUse);
+              mapEmbed.innerHTML = `
+                <iframe
+                  width="100%"
+                  height="100%"
+                  frameborder="0"
+                  style="border:none;border-radius:6px"
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=0,0,0,0&layer=mapnik&search=${query}">
+                </iframe>`;
+            }
+          } else {
+            const errorMsg = (error && error.message && error.message.includes('Rate limit'))
+              ? '⏱️ Rate limit reached. Please wait 10 seconds and try again.'
+              : 'Error loading results. Please try again.';
+            searchResults.innerHTML = `<div style="width:100%;text-align:center;color:#dc2626;padding:20px;font-size:13px">${errorMsg}</div>`;
+          }
         });
       }
       
-      // Fetch REAL business data using Overpass Turbo (OpenStreetMap)
+      // Fetch business data from OpenStreetMap / Nominatim (simple, browser-safe)
       async function fetchRealBusinessData(searchTerm, address) {
         const colorMap = {
           'hotels': '#9333ea',
@@ -11452,17 +11490,16 @@
           'guitar repair': '#db2777',
           'pharmacies': '#059669'
         };
-        
+
         const color = colorMap[searchTerm.toLowerCase()] || '#0ea5e9';
-        
-        // Show loading state
+
         const mapEmbed = document.getElementById('tourMapEmbed');
         if (mapEmbed) {
           mapEmbed.innerHTML = `
             <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f3f4f6;border-radius:6px">
               <div style="text-align:center;color:#64748b">
                 <div class="spinner" style="width:24px;height:24px;border:3px solid #e5e7eb;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px"></div>
-                <div style="font-size:13px">Searching REAL ${searchTerm} near ${address}...</div>
+                <div style="font-size:13px">Searching ${searchTerm} near ${address}...</div>
               </div>
             </div>
             <style>
@@ -11472,29 +11509,26 @@
             </style>
           `;
         }
-        
+
         try {
-          // Geocode the address first
-          const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
-          const geoResponse = await fetch(geocodeUrl, {
-            headers: { 'User-Agent': 'FASTFAST-Setlist-App' }
-          });
+          // Geocode the address first (same service we already use for maps)
+          const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&addressdetails=1`;
+          const geoResponse = await fetch(geocodeUrl);
+          if (!geoResponse.ok) {
+            throw new Error('Location lookup failed');
+          }
           const geoData = await geoResponse.json();
-          
+
           if (!geoData || geoData.length === 0) {
             throw new Error('Location not found');
           }
-          
+
           const lat = parseFloat(geoData[0].lat);
           const lon = parseFloat(geoData[0].lon);
-          const country = geoData[0].address?.country_code?.toUpperCase() || '';
-          
-          console.log(`Location: ${lat}, ${lon} in ${country}`);
-          
-          // Embed OpenStreetMap instead of Bing for better rendering
-          const osmMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.05},${lat-0.05},${lon+0.05},${lat+0.05}&layer=mapnik&marker=${lat},${lon}`;
-          
-          if (mapEmbed) {
+
+          // Show a basic map centered on the venue
+          if (mapEmbed && !isNaN(lat) && !isNaN(lon)) {
+            const osmMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.05},${lat-0.05},${lon+0.05},${lat+0.05}&layer=mapnik&marker=${lat},${lon}`;
             mapEmbed.innerHTML = `
               <iframe 
                 width="100%" 
@@ -11508,154 +11542,79 @@
               </iframe>
             `;
           }
-          
-          // Search query templates for OSM tags with progressive radius
-          const osmQueries = {
-            'hotels': '(node["tourism"="hotel"](around:{radius},{lat},{lon});way["tourism"="hotel"](around:{radius},{lat},{lon});node["tourism"="motel"](around:{radius},{lat},{lon});way["tourism"="motel"](around:{radius},{lat},{lon});node["tourism"="hostel"](around:{radius},{lat},{lon});way["tourism"="hostel"](around:{radius},{lat},{lon});)',
-            'music stores': '(node["shop"="music"](around:{radius},{lat},{lon});way["shop"="music"](around:{radius},{lat},{lon});node["shop"="musical_instrument"](around:{radius},{lat},{lon});way["shop"="musical_instrument"](around:{radius},{lat},{lon});)',
-            'rehearsal studios': '(node["amenity"="studio"](around:{radius},{lat},{lon});way["amenity"="studio"](around:{radius},{lat},{lon});node["amenity"="music_venue"]["rehearsal"="yes"](around:{radius},{lat},{lon});way["amenity"="music_venue"]["rehearsal"="yes"](around:{radius},{lat},{lon});node[~"name"~"[Rr]ehearsal|[Pp]ractice|[Ss]tudio|[Jj]am [Ss]pace|[Ll]ockup|[Mm]usic [Rr]oom",i](around:{radius},{lat},{lon});way[~"name"~"[Rr]ehearsal|[Pp]ractice|[Ss]tudio|[Jj]am [Ss]pace|[Ll]ockup|[Mm]usic [Rr]oom",i](around:{radius},{lat},{lon});)',
-            'bars': '(node["amenity"="bar"](around:{radius},{lat},{lon});way["amenity"="bar"](around:{radius},{lat},{lon});node["amenity"="pub"](around:{radius},{lat},{lon});way["amenity"="pub"](around:{radius},{lat},{lon});)',
-            'restaurants': '(node["amenity"="restaurant"](around:{radius},{lat},{lon});way["amenity"="restaurant"](around:{radius},{lat},{lon});node["amenity"="fast_food"](around:{radius},{lat},{lon});way["amenity"="fast_food"](around:{radius},{lat},{lon});)',
-            'cafes': '(node["amenity"="cafe"](around:{radius},{lat},{lon});way["amenity"="cafe"](around:{radius},{lat},{lon});node["shop"="coffee"](around:{radius},{lat},{lon});)',
-            'gas stations': '(node["amenity"="fuel"](around:{radius},{lat},{lon});way["amenity"="fuel"](around:{radius},{lat},{lon});)',
-            'print shops': '(node["shop"="copyshop"](around:{radius},{lat},{lon});way["shop"="copyshop"](around:{radius},{lat},{lon});node["shop"="printer"](around:{radius},{lat},{lon});node["shop"="print"](around:{radius},{lat},{lon});)',
-            'guitar repair': '(node["craft"="musical_instrument"](around:{radius},{lat},{lon});way["craft"="musical_instrument"](around:{radius},{lat},{lon});node["shop"="music"]["service"="repair"](around:{radius},{lat},{lon});)',
-            'pharmacies': '(node["amenity"="pharmacy"](around:{radius},{lat},{lon});way["amenity"="pharmacy"](around:{radius},{lat},{lon});)'
-          };
-          
-          const queryTemplate = osmQueries[searchTerm.toLowerCase()] || `(node[~"name"~"${searchTerm}",i](around:{radius},{lat},{lon});way[~"name"~"${searchTerm}",i](around:{radius},{lat},{lon});)`;
-          
-          // Single smart search with 10km radius (balance between coverage and API limits)
-          const searchRadius = 10000; // 10km
-          const osmQuery = queryTemplate.replace(/{radius}/g, searchRadius).replace(/{lat}/g, lat).replace(/{lon}/g, lon);
-          const overpassQuery = `[out:json][timeout:30];${osmQuery};out body 50;`;
-          const overpassUrl = 'https://overpass-api.de/api/interpreter';
-          
-          console.log(`Searching within ${searchRadius/1000}km radius...`);
-          
-          // Add delay to avoid rate limiting (wait 1 second between searches)
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          const response = await fetch(overpassUrl, {
-            method: 'POST',
-            body: overpassQuery,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-          });
-          
-          if (!response.ok) {
-            if (response.status === 429) {
+
+          // Now search for places of this type near the venue using Nominatim
+          const radiusKm = 10; // ~10km box around venue
+          const viewbox = `${lon - 0.1},${lat - 0.1},${lon + 0.1},${lat + 0.1}`;
+          const categoryTerm = encodeURIComponent(searchTerm);
+          const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${categoryTerm}&limit=25&viewbox=${viewbox}&bounded=1`;
+
+          const searchResponse = await fetch(searchUrl);
+          if (!searchResponse.ok) {
+            if (searchResponse.status === 429) {
               throw new Error('Rate limit reached. Please wait a moment and try again.');
             }
-            throw new Error(`Overpass API error: ${response.status}`);
+            throw new Error('Search request failed');
           }
-          
-          const data = await response.json();
-          console.log(`Found ${data.elements.length} results within ${searchRadius/1000}km`);
-          
-          // Store elements with their search radius
-          const allBusinesses = data.elements.map(el => {
-            el._searchRadius = searchRadius;
-            return el;
-          });
-          
-          // Calculate distance helper function
-          function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Earth's radius in km
+
+          const data = await searchResponse.json();
+
+          if (!Array.isArray(data) || data.length === 0) {
+            return [];
+          }
+
+          // Helper to compute distance (rough, but good enough for badges)
+          function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                       Math.sin(dLon/2) * Math.sin(dLon/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; // Distance in km
+            return R * c;
           }
-          
-          // Convert OSM data to business chips, filtering by country
-          const businesses = allBusinesses
-            .filter(element => {
-              if (!element.tags || !element.tags.name) return false;
-              
-              // Filter by country if available
-              const elemCountry = element.tags['addr:country']?.toUpperCase();
-              if (country && elemCountry && elemCountry !== country) {
-                console.log(`Filtering out ${element.tags.name} - wrong country: ${elemCountry} != ${country}`);
-                return false;
-              }
-              
-              return true;
-            })
-            .map(element => {
-              const tags = element.tags;
-              const name = tags.name;
-              
-              // Build address
-              const parts = [];
-              if (tags['addr:housenumber']) parts.push(tags['addr:housenumber']);
-              if (tags['addr:street']) parts.push(tags['addr:street']);
-              if (tags['addr:city']) parts.push(tags['addr:city']);
-              const addressLine = parts.length > 0 ? parts.join(' ') : 'Address unavailable';
-              
-              // Get contact info
-              const phone = tags.phone || tags['contact:phone'] || tags['contact:mobile'] || '';
-              const website = tags.website || tags['contact:website'] || '';
-              
-              // Build map URL
-              const elLat = element.lat || (element.center && element.center.lat);
-              const elLon = element.lon || (element.center && element.center.lon);
-              const mapUrl = elLat && elLon 
-                ? `https://www.openstreetmap.org/?mlat=${elLat}&mlon=${elLon}#map=19/${elLat}/${elLon}`
-                : '#';
-              
-              // Calculate actual distance from venue
-              const distance = elLat && elLon ? calculateDistance(lat, lon, elLat, elLon) : null;
-              
-              return {
-                name: name,
-                address: addressLine,
-                phone: phone,
-                url: mapUrl,
-                website: website,
-                rating: null,
-                type: searchTerm,
-                color: color,
-                lat: elLat,
-                lon: elLon,
-                distance: distance
-              };
-            });
-          
-          console.log(`Processed ${businesses.length} businesses with names`);
-          
-          if (businesses.length === 0) {
-            // Return empty array instead of throwing error - let UI handle gracefully
-            return [];
-          }
-          
-          // Update map to zoom to first result if available
-          if (businesses.length > 0 && businesses[0].lat && businesses[0].lon && mapEmbed) {
-            const topLat = businesses[0].lat;
-            const topLon = businesses[0].lon;
-            const zoomedMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${topLon-0.01},${topLat-0.01},${topLon+0.01},${topLat+0.01}&layer=mapnik&marker=${topLat},${topLon}`;
-            
-            mapEmbed.innerHTML = `
-              <iframe 
-                width="100%" 
-                height="100%" 
-                frameborder="0" 
-                scrolling="no" 
-                marginheight="0" 
-                marginwidth="0" 
-                src="${zoomedMapUrl}" 
-                style="border:none;border-radius:6px">
-              </iframe>
-            `;
-          }
-          
-          return businesses;
-          
+
+          const businesses = data.map(result => {
+            const name = result.display_name?.split(',')[0] || searchTerm;
+            const addressLine = result.display_name || 'Address unavailable';
+            const elLat = parseFloat(result.lat);
+            const elLon = parseFloat(result.lon);
+            const mapUrl = !isNaN(elLat) && !isNaN(elLon)
+              ? `https://www.openstreetmap.org/?mlat=${elLat}&mlon=${elLon}#map=19/${elLat}/${elLon}`
+              : '#';
+
+            const distance = (!isNaN(elLat) && !isNaN(elLon))
+              ? calculateDistanceKm(lat, lon, elLat, elLon)
+              : null;
+
+            return {
+              name,
+              address: addressLine,
+              phone: '',
+              url: mapUrl,
+              website: '',
+              rating: null,
+              type: searchTerm,
+              color,
+              lat: elLat,
+              lon: elLon,
+              distance
+            };
+          });
+
+          // Sort closest first and cap to a reasonable number
+          businesses.sort((a, b) => {
+            if (a.distance == null) return 1;
+            if (b.distance == null) return -1;
+            return a.distance - b.distance;
+          });
+
+          return businesses.slice(0, 20);
+
         } catch (error) {
-          console.error('Error fetching REAL business data:', error);
-          throw error; // Re-throw to show error to user
+          console.error('Error fetching business data from Nominatim:', error);
+          throw error;
         }
       }
       
