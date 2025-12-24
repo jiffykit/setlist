@@ -1663,10 +1663,14 @@
               <table style="width:100%;border-collapse:collapse;font-size:12px">
                 <thead style="background:#f3f4f6;position:sticky;top:0;z-index:1">
                   <tr>
+                    <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:130px">Thumbnail</th>
                     <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">Name</th>
                     <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:120px">Category</th>
                     <th style="text-align:right;padding:6px 8px;border-bottom:1px solid #e5e7eb">Price</th>
                     <th style="text-align:right;padding:6px 8px;border-bottom:1px solid #e5e7eb">Inventory</th>
+                    <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:60px">QR1</th>
+                    <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:60px">QR2</th>
+                    <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:60px">QR3</th>
                     <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:48px">Edit</th>
                     <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:48px">×</th>
                   </tr>
@@ -1702,15 +1706,20 @@
                 </div>
               </div>
             <div id="merchQuickButtons" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
-            <div id="merchCartArea" style="border-top:1px solid #e5e7eb;padding-top:8px;margin-top:4px">
+            <div id="merchCartArea" style="border-top:1px solid #e5e7eb;padding-top:8px;margin-top:4px;position:relative;overflow:hidden;min-height:180px">
+              <div id="merchCartUnderlay" style="position:absolute;inset:60px 8px auto 8px;display:flex;align-items:center;justify-content:center;font-size:90px;color:#d1d5db;opacity:0.7;pointer-events:none;z-index:0">🛒</div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                <strong style="font-size:13px">Current Sale</strong>
+                <div>
+                  <div style="font-size:13px;font-weight:600">Checkout</div>
+                  <div style="font-size:11px;color:#6b7280">(drag items here)</div>
+                </div>
                 <button id="merchClearCartBtn" class="btn secondary" type="button" style="padding:4px 8px;font-size:11px">Clear</button>
               </div>
-              <div style="max-height:140px;overflow:auto;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:6px">
+              <div style="border:1px solid #e5e7eb;border-radius:6px;margin-bottom:6px">
                 <table style="width:100%;border-collapse:collapse;font-size:12px">
                   <thead style="background:#f9fafb;position:sticky;top:0;z-index:1">
                     <tr>
+                      <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e5e7eb;width:60px">Thumb</th>
                       <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e5e7eb">Item</th>
                       <th style="text-align:right;padding:4px 6px;border-bottom:1px solid #e5e7eb;width:40px">Qty</th>
                       <th style="text-align:right;padding:4px 6px;border-bottom:1px solid #e5e7eb;width:60px">Line</th>
@@ -1727,11 +1736,11 @@
               <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:11px;color:#4b5563">
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                   <span style="font-weight:600">Payment:</span>
-                  <div id="merchPaymentMethodCash" class="btn secondary" style="padding:4px 8px;font-size:11px;background:#111827;color:#f9fafb;border-color:#111827">Cash</div>
+                  <div id="merchPaymentMethodCash" class="btn secondary" style="padding:6px 14px;font-size:12px;background:#111827;color:#f9fafb;border-color:#111827;border-radius:999px">Cash</div>
                 </div>
                 <span>Tip: drag merch chips above into this area to add them to the sale.</span>
               </div>
-              <button id="merchRecordSaleBtn" class="btn primary" type="button" style="width:100%;margin-bottom:6px">Record Sale</button>
+              <button id="merchRecordSaleBtn" class="btn primary" type="button" style="padding:6px 16px;font-size:12px;display:block;margin-left:auto;margin-bottom:6px">Record Sale</button>
             </div>
           </div>
         </div>
@@ -2967,7 +2976,7 @@
       kids.forEach(ch=>findInNode(ch, term));
     }
   }
-    function showPaymentQrOverlay(itemName, price, methodLabel, imgData){
+    function showPaymentQrOverlay(itemName, price, methodLabel, imgData, merchId){
       if(!imgData){
         showToast('No QR image available for this payment method yet.','warning');
         return;
@@ -3027,15 +3036,117 @@
       closeBtn.className='btn secondary';
       closeBtn.style.padding='6px 12px';
       closeBtn.style.fontSize='12px';
-      closeBtn.addEventListener('click',()=>{
-        document.body.removeChild(overlay);
+      const doClose=()=>{
+        if(overlay.parentNode){
+          overlay.parentNode.removeChild(overlay);
+        }
+      };
+      closeBtn.addEventListener('click',doClose);
+      const completeBtn=document.createElement('button');
+      completeBtn.type='button';
+      completeBtn.textContent='Complete Sale';
+      completeBtn.className='btn primary';
+      completeBtn.style.padding='6px 14px';
+      completeBtn.style.fontSize='12px';
+      completeBtn.style.marginLeft='8px';
+      completeBtn.addEventListener('click',()=>{
+        doClose();
+        if(!merchId){
+          showToast('No linked merch item for this payment.','warning');
+          return;
+        }
+        if(!appData.merch || !appData.merch[merchId]){
+          showToast('This merch item no longer exists.','warning');
+          return;
+        }
+        const item = appData.merch[merchId];
+        const unitPrice = Number(item.price!=null ? item.price : price || 0);
+        if(!Number.isFinite(unitPrice) || unitPrice<=0){
+          showToast('This item has no valid price set.','warning');
+          return;
+        }
+        let qtyInCart = 0;
+        if(currentMerchCart && Array.isArray(currentMerchCart.items)){
+          currentMerchCart.items.forEach(line=>{
+            if(line.merchId===merchId){
+              qtyInCart += Number(line.qty||0);
+            }
+          });
+        }
+        const qty = qtyInCart>0 ? qtyInCart : 1;
+        if(qty<=0){
+          showToast('Quantity for this sale is zero.','warning');
+          return;
+        }
+        const total = unitPrice * qty;
+        if(total<=0){
+          showToast('Sale has no billable amount.','warning');
+          return;
+        }
+        const gigSel=document.getElementById('merchGigSelect');
+        const gigId = gigSel ? (gigSel.value||'') : '';
+        const saleId='sale_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+        const ts=new Date().toISOString();
+        const paymentLabel = methodLabel && String(methodLabel).trim() ? String(methodLabel).trim() : 'QR';
+        const sale={
+          id:saleId,
+          gigId,
+          timestamp:ts,
+          items:[{ merchId, qty, price: unitPrice }],
+          total,
+          paymentMethod: paymentLabel
+        };
+        if(!Array.isArray(appData.sales)) appData.sales=[];
+        appData.sales.push(sale);
+        // Reduce inventory only for this item
+        const inv = Number(item.inventory||0);
+        if(inv>0){
+          item.inventory = Math.max(0, inv-qty);
+        }
+        // Remove this item's quantity from the cart, leaving all other items
+        if(qtyInCart>0 && currentMerchCart && Array.isArray(currentMerchCart.items)){
+          let remaining = qty;
+          const nextItems=[];
+          currentMerchCart.items.forEach(line=>{
+            if(line.merchId!==merchId){
+              nextItems.push(line);
+              return;
+            }
+            if(remaining<=0){
+              nextItems.push(line);
+              return;
+            }
+            const lineQty = Number(line.qty||0);
+            if(lineQty<=remaining){
+              remaining -= lineQty;
+              // omit line entirely
+            }else{
+              const newQty = lineQty-remaining;
+              remaining = 0;
+              if(newQty>0){
+                nextItems.push({ merchId: line.merchId, qty: newQty });
+              }
+            }
+          });
+          currentMerchCart.items = nextItems;
+          renderMerchCart();
+        }
+        saveAll();
+        renderMerchTab();
+        try{ renderFinanceTab(); }catch(_){ }
+        showToast('Sale recorded via '+paymentLabel+'.','success');
       });
       overlay.addEventListener('click',e=>{
         if(e.target===overlay){
-          document.body.removeChild(overlay);
+          doClose();
         }
       });
-      box.append(title,subtitle,imgWrap,helper,closeBtn);
+      const btnRow=document.createElement('div');
+      btnRow.style.display='flex';
+      btnRow.style.justifyContent='center';
+      btnRow.style.gap='8px';
+      btnRow.append(closeBtn,completeBtn);
+      box.append(title,subtitle,imgWrap,helper,btnRow);
       overlay.appendChild(box);
       document.body.appendChild(overlay);
     }
@@ -4002,7 +4113,7 @@
       if(!items.length){
         const tr=document.createElement('tr');
         const td=document.createElement('td');
-        td.colSpan=6;
+        td.colSpan=10;
         td.textContent='No merch items yet. Add items using the form above.';
         td.style.padding='8px';
         td.style.color='#6b7280';
@@ -4013,6 +4124,36 @@
       items.forEach(item=>{
         const tr=document.createElement('tr');
         tr.style.borderBottom='1px solid #e5e7eb';
+        const tdThumb=document.createElement('td');
+        tdThumb.style.padding='4px 6px';
+        tdThumb.style.verticalAlign='middle';
+        tdThumb.style.width='130px';
+        const thumbWrap=document.createElement('div');
+        thumbWrap.style.width='150px';
+        thumbWrap.style.height='150px';
+        thumbWrap.style.border='1px solid #e5e7eb';
+        thumbWrap.style.borderRadius='6px';
+        thumbWrap.style.overflow='hidden';
+        thumbWrap.style.display='flex';
+        thumbWrap.style.alignItems='center';
+        thumbWrap.style.justifyContent='center';
+        thumbWrap.style.background='#f9fafb';
+        if(item.thumb){
+          const img=document.createElement('img');
+          img.src=item.thumb;
+          img.alt=item.name||'';
+          img.style.maxWidth='150px';
+          img.style.maxHeight='150px';
+          img.style.display='block';
+          thumbWrap.appendChild(img);
+        }else{
+          const ph=document.createElement('div');
+          ph.textContent='No image';
+          ph.style.fontSize='10px';
+          ph.style.color='#9ca3af';
+          thumbWrap.appendChild(ph);
+        }
+        tdThumb.appendChild(thumbWrap);
         const tdName=document.createElement('td');
         tdName.style.padding='4px 6px';
         tdName.textContent=item.name||'';
@@ -4029,6 +4170,22 @@
         tdInv.style.padding='4px 6px';
         tdInv.style.textAlign='right';
         tdInv.textContent=String(Number(item.inventory||0));
+        const qrCodes = Array.isArray(item.qrCodes) ? item.qrCodes : [];
+        const qrTds=[];
+        for(let i=0;i<3;i++){
+          const td=document.createElement('td');
+          td.style.padding='4px 6px';
+          td.style.textAlign='center';
+          td.style.fontSize='11px';
+          td.style.color='#4b5563';
+          const slot = qrCodes[i] || null;
+          if(slot && slot.image){
+            td.textContent = slot.label || ('QR '+(i+1));
+          } else {
+            td.textContent='';
+          }
+          qrTds.push(td);
+        }
         const tdEdit=document.createElement('td');
         tdEdit.style.padding='4px 6px';
         tdEdit.style.textAlign='center';
@@ -4106,7 +4263,7 @@
           }
         });
         tdDel.appendChild(btnDel);
-        tr.append(tdName,tdCat,tdPrice,tdInv,tdEdit,tdDel);
+        tr.append(tdThumb,tdName,tdCat,tdPrice,tdInv,qrTds[0],qrTds[1],qrTds[2],tdEdit,tdDel);
         tbody.appendChild(tr);
       });
     }
@@ -4124,6 +4281,12 @@
       const host=document.getElementById('merchQuickButtons');
       if(!host) return;
       host.innerHTML='';
+      try{
+        host.style.display='grid';
+        host.style.gridTemplateColumns='repeat(auto-fill,minmax(160px,1fr))';
+        host.style.gap='8px';
+        host.style.alignItems='flex-start';
+      }catch(_){ }
       const items=getAllMerchItems();
       if(!items.length){
         const p=document.createElement('div');
@@ -4133,6 +4296,8 @@
         host.appendChild(p);
         return;
       }
+      const isNarrow = (typeof window!=='undefined' && window.innerWidth && window.innerWidth<768);
+      const thumbSize = isNarrow ? 80 : 130;
       let lastCat = null;
       items.forEach(item=>{
         const cat = (item.category||'').trim() || 'Uncategorized';
@@ -4150,29 +4315,31 @@
         }
         const chip=document.createElement('div');
         chip.style.display='flex';
-        chip.style.alignItems='center';
-        chip.style.gap='8px';
-        chip.style.padding='4px 8px';
+        chip.style.flexDirection='column';
+        chip.style.alignItems='stretch';
+        chip.style.gap='4px';
+        chip.style.padding='6px';
         chip.style.border='1px solid #d1d5db';
-        chip.style.borderRadius='999px';
+        chip.style.borderRadius='12px';
         chip.style.background='#ffffff';
         chip.style.fontSize='12px';
         chip.style.cursor='grab';
         chip.draggable=true;
         chip.dataset.merchId = item.id || '';
         const thumbWrap=document.createElement('div');
-        thumbWrap.style.width='32px';
-        thumbWrap.style.height='32px';
-        thumbWrap.style.borderRadius='999px';
+        thumbWrap.style.width=thumbSize+'px';
+        thumbWrap.style.height=thumbSize+'px';
+        thumbWrap.style.borderRadius='8px';
         thumbWrap.style.overflow='hidden';
-        thumbWrap.style.background='#f3f4f6';
+        thumbWrap.style.border='1px solid #e5e7eb';
+        thumbWrap.style.background='#f9fafb';
         thumbWrap.style.display='flex';
         thumbWrap.style.alignItems='center';
         thumbWrap.style.justifyContent='center';
         const img=document.createElement('img');
         img.alt='';
-        img.style.maxWidth='100%';
-        img.style.maxHeight='100%';
+        img.style.maxWidth=thumbSize+'px';
+        img.style.maxHeight=thumbSize+'px';
         if(item.thumb){
           img.src=item.thumb;
           img.style.display='block';
@@ -4205,8 +4372,7 @@
           qrRow.style.display='flex';
           qrRow.style.flexWrap='wrap';
           qrRow.style.gap='4px';
-          qrRow.style.marginLeft='40px';
-          qrRow.style.marginTop='2px';
+          qrRow.style.marginTop='4px';
           qrCodes.slice(0,3).forEach(method=>{
             const btn=document.createElement('button');
             btn.type='button';
@@ -4221,21 +4387,17 @@
                 return;
               }
               currentMerchPaymentMethod = method.label || 'QR';
-              showPaymentQrOverlay(item.name||'Item', item.price||0, method.label||'QR', method.image);
+              showPaymentQrOverlay(item.name||'Item', item.price||0, method.label||'QR', method.image, item.id||null);
             });
             qrRow.appendChild(btn);
           });
-          host.appendChild(qrRow);
+          chip.appendChild(qrRow);
         }
         chip.appendChild(text);
         chip.addEventListener('dragstart',e=>{
           if(!item.id) return;
           e.dataTransfer.effectAllowed='copy';
           try{ e.dataTransfer.setData('text/x-merch-id', item.id); }catch(_){ }
-        });
-        chip.addEventListener('click',()=>{
-          if(!item.id) return;
-          addMerchToCart(item.id, 1);
         });
         host.appendChild(chip);
       });
@@ -4279,6 +4441,29 @@
         total += lineTotal;
         const tr=document.createElement('tr');
         tr.style.borderBottom='1px solid #e5e7eb';
+        const tdThumb=document.createElement('td');
+        tdThumb.style.padding='4px 6px';
+        tdThumb.style.verticalAlign='middle';
+        tdThumb.style.width='60px';
+        const thumbWrap=document.createElement('div');
+        thumbWrap.style.width='40px';
+        thumbWrap.style.height='40px';
+        thumbWrap.style.borderRadius='6px';
+        thumbWrap.style.overflow='hidden';
+        thumbWrap.style.background='#f3f4f6';
+        thumbWrap.style.display='flex';
+        thumbWrap.style.alignItems='center';
+        thumbWrap.style.justifyContent='center';
+        if(item.thumb){
+          const img=document.createElement('img');
+          img.src=item.thumb;
+          img.alt=item.name||'';
+          img.style.maxWidth='40px';
+          img.style.maxHeight='40px';
+          img.style.display='block';
+          thumbWrap.appendChild(img);
+        }
+        tdThumb.appendChild(thumbWrap);
         const tdName=document.createElement('td');
         tdName.style.padding='4px 6px';
         tdName.textContent=item.name||'';
@@ -4301,7 +4486,7 @@
         btn.style.fontSize='11px';
         btn.addEventListener('click',()=> removeMerchCartItem(line.merchId));
         tdDel.appendChild(btn);
-        tr.append(tdName,tdQty,tdLine,tdDel);
+        tr.append(tdThumb,tdName,tdQty,tdLine,tdDel);
         tbody.appendChild(tr);
       });
       totalEl.textContent = formatMoney(total);
@@ -4324,7 +4509,8 @@
         host.appendChild(p);
         return;
       }
-      sales.forEach(sale=>{
+      const latest = sales[0];
+      const sale = latest;
         const row=document.createElement('div');
         row.style.display='flex';
         row.style.alignItems='center';
@@ -4370,7 +4556,6 @@
         right.appendChild(btn);
         row.append(left,right);
         host.appendChild(row);
-      });
     }
 
     // --- Tickets ---
@@ -4684,7 +4869,7 @@
           breakdownEl.textContent='Income by payment method: no merch sales yet for this selection.';
         }else{
           const parts=keys.sort((a,b)=>a.localeCompare(b)).map(k=>k+': '+formatMoney(map[k]));
-          breakdownEl.textContent='Income by payment method (merch): '+parts.join('  b7 ');
+          breakdownEl.textContent='Income by payment method (merch): '+parts.join(', ');
         }
       }
     }
@@ -4766,7 +4951,7 @@
           appData.expenses = (appData.expenses||[]).filter(e=>e.id!==exp.id);
           saveAll();
           renderExpenseList();
-          updateFinanceSummary();
+        tr.append(tdThumb,tdName,tdQty,tdLine,tdDel);
           renderFinanceTransactions();
           updateBandSplitSummary();
         });
@@ -18888,6 +19073,10 @@ function closeStageModal(){
           }else{
             showToast('Recorded as cash (exact amount).','info');
           }
+          const recordBtn=document.getElementById('merchRecordSaleBtn');
+          if(recordBtn){
+            recordBtn.click();
+          }
         });
       }
 
@@ -19937,7 +20126,7 @@ function closeStageModal(){
               line.style.fontSize='11px';
               line.style.color='#4b5563';
               const parts=keys.sort((a,b)=>a.localeCompare(b)).map(k=>k+': '+formatMoney(map[k]));
-              line.textContent='Income by payment method (merch): '+parts.join('  b7 ');
+              line.textContent='Income by payment method (merch): '+parts.join(', ');
               sheet.appendChild(line);
             }
             const txTitle=document.createElement('h3'); txTitle.textContent='Transactions'; txTitle.style.margin='8px 0 4px';
