@@ -318,6 +318,29 @@
   .bw path,.bw circle,.bw ellipse,.bw line,.bw polyline,.bw polygon{fill:none;stroke:#000}
   .bw text{fill:#000;stroke:none}
   /* selection visual (editor only; not printed) */
+  
+  /* QR scanner modal */
+  .qr-scanner-modal{position:fixed;inset:0;background:rgba(15,23,42,0.7);display:none;align-items:center;justify-content:center;z-index:120}
+  .qr-scanner-modal.open{display:flex}
+  .qr-scanner-inner{background:#ffffff;border-radius:10px;padding:12px 14px;max-width:720px;width:100%;box-shadow:0 12px 36px rgba(0,0,0,0.35);display:flex;flex-direction:row;gap:10px;align-items:stretch}
+  .qr-scanner-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .qr-scanner-header h3{margin:0;font-size:14px}
+  .qr-scanner-main{flex:2 1 0;display:flex;flex-direction:column;gap:6px}
+  .qr-scanner-side{flex:1 1 200px;border-left:1px solid #e5e7eb;padding-left:10px;display:flex;flex-direction:column;gap:6px;font-size:11px}
+  .qr-scanner-video{width:100%;max-height:260px;border-radius:8px;background:#000}
+  .qr-scanner-status{font-size:11px;color:#4b5563}
+  .qr-scanner-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+  .qr-scanner-count{font-weight:600;font-size:12px}
+  .qr-scanner-list{max-height:160px;overflow:auto;border:1px solid #e5e7eb;border-radius:4px;padding:4px 6px;background:#f9fafb;font-size:10px}
+  .qr-scanner-list div{padding:1px 0;border-bottom:1px solid #e5e7eb}
+  .qr-scanner-list div:last-child{border-bottom:none}
+  .qr-scanner-manual{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+  .qr-scanner-manual input{width:100%;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px}
+  .qr-error-overlay{position:fixed;inset:0;background:#b91c1c;color:#fef2f2;display:none;align-items:center;justify-content:center;z-index:130}
+  .qr-error-overlay.open{display:flex}
+  .qr-error-content{text-align:center;max-width:480px;padding:24px 32px;border-radius:12px;background:rgba(0,0,0,0.2);box-shadow:0 12px 40px rgba(0,0,0,0.5)}
+  .qr-error-content h2{margin:0 0 8px;font-size:22px}
+  .qr-error-content p{margin:4px 0;font-size:13px}
   g[data-draggable].selected path,
   g[data-draggable].selected rect,
   g[data-draggable].selected circle,
@@ -931,6 +954,46 @@
   </div>
   
   <div class="wrap" style="padding-bottom:28px">
+    <!-- QR scanner modal (used for ticket QR redemption, fully offline) -->
+    <div id="qrScannerModal" class="qr-scanner-modal" aria-hidden="true">
+      <div class="qr-scanner-inner">
+        <div class="qr-scanner-main">
+          <div class="qr-scanner-header">
+            <h3>Scan Ticket QR</h3>
+            <button id="qrScannerCloseBtn" type="button" class="btn secondary" style="padding:2px 6px;font-size:11px">Close</button>
+          </div>
+          <video id="qrScannerVideo" class="qr-scanner-video" autoplay playsinline muted></video>
+          <canvas id="qrScannerCanvas" style="display:none"></canvas>
+          <div id="qrScannerStatus" class="qr-scanner-status">Allow camera access, then point at the ticket QR code.</div>
+          <div class="qr-scanner-actions">
+            <button id="qrScannerCashBtn" type="button" class="btn secondary" style="padding:4px 8px;font-size:11px">Cash Sale</button>
+            <button id="qrScannerStopBtn" type="button" class="btn secondary" style="padding:4px 8px;font-size:11px">Stop scanning</button>
+          </div>
+        </div>
+        <div class="qr-scanner-side">
+          <div class="qr-scanner-count">Redeemed this session: <span id="qrScannerCount">0</span></div>
+          <div id="qrScannerList" class="qr-scanner-list" aria-live="polite"></div>
+          <div class="qr-scanner-manual">
+            <label for="qrScannerManualCode">Manual code (if QR fails):</label>
+            <input id="qrScannerManualCode" type="text" placeholder="TEST-251224-006-00W">
+            <button id="qrScannerManualRedeemBtn" type="button" class="btn secondary" style="padding:3px 8px;font-size:11px;align-self:flex-start">Redeem typed code</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="qrErrorOverlay" class="qr-error-overlay" aria-hidden="true">
+      <div class="qr-error-content">
+        <h2>Ticket Issue</h2>
+        <p id="qrErrorMessage">This ticket is already redeemed or invalid.</p>
+        <p style="margin-top:10px"><button id="qrErrorBackBtn" type="button" class="btn secondary" style="padding:6px 10px;font-size:12px">Back to scanning</button></p>
+      </div>
+    </div>
+    <div id="qrSuccessOverlay" class="qr-error-overlay" aria-hidden="true" style="background:#15803d;">
+      <div class="qr-error-content">
+        <h2>Ticket OK</h2>
+        <p id="qrSuccessMessage">Ticket accepted.</p>
+      </div>
+    </div>
     <!-- Tabs row -->
     <div style="display:flex;align-items:center;gap:12px;margin:16px 0">
       <div class="tabs" style="margin:0;flex:1">
@@ -938,6 +1001,8 @@
         <button class="tab" data-tab="db">Song Database</button>
         <button class="tab" data-tab="set">Setlist</button>
         <button class="tab" data-tab="adv">Tech / Stage</button>
+        <button class="tab" data-tab="merch">Merch / POS</button>
+        <button class="tab" data-tab="finance">Finances</button>
         <button class="tab" data-tab="live">Live</button>
       </div>
     </div>
@@ -1501,6 +1566,268 @@
         </div>
       </div>
       
+
+
+      <!-- Merch / POS Tab -->
+      <div id="merch" style="display:none;grid-column:1 / -1;width:100%;margin-top:12px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button id="merchTabTickets" type="button" class="btn secondary" style="padding:6px 10px;font-size:12px">Tickets</button>
+          <button id="merchTabCatalog" type="button" class="btn secondary" style="padding:6px 10px;font-size:12px">Catalog</button>
+          <button id="merchTabPOS" type="button" class="btn secondary" style="padding:6px 10px;font-size:12px">POS</button>
+        </div>
+        <div id="merchTicketsPane" style="display:none;flex-wrap:wrap;gap:16px;align-items:flex-start">
+          <div class="card" style="margin-bottom:12px;flex:1 1 320px;min-width:280px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <h2 style="margin:0">Tickets Catalog</h2>
+              <button id="ticketsPrintBtn" class="btn secondary" type="button">Preview tickets</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <input id="ticketEventName" type="text" placeholder="Event name" style="flex:2 1 160px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <input id="ticketEventDate" type="date" style="flex:1 1 140px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <input id="ticketPrice" type="number" min="0" step="0.01" placeholder="Price" style="flex:1 1 80px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <input id="ticketQuantity" type="number" min="1" step="1" placeholder="Quantity" style="flex:1 1 80px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <select id="ticketGigSelect" style="flex:1 1 160px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px"></select>
+              <select id="ticketAgeRestriction" style="flex:1 1 120px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px">
+                <option value="All ages">All ages</option>
+                <option value="18+">18+</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="ticketCreateBatchBtn" class="btn primary" type="button">Create Batch</button>
+              <div style="font-size:11px;color:#6b7280;align-self:center">Codes are printable and human-readable. QR codes are optional and can be added later if needed.</div>
+            </div>
+          </div>
+          <div class="card" style="flex:1 1 320px;min-width:280px">
+            <h3 style="margin-top:0;margin-bottom:6px;font-size:14px">Ticket Batches</h3>
+            <div id="ticketBatchList" style="max-height:320px;overflow:auto;font-size:12px"></div>
+          </div>
+        </div>
+        <div id="merchCatalogPane" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+          <!-- Merch catalog management -->
+          <div class="card" style="flex:1 1 320px;min-width:280px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <h2 style="margin:0">Merch Catalog</h2>
+              <button id="merchPrintBtn" class="btn secondary" type="button">Print</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <input id="merchName" type="text" placeholder="Item name" style="flex:2 1 140px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <input id="merchCategory" type="text" placeholder="Category (e.g. shirts, vinyl)" style="flex:1 1 140px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <input id="merchPrice" type="number" min="0" step="0.01" placeholder="Price" style="flex:1 1 80px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <input id="merchInventory" type="number" min="0" step="1" placeholder="Inventory" style="flex:0 0 90px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <button id="merchSaveBtn" class="btn primary" type="button" style="flex:0 0 auto">Save Item</button>
+              <button id="merchClearBtn" class="btn secondary" type="button" style="flex:0 0 auto">Clear</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <div id="merchImageDrop" style="flex:1 1 auto;padding:6px 8px;border:1px dashed #d1d5db;border-radius:6px;font-size:12px;color:#6b7280;background:#f9fafb;cursor:pointer;text-align:center">
+                Drop merch photo here or click to choose
+              </div>
+              <div style="width:56px;height:56px;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3f4f6">
+                <img id="merchImagePreview" alt="" style="max-width:100%;max-height:100%;display:none">
+              </div>
+              <button id="merchImageClearBtn" class="btn secondary" type="button" style="padding:4px 8px;font-size:11px;flex:0 0 auto">Clear</button>
+              <input id="merchImageInput" type="file" accept="image/*" style="display:none">
+            </div>
+            <div style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-bottom:8px;background:#f9fafb">
+              <div style="font-size:11px;color:#4b5563;margin-bottom:4px;font-weight:600">Payment QR codes per item (optional, up to 3)</div>
+              <div style="font-size:11px;color:#6b7280;margin-bottom:4px">Give each QR a label (e.g. PayPal, Interac, Square), then drop the QR image. Only QRs with an image will show as buttons in POS.</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <input id="merchQrLabel1" type="text" placeholder="Method 1 label (e.g. PayPal)" style="flex:1 1 auto;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px">
+                  <div id="merchQrDrop1" style="flex:0 0 150px;padding:4px 6px;border:1px dashed #d1d5db;border-radius:6px;background:#ffffff;cursor:pointer;text-align:center">Drop QR 1 image or click</div>
+                  <div style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3f4f6">
+                    <img id="merchQrPreview1" alt="" style="max-width:100%;max-height:100%;display:none">
+                  </div>
+                  <input id="merchQrInput1" type="file" accept="image/*" style="display:none">
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <input id="merchQrLabel2" type="text" placeholder="Method 2 label (optional)" style="flex:1 1 auto;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px">
+                  <div id="merchQrDrop2" style="flex:0 0 150px;padding:4px 6px;border:1px dashed #d1d5db;border-radius:6px;background:#ffffff;cursor:pointer;text-align:center">Drop QR 2 image or click</div>
+                  <div style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3f4f6">
+                    <img id="merchQrPreview2" alt="" style="max-width:100%;max-height:100%;display:none">
+                  </div>
+                  <input id="merchQrInput2" type="file" accept="image/*" style="display:none">
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <input id="merchQrLabel3" type="text" placeholder="Method 3 label (optional)" style="flex:1 1 auto;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px">
+                  <div id="merchQrDrop3" style="flex:0 0 150px;padding:4px 6px;border:1px dashed #d1d5db;border-radius:6px;background:#ffffff;cursor:pointer;text-align:center">Drop QR 3 image or click</div>
+                  <div style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3f4f6">
+                    <img id="merchQrPreview3" alt="" style="max-width:100%;max-height:100%;display:none">
+                  </div>
+                  <input id="merchQrInput3" type="file" accept="image/*" style="display:none">
+                </div>
+              </div>
+            </div>
+            <div style="max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:6px">
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead style="background:#f3f4f6;position:sticky;top:0;z-index:1">
+                  <tr>
+                    <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">Name</th>
+                    <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:120px">Category</th>
+                    <th style="text-align:right;padding:6px 8px;border-bottom:1px solid #e5e7eb">Price</th>
+                    <th style="text-align:right;padding:6px 8px;border-bottom:1px solid #e5e7eb">Inventory</th>
+                    <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:48px">Edit</th>
+                    <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;width:48px">×</th>
+                  </tr>
+                </thead>
+                <tbody id="merchTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <div id="merchPosPane" style="display:none;flex-wrap:wrap;gap:16px;align-items:flex-start">
+          <!-- POS quick sale -->
+            <div class="card" style="flex:1 1 100%;min-width:280px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <h2 style="margin:0">POS</h2>
+              <select id="merchGigSelect" style="min-width:160px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px"></select>
+            </div>
+              <div style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px;margin-bottom:10px;background:#f9fafb;font-size:11px">
+                <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px">
+                  <span style="font-weight:600">Tickets / Door:</span>
+                  <select id="posTicketBatchSelect" style="flex:1 1 140px;min-width:160px;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px"></select>
+                  <span id="posTicketPriceLabel" style="color:#4b5563"></span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px">
+                  <button id="posTicketDoorCashBtn" class="btn secondary" type="button" style="padding:3px 8px;font-size:11px">Sell door ticket (cash)</button>
+                  <span id="posTicketStats" style="font-size:11px;color:#6b7280"></span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                  <input id="posTicketCodeInput" type="text" placeholder="Scan or type ticket code" style="flex:2 1 160px;min-width:160px;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px">
+                  <button id="posTicketRedeemBtn" class="btn secondary" type="button" style="padding:3px 8px;font-size:11px">Redeem code</button>
+                  <button id="posTicketScanQrBtn" class="btn secondary" type="button" style="padding:3px 8px;font-size:11px">Scan QR</button>
+                </div>
+              </div>
+            <div id="merchQuickButtons" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+            <div id="merchCartArea" style="border-top:1px solid #e5e7eb;padding-top:8px;margin-top:4px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <strong style="font-size:13px">Current Sale</strong>
+                <button id="merchClearCartBtn" class="btn secondary" type="button" style="padding:4px 8px;font-size:11px">Clear</button>
+              </div>
+              <div style="max-height:140px;overflow:auto;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:6px">
+                <table style="width:100%;border-collapse:collapse;font-size:12px">
+                  <thead style="background:#f9fafb;position:sticky;top:0;z-index:1">
+                    <tr>
+                      <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e5e7eb">Item</th>
+                      <th style="text-align:right;padding:4px 6px;border-bottom:1px solid #e5e7eb;width:40px">Qty</th>
+                      <th style="text-align:right;padding:4px 6px;border-bottom:1px solid #e5e7eb;width:60px">Line</th>
+                      <th style="text-align:center;padding:4px 6px;border-bottom:1px solid #e5e7eb;width:32px">×</th>
+                    </tr>
+                  </thead>
+                  <tbody id="merchCartBody"></tbody>
+                </table>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px">
+                <span>Total</span>
+                <strong id="merchCartTotal">$0.00</strong>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:11px;color:#4b5563">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                  <span style="font-weight:600">Payment:</span>
+                  <div id="merchPaymentMethodCash" class="btn secondary" style="padding:4px 8px;font-size:11px;background:#111827;color:#f9fafb;border-color:#111827">Cash</div>
+                </div>
+                <span>Tip: drag merch chips above into this area to add them to the sale.</span>
+              </div>
+              <button id="merchRecordSaleBtn" class="btn primary" type="button" style="width:100%;margin-bottom:6px">Record Sale</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <h3 style="margin:0;font-size:14px">Recent Merch Sales</h3>
+            <button id="merchSalesPrintBtn" class="btn secondary" type="button" style="padding:4px 8px;font-size:11px">Print Log</button>
+          </div>
+          <div id="merchSalesLog" style="max-height:220px;overflow:auto;font-size:12px"></div>
+        </div>
+      </div>
+
+
+      <!-- Finances Tab -->
+      <div id="finance" style="display:none;grid-column:1 / -1;width:100%;margin-top:12px">
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <h2 style="margin:0">Finances</h2>
+            <select id="financeGigSelect" style="min-width:180px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px"></select>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:8px;font-size:13px">
+            <div style="padding:8px;border-radius:6px;background:#eff6ff;border:1px solid #bfdbfe">
+              <div style="font-size:11px;color:#1d4ed8;margin-bottom:2px">Ticket Income</div>
+              <div id="financeTicketTotal" style="font-size:16px;font-weight:700;color:#1e3a8a">$0.00</div>
+            </div>
+            <div style="padding:8px;border-radius:6px;background:#ecfdf5;border:1px solid #bbf7d0">
+              <div style="font-size:11px;color:#15803d;margin-bottom:2px">Merch Income</div>
+              <div id="financeMerchTotal" style="font-size:16px;font-weight:700;color:#14532d">$0.00</div>
+            </div>
+            <div style="padding:8px;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd">
+              <div style="font-size:11px;color:#0369a1;margin-bottom:2px">Other Income (fees, guarantees)</div>
+              <div id="financeOtherIncomeTotal" style="font-size:16px;font-weight:700;color:#0f172a">$0.00</div>
+            </div>
+            <div style="padding:8px;border-radius:6px;background:#fefce8;border:1px solid #fef08a">
+              <div style="font-size:11px;color:#854d0e;margin-bottom:2px">Expenses</div>
+              <div id="financeExpenseTotal" style="font-size:16px;font-weight:700;color:#713f12">$0.00</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px;font-size:13px">
+            <div><strong>Total Income:</strong> <span id="financeIncomeTotal">$0.00</span></div>
+            <div><strong>Net Profit:</strong> <span id="financeNetTotal">$0.00</span></div>
+          </div>
+          <div id="financePaymentBreakdown" style="font-size:11px;color:#4b5563;margin-bottom:6px"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+            <button id="financeExportAllBtn" class="btn primary" type="button">Export CSV (all)</button>
+            <button id="financeExportNewBtn" class="btn secondary" type="button">Export CSV (new since last export)</button>
+            <button id="financePrintBtn" class="btn secondary" type="button">Print</button>
+            <button id="financeClearGigBtn" class="btn danger" type="button">Clear this day's ledger</button>
+          </div>
+          <div style="font-size:11px;color:#4b5563;line-height:1.4;margin-top:4px">
+            CSV exports are <strong>Google Sheets / Excel-ready</strong>. Download the CSV, then open Google Sheets or Excel Online and use 
+            <em>File → Import → Upload</em>. Choose "Append to current sheet" if you are maintaining a running ledger. Each row includes a stable
+            transaction ID so re-importing the same file will not create duplicates if your external sheet de-duplicates on that ID.
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start">
+          <div class="card" style="flex:1 1 280px;min-width:260px">
+            <h3 style="margin-top:0;margin-bottom:8px;font-size:14px">Event Fees / Other Income</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <input id="incomeAmount" type="number" min="0" step="0.01" placeholder="Amount" style="flex:0 0 100px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <input id="incomeLabel" type="text" placeholder="Label (e.g. Wedding fee, guarantee)" style="flex:1 1 140px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+            </div>
+            <textarea id="incomeNotes" rows="2" placeholder="Notes (optional)" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;resize:vertical;margin-bottom:8px"></textarea>
+            <button id="incomeAddBtn" class="btn primary" type="button" style="width:100%;margin-bottom:4px">Add Income</button>
+            <div id="incomeList" style="margin-top:4px;max-height:220px;overflow:auto;font-size:12px"></div>
+          </div>
+          <div class="card" style="flex:1 1 280px;min-width:260px">
+            <h3 style="margin-top:0;margin-bottom:8px;font-size:14px">Expenses</h3>
+            <div id="expensePresets" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;font-size:11px"></div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <input id="expenseAmount" type="number" min="0" step="0.01" placeholder="Amount" style="flex:0 0 100px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+              <input id="expenseCategory" type="text" placeholder="Category (e.g. gas, lodging)" style="flex:1 1 140px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
+            </div>
+            <textarea id="expenseNotes" rows="2" placeholder="Notes (optional)" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;resize:vertical;margin-bottom:8px"></textarea>
+            <button id="expenseAddBtn" class="btn primary" type="button" style="width:100%">Add Expense</button>
+            <div id="expenseList" style="margin-top:8px;max-height:220px;overflow:auto;font-size:12px"></div>
+          </div>
+          <div class="card" style="flex:1 1 260px;min-width:240px">
+            <h3 style="margin-top:0;margin-bottom:8px;font-size:14px">Band Split</h3>
+            <div style="font-size:12px;color:#4b5563;margin-bottom:6px">Based on current gig net profit.</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <button id="splitEqualBtn" class="btn secondary" type="button" style="flex:1">Equal Split</button>
+              <button id="splitCustomBtn" class="btn secondary" type="button" style="flex:1">Custom %</button>
+            </div>
+            <div id="splitCustomArea" style="display:none;margin-bottom:8px">
+              <div id="splitCustomRows" style="display:flex;flex-direction:column;gap:4px;margin-bottom:4px"></div>
+              <button id="splitAddMemberBtn" class="btn secondary" type="button" style="width:100%;padding:4px 8px;font-size:11px">+ Add Member</button>
+            </div>
+            <div id="splitResults" style="font-size:12px"></div>
+          </div>
+          <div class="card" style="flex:1 1 260px;min-width:240px">
+            <h3 style="margin-top:0;margin-bottom:8px;font-size:14px">Transactions</h3>
+            <div id="financeTransactions" style="max-height:260px;overflow:auto;font-size:12px"></div>
+          </div>
+        </div>
+      </div>
 
 
       <!-- Live Mode: full-screen, touch-first setlist + lyrics viewer -->
@@ -2156,6 +2483,26 @@
   let tourViewMode = 'month'; // 'week' | 'month' | 'year'
   let tourViewDate = new Date(); // Current view period anchor
   let tourCustomSearchTerms = ''; // User-defined search terms
+  // Finance + merch + tickets data (stored in localStorage as part of app data)
+  let appData = {
+    merch: {}, // id -> {id,name,category,price,inventory,thumb,qrCodes}
+    sales: [], // {id,timestamp,gigId,items:[{merchId,qty,price}],total,paymentMethod?}
+    tickets: [], // {id,eventName,date,price,quantity,tickets:[{code,redeemed}],gigId,ageRestriction?,timestamp}
+    gigs: {}, // gigId -> {id,name,date,venue}
+    expenses: [], // {id,gigId,timestamp,amount,category,notes}
+    income: [],   // {id,gigId,timestamp,amount,label,notes}
+    expensePresets: [],
+    exports: { lastExportTimestamp: null },
+    paymentLinks: { paypal:'', square:'', interac:'' },
+    paymentQr: { paypal:'', square:'', interac:'' }
+  };
+  // Transient POS/cart state (not persisted directly)
+  let currentMerchCart = { items: [] }; // [{merchId, qty}]
+  let editingMerchId = null;
+  let currentMerchImageData = null; // data URL thumbnail for merch item being edited
+  let currentMerchQrData = [null,null,null]; // up to 3 per-item payment QR images for the item being edited
+  // Label for how the current merch sale is being paid (e.g. "Cash", "Paypal 100", "Interac QR")
+  let currentMerchPaymentMethod = 'Cash';
   
   // Toast notification system
   function showToast(message, type = 'info', duration = 5000){
@@ -2176,6 +2523,349 @@
       toast.classList.remove('show');
       setTimeout(() => toast.remove(), 300);
     }, duration);
+  }
+
+  // Generic QR scanner helper (camera-based, offline; expects a QR decoder such as jsQR to be loaded locally)
+  let qrScannerStream = null;
+  let qrScannerTimer = null;
+  let qrScannerCallback = null;
+  let qrScannerPaused = false;
+  let qrScannerLastValue = '';
+  let qrScannerLastTime = 0;
+  let qrAudioCtx = null;
+
+  function playTone(freq, durationMs, type){
+    try{
+      if(!qrAudioCtx){ qrAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      if(qrAudioCtx.state === 'suspended'){ qrAudioCtx.resume().catch(()=>{}); }
+      const osc = qrAudioCtx.createOscillator();
+      const gain = qrAudioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, qrAudioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.2, qrAudioCtx.currentTime + 0.01);
+      gain.gain.linearRampToValueAtTime(0.0001, qrAudioCtx.currentTime + durationMs/1000);
+      osc.connect(gain);
+      gain.connect(qrAudioCtx.destination);
+      osc.start();
+      osc.stop(qrAudioCtx.currentTime + durationMs/1000 + 0.05);
+    }catch(_){
+      // ignore audio errors
+    }
+  }
+
+  function playSuccessSound(){
+    // quick pleasant two-tone "ding"
+    playTone(880, 120, 'sine');
+    setTimeout(()=>playTone(1320, 100, 'sine'), 110);
+  }
+
+  function playErrorSound(){
+    // single low beep around 300 Hz
+    playTone(300, 220, 'square');
+  }
+
+  function ensureQrDecoderLoaded(callback){
+    if(window.jsQR || typeof window.decodeQrFromImageData === 'function'){
+      callback(true);
+      return;
+    }
+
+    function loadScript(src, done){
+      try{
+        const el=document.createElement('script');
+        el.src=src;
+        el.onload=()=>done(true);
+        el.onerror=()=>done(false);
+        document.head.appendChild(el);
+      }catch(_){
+        done(false);
+      }
+    }
+
+    // 1) Try local file next to this HTML (best for offline use)
+    loadScript('jsqr.min.js', okLocal=>{
+      if(okLocal && (window.jsQR || typeof window.decodeQrFromImageData === 'function')){
+        callback(true);
+        return;
+      }
+
+      // 2) If that failed and we appear to be online, try a CDN copy
+      if(navigator.onLine){
+        const cdnUrl='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        loadScript(cdnUrl, okCdn=>{
+          const ok = okCdn && (window.jsQR || typeof window.decodeQrFromImageData === 'function');
+          callback(ok);
+        });
+      }else{
+        callback(false);
+      }
+    });
+  }
+
+  // Lazy-load a QR code generator for printing ticket QR images
+  function ensureQrGeneratorLoaded(callback){
+    if(window.QRCode && typeof window.QRCode.toDataURL === 'function'){
+      callback(true);
+      return;
+    }
+
+    function loadScript(src, done){
+      try{
+        const el=document.createElement('script');
+        el.src=src;
+        el.onload=()=>done(true);
+        el.onerror=()=>done(false);
+        document.head.appendChild(el);
+      }catch(_){
+        done(false);
+      }
+    }
+
+    // Prefer a local copy placed next to this file
+    loadScript('qrcode.min.js', okLocal=>{
+      if(okLocal && window.QRCode && typeof window.QRCode.toDataURL === 'function'){
+        callback(true);
+        return;
+      }
+
+      // Fallback: try a CDN when online (one-time fetch)
+      if(navigator.onLine){
+        const cdn='https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js';
+        loadScript(cdn, okCdn=>{
+          const ok = okCdn && window.QRCode && typeof window.QRCode.toDataURL === 'function';
+          callback(ok);
+        });
+      }else{
+        callback(false);
+      }
+    });
+  }
+
+  function createTicketQrImageElement(text){
+    if(!window.QRCode || typeof window.QRCode.toDataURL !== 'function') return null;
+    const img=document.createElement('img');
+    img.alt='Ticket QR';
+    img.style.display='block';
+    img.style.margin='0 0 0 auto';
+    img.style.width='110px';
+    img.style.height='110px';
+    try{
+      window.QRCode.toDataURL(String(text||''), { margin:1, scale:6 }, (err,url)=>{
+        if(!err && url){ img.src=url; }
+      });
+    }catch(_){
+      // leave img empty on failure
+    }
+    return img;
+  }
+
+  function stopQrScanner(){
+    if(qrScannerTimer){
+      clearInterval(qrScannerTimer);
+      qrScannerTimer = null;
+    }
+    if(qrScannerStream){
+      try{ qrScannerStream.getTracks().forEach(t=>t.stop()); }catch(_){ }
+      qrScannerStream = null;
+    }
+    qrScannerPaused = false;
+    const modal=document.getElementById('qrScannerModal');
+    if(modal) modal.classList.remove('open');
+  }
+
+  function openQrScanner(onDecoded){
+    const modal=document.getElementById('qrScannerModal');
+    const video=document.getElementById('qrScannerVideo');
+    const canvas=document.getElementById('qrScannerCanvas');
+    const statusEl=document.getElementById('qrScannerStatus');
+    const closeBtn=document.getElementById('qrScannerCloseBtn');
+    const stopBtn=document.getElementById('qrScannerStopBtn');
+    const cashBtn=document.getElementById('qrScannerCashBtn');
+    const countEl=document.getElementById('qrScannerCount');
+    const listEl=document.getElementById('qrScannerList');
+    const manualInput=document.getElementById('qrScannerManualCode');
+    const manualBtn=document.getElementById('qrScannerManualRedeemBtn');
+    const errorOverlay=document.getElementById('qrErrorOverlay');
+    const errorBackBtn=document.getElementById('qrErrorBackBtn');
+    if(!modal || !video || !canvas || !statusEl){
+      showToast('QR scanner UI not available.','warning');
+      return;
+    }
+    qrScannerCallback = typeof onDecoded==='function' ? onDecoded : null;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    statusEl.textContent='Preparing scanner…';
+    qrScannerPaused = false;
+    qrScannerLastValue = '';
+    qrScannerLastTime = 0;
+    if(countEl) countEl.textContent='0';
+    if(listEl) listEl.innerHTML='';
+    if(manualInput) manualInput.value='';
+
+    function showDuplicateError(msg){
+      qrScannerPaused = true;
+      const overlay=errorOverlay;
+      const msgEl=document.getElementById('qrErrorMessage');
+            if(msgEl) msgEl.textContent=msg || 'This ticket is already redeemed or invalid.';
+      if(overlay){
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden','false');
+      }
+            try{ playErrorSound(); }catch(_){ }
+    }
+
+    if(closeBtn){ closeBtn.onclick = ()=>{ stopQrScanner(); }; }
+    if(stopBtn){ stopBtn.onclick = ()=>{ stopQrScanner(); }; }
+    if(errorBackBtn){
+      errorBackBtn.onclick = ()=>{
+        qrScannerPaused = false;
+        if(errorOverlay){ errorOverlay.classList.remove('open'); errorOverlay.setAttribute('aria-hidden','true'); }
+      };
+    }
+
+    // Cash ticket sale while scanner stays open (reuses POS door-cash logic + change prompt)
+    if(cashBtn){
+      cashBtn.onclick = ()=>{
+        const batchSel=document.getElementById('posTicketBatchSelect');
+        const gigSel=document.getElementById('merchGigSelect');
+        const doorBtn=document.getElementById('posTicketDoorCashBtn');
+        if(!batchSel || !gigSel || !doorBtn){
+          showToast('Use POS Tickets to pick a gig and batch first.','warning');
+          return;
+        }
+        const activeGigId = gigSel.value||'';
+        if(!activeGigId){
+          showToast('Choose the active gig for this POS first.','warning');
+          return;
+        }
+        let batchId = batchSel.value||'';
+        if(!batchId){
+          const firstReal = Array.from(batchSel.options||[]).find(o=>o.value && o.value!=='');
+          if(firstReal){
+            batchId = firstReal.value;
+            batchSel.value = firstReal.value;
+          }
+        }
+        if(!batchId){
+          showToast('No ticket batches available for this gig.','warning');
+          return;
+        }
+        const batches = Array.isArray(appData.tickets) ? appData.tickets : [];
+        const batch = batches.find(b=>b.id===batchId);
+        if(!batch){
+          showToast('Ticket batch not found.','warning');
+          return;
+        }
+        const price = Number(batch.price||0) || 0;
+        if(!(price>0)){
+          showToast('Set a ticket price in Tickets Catalog first.','warning');
+          return;
+        }
+        const promptMsg = 'Amount received (ticket is '+formatMoney(price)+'):';
+        const input = prompt(promptMsg, '');
+        if(input===null){
+          return;
+        }
+        const trimmed = input.trim();
+        let paid = price;
+        if(trimmed){
+          paid = parseFloat(trimmed.replace(/[^0-9.\-]/g,''));
+          if(!Number.isFinite(paid) || paid<=0){
+            showToast('Enter a valid amount received, e.g. 40.','warning');
+            return;
+          }
+          if(paid+0.0001 < price){
+            const short = price - paid;
+            showToast('Amount received is short by '+formatMoney(short)+'.','warning');
+            return;
+          }
+        }
+        const change = paid - price;
+        window.lastTicketRedeemSource = 'scanner-cash';
+        doorBtn.click();
+        if(change>0.004){
+          showToast('Cash ticket: give back '+formatMoney(change)+' in change.','info',8000);
+        }else{
+          showToast('Cash ticket sold (exact amount).','success');
+        }
+        try{ playSuccessSound(); }catch(_){ }
+      };
+    }
+
+    // Manual typed redemption while scanner stays open
+    if(manualBtn && manualInput){
+      manualBtn.onclick = ()=>{
+        const val=(manualInput.value||'').trim();
+        if(!val){ showToast('Enter a ticket code first.','warning'); return; }
+        const inputEl=document.getElementById('posTicketCodeInput');
+        const redeemBtn=document.getElementById('posTicketRedeemBtn');
+        if(inputEl) inputEl.value=val;
+        window.lastTicketRedeemSource = 'manual';
+        if(redeemBtn) redeemBtn.click();
+      };
+    }
+
+    ensureQrDecoderLoaded(ok=>{
+      if(!ok){
+        statusEl.innerHTML = 'Camera QR scanning is not ready yet.<br>'+
+          'When you have internet, open this app and tap &ldquo;Scan QR&rdquo; once; it will automatically download a small decoder file.'+
+          '<br>If you need it to work completely offline, ask your organizer to place a <strong>jsqr.min.js</strong> file next to this app.';
+        return;
+      }
+
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        statusEl.textContent='Camera access is not supported in this browser.';
+        return;
+      }
+
+      navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(stream=>{
+        qrScannerStream = stream;
+        video.srcObject = stream;
+        video.play().catch(()=>{});
+        statusEl.textContent='Point the camera at a ticket QR code.';
+
+        const ctx = canvas.getContext('2d');
+        qrScannerTimer = setInterval(()=>{
+          try{
+            if(qrScannerPaused) return;
+            if(video.readyState !== video.HAVE_ENOUGH_DATA) return;
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            if(!w || !h) return;
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(video,0,0,w,h);
+            const imageData = ctx.getImageData(0,0,w,h);
+            let decoded = null;
+            if(window.jsQR){
+              const res = window.jsQR(imageData.data, w, h);
+              if(res && res.data) decoded = String(res.data);
+            }else if(typeof window.decodeQrFromImageData === 'function'){
+              decoded = window.decodeQrFromImageData(imageData);
+            }else{
+              statusEl.textContent='QR decoder not available. Close and try again.';
+              if(qrScannerTimer){ clearInterval(qrScannerTimer); qrScannerTimer = null; }
+              return;
+            }
+            if(decoded){
+              const now=Date.now();
+              if(decoded===qrScannerLastValue && now-qrScannerLastTime<1500){
+                return; // avoid double-firing on the same code
+              }
+              qrScannerLastValue = decoded;
+              qrScannerLastTime = now;
+              if(qrScannerCallback){ qrScannerCallback(decoded); }
+            }
+          }catch(err){
+            console.log('QR scan error', err);
+          }
+        }, 400);
+      }).catch(err=>{
+        console.log('Camera error', err);
+        statusEl.textContent='Could not access camera. Check permissions.';
+      });
+    });
   }
   
   // Song length helpers: store minutes as numbers, display as mm:ss
@@ -2277,6 +2967,78 @@
       kids.forEach(ch=>findInNode(ch, term));
     }
   }
+    function showPaymentQrOverlay(itemName, price, methodLabel, imgData){
+      if(!imgData){
+        showToast('No QR image available for this payment method yet.','warning');
+        return;
+      }
+      const overlay=document.createElement('div');
+      overlay.style.position='fixed';
+      overlay.style.inset='0';
+      overlay.style.background='rgba(15,23,42,0.92)';
+      overlay.style.zIndex='110';
+      overlay.style.display='flex';
+      overlay.style.alignItems='center';
+      overlay.style.justifyContent='center';
+      overlay.style.padding='16px';
+      const box=document.createElement('div');
+      box.style.background='#020617';
+      box.style.borderRadius='16px';
+      box.style.padding='16px 20px 20px';
+      box.style.boxShadow='0 20px 60px rgba(0,0,0,0.7)';
+      box.style.maxWidth='420px';
+      box.style.width='100%';
+      box.style.textAlign='center';
+      box.style.color='#e5e7eb';
+      const title=document.createElement('div');
+      title.textContent=itemName||'Item';
+      title.style.fontSize='18px';
+      title.style.fontWeight='700';
+      title.style.marginBottom='4px';
+      const subtitle=document.createElement('div');
+      subtitle.textContent=(methodLabel||'QR pay') + ' • ' + formatMoney(price||0);
+      subtitle.style.fontSize='13px';
+      subtitle.style.color='#9ca3af';
+      subtitle.style.marginBottom='10px';
+      const imgWrap=document.createElement('div');
+      imgWrap.style.background='#0b1120';
+      imgWrap.style.borderRadius='12px';
+      imgWrap.style.padding='12px';
+      imgWrap.style.marginBottom='10px';
+      imgWrap.style.display='flex';
+      imgWrap.style.alignItems='center';
+      imgWrap.style.justifyContent='center';
+      const img=document.createElement('img');
+      img.src=imgData;
+      img.alt=methodLabel||'QR code';
+      img.style.maxWidth='260px';
+      img.style.maxHeight='260px';
+      img.style.width='100%';
+      img.style.height='auto';
+      imgWrap.appendChild(img);
+      const helper=document.createElement('div');
+      helper.textContent='Ask the customer to scan this code with their phone to pay you.';
+      helper.style.fontSize='12px';
+      helper.style.color='#9ca3af';
+      helper.style.marginBottom='10px';
+      const closeBtn=document.createElement('button');
+      closeBtn.type='button';
+      closeBtn.textContent='Close';
+      closeBtn.className='btn secondary';
+      closeBtn.style.padding='6px 12px';
+      closeBtn.style.fontSize='12px';
+      closeBtn.addEventListener('click',()=>{
+        document.body.removeChild(overlay);
+      });
+      overlay.addEventListener('click',e=>{
+        if(e.target===overlay){
+          document.body.removeChild(overlay);
+        }
+      });
+      box.append(title,subtitle,imgWrap,helper,closeBtn);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+    }
   function runHelpSearch(){
     const input = document.getElementById('helpSearch');
     const host = document.getElementById('helpContent');
@@ -2497,7 +3259,23 @@
       if(setlist && setlist.length > 0){
         lastUsedSetlist = {setlist: JSON.parse(JSON.stringify(setlist)), gig: JSON.parse(JSON.stringify(gig)), date: new Date().toISOString()};
       }
-      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,customActivityChips,selectedTourDateId,activeTab:previousTab,bandPresets,currentBandPresetId,stagePresets,setlistPresets,lastUsedSetlist};
+      // Keep a lightweight gig directory for finance views
+      const gigDirectory = {};
+      if(Array.isArray(tourDates)){
+        tourDates.forEach(td=>{
+          if(td && td.id){
+            const gId = td.id;
+            gigDirectory[gId] = {
+              id: gId,
+              name: (td.venue && td.venue.trim()) || (gig.band || 'Gig'),
+              date: td.date || '',
+              venue: td.venue || ''
+            };
+          }
+        });
+      }
+      appData.gigs = gigDirectory;
+      const payload={db:dbOut,setlist,gig,gearSummary,techNotes,stage:stageHTML,setlistColumns,pageLayout,tourDates,tourCustomSearchTerms,customSearchButtons,customActivityChips,selectedTourDateId,activeTab:previousTab,bandPresets,currentBandPresetId,stagePresets,setlistPresets,lastUsedSetlist,appData};
       localStorage.setItem(STORE_KEY, JSON.stringify(payload));
     }catch(e){ console.error('saveAll failed', e); }
   }
@@ -2652,7 +3430,30 @@
           var stageEl=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
           const stage = stageEl ? stageEl.outerHTML : '';
           const dbOut = db.map(s=>{ const {audioData, ...rest}=s||{}; return rest; });
-          const data={version:3,type:'fastfast-band', db:dbOut, setlist, gig, gearSummary, techNotes, stage};
+          // Use the same full-profile schema as Save Profile, including appData
+          const data={
+            version:5,
+            type:'fastfast-band',
+            db:dbOut,
+            setlist,
+            gig,
+            gearSummary,
+            techNotes,
+            stage,
+            setlistColumns,
+            pageLayout,
+            tourDates,
+            tourCustomSearchTerms,
+            customSearchButtons,
+            customActivityChips,
+            selectedTourDateId,
+            bandPresets,
+            currentBandPresetId,
+            stagePresets,
+            setlistPresets,
+            lastUsedSetlist,
+            appData
+          };
           const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
           const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=((gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'profile.band'); a.click(); URL.revokeObjectURL(a.href);
         }
@@ -2785,7 +3586,7 @@
   function loadAll(){
     try{
       const raw=localStorage.getItem(STORE_KEY); if(!raw) return;
-    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,customSearchButtons:customSearchButtonsIn,customActivityChips:customActivityChipsIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn,bandPresets:bandPresetsIn,currentBandPresetId:currentBandPresetIdIn,stagePresets:stagePresetsIn,setlistPresets:setlistPresetsIn,lastUsedSetlist:lastUsedSetlistIn}=JSON.parse(raw);
+    const {db:dbIn,setlist:setIn,gig:gigIn,gearSummary:gearIn,techNotes:tnIn,stage,setlistColumns:setColIn,pageLayout:pageLayoutIn,tourDates:tourIn,tourCustomSearchTerms:tourSearchIn,customSearchButtons:customSearchButtonsIn,customActivityChips:customActivityChipsIn,selectedTourDateId:selectedIdIn,activeTab:activeTabIn,bandPresets:bandPresetsIn,currentBandPresetId:currentBandPresetIdIn,stagePresets:stagePresetsIn,setlistPresets:setlistPresetsIn,lastUsedSetlist:lastUsedSetlistIn,appData:appDataIn}=JSON.parse(raw);
       if(Array.isArray(dbIn)) db.push(...dbIn);
       if(Array.isArray(setIn)) setlist=setIn;
       if(gigIn) gig=Object.assign(gig,gigIn);
@@ -2813,6 +3614,46 @@
   if(Array.isArray(stagePresetsIn)) { stagePresets = stagePresetsIn; }
   if(Array.isArray(setlistPresetsIn)) { setlistPresets = setlistPresetsIn; }
   if(lastUsedSetlistIn && lastUsedSetlistIn.setlist) { lastUsedSetlist = lastUsedSetlistIn; }
+  // Load finance/merch/ticket data (with safe defaults for older saves)
+  if(appDataIn && typeof appDataIn==='object'){
+    const loaded=appDataIn;
+    appData.merch = loaded.merch && typeof loaded.merch==='object' ? loaded.merch : {};
+    appData.sales = Array.isArray(loaded.sales) ? loaded.sales : [];
+    appData.tickets = Array.isArray(loaded.tickets) ? loaded.tickets : [];
+    appData.gigs = loaded.gigs && typeof loaded.gigs==='object' ? loaded.gigs : {};
+    appData.expenses = Array.isArray(loaded.expenses) ? loaded.expenses : [];
+    appData.income = Array.isArray(loaded.income) ? loaded.income : [];
+    appData.expensePresets = Array.isArray(loaded.expensePresets) ? loaded.expensePresets : [];
+    if((!appData.expensePresets || !appData.expensePresets.length) && Array.isArray(appData.expenses) && appData.expenses.length){
+      const cats = Array.from(new Set(appData.expenses.map(e=> (e && typeof e.category==='string' ? e.category.trim() : '') ).filter(Boolean)));
+      appData.expensePresets = cats;
+    }
+    const exp = loaded.exports && typeof loaded.exports==='object' ? loaded.exports : {};
+    appData.exports = { lastExportTimestamp: exp.lastExportTimestamp || null };
+    const pay = loaded.paymentLinks && typeof loaded.paymentLinks==='object' ? loaded.paymentLinks : {};
+    appData.paymentLinks = {
+      paypal: pay.paypal || '',
+      square: pay.square || '',
+      interac: pay.interac || ''
+    };
+    const qr = loaded.paymentQr && typeof loaded.paymentQr==='object' ? loaded.paymentQr : {};
+    appData.paymentQr = {
+      paypal: qr.paypal || '',
+      square: qr.square || '',
+      interac: qr.interac || ''
+    };
+  } else {
+    appData.merch = appData.merch || {};
+    appData.sales = appData.sales || [];
+    appData.tickets = appData.tickets || [];
+    appData.gigs = appData.gigs || {};
+    appData.expenses = appData.expenses || [];
+    appData.income = appData.income || [];
+    appData.expensePresets = appData.expensePresets || [];
+    if(!appData.exports){ appData.exports = { lastExportTimestamp: null }; }
+    if(!appData.paymentLinks){ appData.paymentLinks = { paypal:'', square:'', interac:'' }; }
+    if(!appData.paymentQr){ appData.paymentQr = { paypal:'', square:'', interac:'' }; }
+  }
       // Gig info now edited directly on sheet header
       const gearEl=document.getElementById('gear'); if(gearEl) gearEl.value = gearSummary || '';
       renderDB(); buildSheet('sheetInline'); attachPreviewInteractions(); renderSongPool();
@@ -2921,7 +3762,7 @@
       
       document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+      ['db','set','adv','tour','live','merch','finance'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
       const activePanel = document.getElementById(btn.dataset.tab);
       if(activePanel){
         activePanel.style.display='block';
@@ -2932,6 +3773,10 @@
       // Reload Calendar data when entering Calendar tab
       if(btn.dataset.tab === 'tour'){
         try { if(typeof window.reloadCalendarData === 'function') window.reloadCalendarData(); } catch(err) { console.log('Reload calendar data:', err); }
+      } else if(btn.dataset.tab === 'merch'){
+        try{ renderMerchTab(); }catch(_){ }
+      } else if(btn.dataset.tab === 'finance'){
+        try{ renderFinanceTab(); }catch(_){ }
       }
       
       previousTab = btn.dataset.tab;
@@ -2980,12 +3825,19 @@
       const tabToActivate = document.querySelector(`.tab[data-tab="${restoreTab}"]`);
       if(tabToActivate) {
         tabToActivate.classList.add('active');
-        ['db','set','adv','tour','live'].forEach(id => {
+        ['db','set','adv','tour','live','merch','tickets','finance'].forEach(id => {
           const el = document.getElementById(id);
           if(el) el.style.display = 'none';
         });
         const tabContent = document.getElementById(restoreTab);
         if(tabContent) tabContent.style.display = 'block';
+        if(restoreTab === 'merch'){
+          try{ renderMerchTab(); }catch(_){ }
+        } else if(restoreTab === 'tickets'){
+          try{ renderTicketsTab(); }catch(_){ }
+        } else if(restoreTab === 'finance'){
+          try{ renderFinanceTab(); }catch(_){ }
+        }
       }
       
       // Smart date selection on load: prioritize today or future dates, never load past dates
@@ -3052,6 +3904,1113 @@
         }
       }, 300);
     })();
+
+    // --- Shared finance helpers ---
+    function formatMoney(amount){
+      const n = Number(amount);
+      if(!isFinite(n)) return '$0.00';
+      return '$' + n.toFixed(2);
+    }
+    function getGigLabelById(gigId){
+      if(!gigId) return 'No specific gig';
+      const g = (appData.gigs && appData.gigs[gigId]) || null;
+      if(g){
+        const d = g.date ? new Date(g.date + 'T00:00:00') : null;
+        const dStr = d ? d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+        const venue = g.venue || g.name || '';
+        return [dStr, venue].filter(Boolean).join(' • ') || gigId;
+      }
+      const td = Array.isArray(tourDates) ? tourDates.find(t=>t.id===gigId) : null;
+      if(td){
+        const d = td.date ? new Date(td.date + 'T00:00:00') : null;
+        const dStr = d ? d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+        const venue = td.venue || '';
+        return [dStr, venue].filter(Boolean).join(' • ') || gigId;
+      }
+      return gigId;
+    }
+    function buildGigSelectOptions(selectEl, includeAll){
+      if(!selectEl) return;
+      while(selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
+      if(includeAll){
+        const optAll = document.createElement('option');
+        optAll.value = 'all';
+        optAll.textContent = 'All gigs';
+        selectEl.appendChild(optAll);
+      }
+      const optNone = document.createElement('option');
+      optNone.value = '';
+      optNone.textContent = 'No specific gig';
+      selectEl.appendChild(optNone);
+      if(Array.isArray(tourDates)){
+        const sorted = [...tourDates].sort((a,b)=>{
+          if(!a.date && !b.date) return 0;
+          if(!a.date) return 1;
+          if(!b.date) return -1;
+          return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0);
+        });
+        sorted.forEach(td=>{
+          if(!td || !td.id) return;
+          const opt=document.createElement('option');
+          opt.value = td.id;
+          const d = td.date ? new Date(td.date + 'T00:00:00') : null;
+          const dStr = d ? d.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : td.date || '';
+          const venue = td.venue || 'No venue';
+          opt.textContent = dStr + ' • ' + venue;
+          selectEl.appendChild(opt);
+        });
+      }
+      if(selectedTourDateId && !includeAll){
+        selectEl.value = selectedTourDateId;
+      }
+    }
+
+    // --- Merch / POS ---
+    function renderMerchTab(){
+      const ticketsPane=document.getElementById('merchTicketsPane');
+      const catPane=document.getElementById('merchCatalogPane');
+      const posPane=document.getElementById('merchPosPane');
+      const tabTickets=document.getElementById('merchTabTickets');
+      const tabCat=document.getElementById('merchTabCatalog');
+      const tabPos=document.getElementById('merchTabPOS');
+      // Default to POS view when opening Merch
+      if(tabTickets && tabCat && tabPos){
+        tabTickets.classList.remove('primary');
+        tabCat.classList.remove('primary');
+        tabPos.classList.add('primary');
+      }
+      if(ticketsPane) ticketsPane.style.display='none';
+      if(catPane) catPane.style.display='none';
+      if(posPane) posPane.style.display='flex';
+      renderMerchCatalog();
+      renderMerchPOS();
+      renderMerchSalesLog();
+    }
+    function getAllMerchItems(){
+      const src = appData && appData.merch && typeof appData.merch==='object' ? appData.merch : {};
+      return Object.values(src).filter(Boolean).sort((a,b)=>{
+        const an=(a.name||'').toLowerCase();
+        const bn=(b.name||'').toLowerCase();
+        if(an<bn) return -1; if(an>bn) return 1; return 0;
+      });
+    }
+    function renderMerchCatalog(){
+      const tbody=document.getElementById('merchTableBody');
+      if(!tbody) return;
+      tbody.innerHTML='';
+      const items = getAllMerchItems();
+      if(!items.length){
+        const tr=document.createElement('tr');
+        const td=document.createElement('td');
+        td.colSpan=6;
+        td.textContent='No merch items yet. Add items using the form above.';
+        td.style.padding='8px';
+        td.style.color='#6b7280';
+        tbody.appendChild(tr);
+        tr.appendChild(td);
+        return;
+      }
+      items.forEach(item=>{
+        const tr=document.createElement('tr');
+        tr.style.borderBottom='1px solid #e5e7eb';
+        const tdName=document.createElement('td');
+        tdName.style.padding='4px 6px';
+        tdName.textContent=item.name||'';
+        const tdCat=document.createElement('td');
+        tdCat.style.padding='4px 6px';
+        tdCat.style.fontSize='11px';
+        tdCat.style.color='#6b7280';
+        tdCat.textContent=(item.category||'').trim()||'';
+        const tdPrice=document.createElement('td');
+        tdPrice.style.padding='4px 6px';
+        tdPrice.style.textAlign='right';
+        tdPrice.textContent=formatMoney(item.price||0);
+        const tdInv=document.createElement('td');
+        tdInv.style.padding='4px 6px';
+        tdInv.style.textAlign='right';
+        tdInv.textContent=String(Number(item.inventory||0));
+        const tdEdit=document.createElement('td');
+        tdEdit.style.padding='4px 6px';
+        tdEdit.style.textAlign='center';
+        const btnEdit=document.createElement('button');
+        btnEdit.type='button';
+        btnEdit.textContent='Edit';
+        btnEdit.className='btn secondary';
+        btnEdit.style.padding='2px 6px';
+        btnEdit.style.fontSize='11px';
+        btnEdit.addEventListener('click',()=>{
+          const nameEl=document.getElementById('merchName');
+          const catEl=document.getElementById('merchCategory');
+          const priceEl=document.getElementById('merchPrice');
+          const invEl=document.getElementById('merchInventory');
+          const imgPrev=document.getElementById('merchImagePreview');
+          const qrLabel1=document.getElementById('merchQrLabel1');
+          const qrLabel2=document.getElementById('merchQrLabel2');
+          const qrLabel3=document.getElementById('merchQrLabel3');
+          const qrPrev1=document.getElementById('merchQrPreview1');
+          const qrPrev2=document.getElementById('merchQrPreview2');
+          const qrPrev3=document.getElementById('merchQrPreview3');
+          if(nameEl) nameEl.value=item.name||'';
+          if(catEl) catEl.value=item.category||'';
+          if(priceEl) priceEl.value=String(item.price!=null? item.price:'');
+          if(invEl) invEl.value=String(item.inventory!=null? item.inventory:'');
+          editingMerchId = item.id || null;
+          currentMerchImageData = item.thumb || null;
+          currentMerchQrData = [null,null,null];
+          if(imgPrev){
+            if(currentMerchImageData){
+              imgPrev.src=currentMerchImageData;
+              imgPrev.style.display='block';
+            } else {
+              imgPrev.src='';
+              imgPrev.style.display='none';
+            }
+          }
+          const qrCodes = Array.isArray(item.qrCodes) ? item.qrCodes : [];
+          const applyQr = (idx,labelEl,prevEl)=>{
+            const slot = qrCodes[idx] || null;
+            if(labelEl) labelEl.value = slot && slot.label ? slot.label : '';
+            currentMerchQrData[idx] = slot && slot.image ? slot.image : null;
+            if(prevEl){
+              if(slot && slot.image){
+                prevEl.src = slot.image;
+                prevEl.style.display='block';
+              }else{
+                prevEl.src='';
+                prevEl.style.display='none';
+              }
+            }
+          };
+          applyQr(0,qrLabel1,qrPrev1);
+          applyQr(1,qrLabel2,qrPrev2);
+          applyQr(2,qrLabel3,qrPrev3);
+        });
+        tdEdit.appendChild(btnEdit);
+        const tdDel=document.createElement('td');
+        tdDel.style.padding='4px 6px';
+        tdDel.style.textAlign='center';
+        const btnDel=document.createElement('button');
+        btnDel.type='button';
+        btnDel.textContent='×';
+        btnDel.className='btn danger';
+        btnDel.style.padding='2px 6px';
+        btnDel.style.fontSize='11px';
+        btnDel.addEventListener('click',()=>{
+          if(!item.id) return;
+          if(!confirm('Delete merch item "' + (item.name||'') + '"? This does not remove past sales.')) return;
+          if(appData.merch && appData.merch[item.id]){
+            delete appData.merch[item.id];
+            saveAll();
+            renderMerchTab();
+            try{ renderFinanceTab(); }catch(_){ }
+          }
+        });
+        tdDel.appendChild(btnDel);
+        tr.append(tdName,tdCat,tdPrice,tdInv,tdEdit,tdDel);
+        tbody.appendChild(tr);
+      });
+    }
+    function renderMerchPOS(){
+      const gigSel=document.getElementById('merchGigSelect');
+      if(gigSel){
+        const prevVal=gigSel.value;
+        buildGigSelectOptions(gigSel,false);
+        if(prevVal && gigSel.querySelector('option[value="'+prevVal+'"]')){
+          gigSel.value=prevVal;
+        } else if(selectedTourDateId){
+          gigSel.value=selectedTourDateId;
+        }
+      }
+      const host=document.getElementById('merchQuickButtons');
+      if(!host) return;
+      host.innerHTML='';
+      const items=getAllMerchItems();
+      if(!items.length){
+        const p=document.createElement('div');
+        p.textContent='Add merch items on the left to enable quick sales.';
+        p.style.color='#6b7280';
+        p.style.fontSize='12px';
+        host.appendChild(p);
+        return;
+      }
+      let lastCat = null;
+      items.forEach(item=>{
+        const cat = (item.category||'').trim() || 'Uncategorized';
+        if(cat !== lastCat){
+          lastCat = cat;
+          const sep=document.createElement('div');
+          sep.textContent=cat;
+          sep.style.fontSize='11px';
+          sep.style.fontWeight='600';
+          sep.style.color='#4b5563';
+          sep.style.marginTop='4px';
+          sep.style.padding='2px 4px';
+          sep.style.borderBottom='1px solid #e5e7eb';
+          host.appendChild(sep);
+        }
+        const chip=document.createElement('div');
+        chip.style.display='flex';
+        chip.style.alignItems='center';
+        chip.style.gap='8px';
+        chip.style.padding='4px 8px';
+        chip.style.border='1px solid #d1d5db';
+        chip.style.borderRadius='999px';
+        chip.style.background='#ffffff';
+        chip.style.fontSize='12px';
+        chip.style.cursor='grab';
+        chip.draggable=true;
+        chip.dataset.merchId = item.id || '';
+        const thumbWrap=document.createElement('div');
+        thumbWrap.style.width='32px';
+        thumbWrap.style.height='32px';
+        thumbWrap.style.borderRadius='999px';
+        thumbWrap.style.overflow='hidden';
+        thumbWrap.style.background='#f3f4f6';
+        thumbWrap.style.display='flex';
+        thumbWrap.style.alignItems='center';
+        thumbWrap.style.justifyContent='center';
+        const img=document.createElement('img');
+        img.alt='';
+        img.style.maxWidth='100%';
+        img.style.maxHeight='100%';
+        if(item.thumb){
+          img.src=item.thumb;
+          img.style.display='block';
+        } else {
+          img.style.display='none';
+          const fallback=document.createElement('span');
+          fallback.textContent=(item.name||'?').slice(0,2).toUpperCase();
+          fallback.style.fontSize='11px';
+          fallback.style.color='#4b5563';
+          thumbWrap.appendChild(fallback);
+        }
+        thumbWrap.appendChild(img);
+        const text=document.createElement('div');
+        text.style.display='flex';
+        text.style.flexDirection='column';
+        text.style.gap='2px';
+        const line1=document.createElement('div');
+        line1.textContent=item.name||'';
+        line1.style.fontWeight='600';
+        const line2=document.createElement('div');
+        line2.textContent=formatMoney(item.price||0)+(Number(item.inventory||0)>0 ? ' • Stock '+Number(item.inventory||0) : '');
+        line2.style.fontSize='11px';
+        line2.style.color='#6b7280';
+        text.appendChild(line1);
+        text.appendChild(line2);
+        chip.appendChild(thumbWrap);
+        const qrCodes = Array.isArray(item.qrCodes) ? item.qrCodes.filter(q=>q && q.image) : [];
+        if(qrCodes.length){
+          const qrRow=document.createElement('div');
+          qrRow.style.display='flex';
+          qrRow.style.flexWrap='wrap';
+          qrRow.style.gap='4px';
+          qrRow.style.marginLeft='40px';
+          qrRow.style.marginTop='2px';
+          qrCodes.slice(0,3).forEach(method=>{
+            const btn=document.createElement('button');
+            btn.type='button';
+            btn.textContent=method.label || 'QR';
+            btn.className='btn secondary';
+            btn.style.padding='2px 6px';
+            btn.style.fontSize='10px';
+            btn.addEventListener('click',ev=>{
+              ev.stopPropagation();
+              if(!method.image){
+                showToast('No QR image saved for this method yet.','warning');
+                return;
+              }
+              currentMerchPaymentMethod = method.label || 'QR';
+              showPaymentQrOverlay(item.name||'Item', item.price||0, method.label||'QR', method.image);
+            });
+            qrRow.appendChild(btn);
+          });
+          host.appendChild(qrRow);
+        }
+        chip.appendChild(text);
+        chip.addEventListener('dragstart',e=>{
+          if(!item.id) return;
+          e.dataTransfer.effectAllowed='copy';
+          try{ e.dataTransfer.setData('text/x-merch-id', item.id); }catch(_){ }
+        });
+        chip.addEventListener('click',()=>{
+          if(!item.id) return;
+          addMerchToCart(item.id, 1);
+        });
+        host.appendChild(chip);
+      });
+      renderMerchCart();
+    }
+    function addMerchToCart(merchId, qty){
+      if(!merchId || !qty) return;
+      const item = appData.merch && appData.merch[merchId];
+      if(!item) return;
+      const inv = Number(item.inventory||0);
+      const existingQty = currentMerchCart.items.filter(it=>it.merchId===merchId).reduce((s,it)=>s+it.qty,0);
+      const maxAdd = inv>0 ? Math.max(0, inv-existingQty) : qty;
+      const finalQty = inv>0 ? Math.min(qty, maxAdd) : qty;
+      if(inv>0 && finalQty<=0){
+        showToast('No inventory remaining for ' + (item.name||'item'), 'info');
+        return;
+      }
+      const line = currentMerchCart.items.find(it=>it.merchId===merchId);
+      if(line){ line.qty += finalQty; } else { currentMerchCart.items.push({merchId, qty: finalQty}); }
+      renderMerchCart();
+    }
+    function removeMerchCartItem(merchId){
+      currentMerchCart.items = currentMerchCart.items.filter(it=>it.merchId!==merchId);
+      renderMerchCart();
+    }
+    function clearMerchCart(){
+      currentMerchCart.items = [];
+      renderMerchCart();
+    }
+    function renderMerchCart(){
+      const tbody=document.getElementById('merchCartBody');
+      const totalEl=document.getElementById('merchCartTotal');
+      if(!tbody || !totalEl) return;
+      tbody.innerHTML='';
+      let total=0;
+      currentMerchCart.items.forEach(line=>{
+        const item = appData.merch && appData.merch[line.merchId];
+        if(!item) return;
+        const price=Number(item.price||0);
+        const lineTotal = price * line.qty;
+        total += lineTotal;
+        const tr=document.createElement('tr');
+        tr.style.borderBottom='1px solid #e5e7eb';
+        const tdName=document.createElement('td');
+        tdName.style.padding='4px 6px';
+        tdName.textContent=item.name||'';
+        const tdQty=document.createElement('td');
+        tdQty.style.padding='4px 6px';
+        tdQty.style.textAlign='right';
+        tdQty.textContent=String(line.qty);
+        const tdLine=document.createElement('td');
+        tdLine.style.padding='4px 6px';
+        tdLine.style.textAlign='right';
+        tdLine.textContent=formatMoney(lineTotal);
+        const tdDel=document.createElement('td');
+        tdDel.style.padding='4px 6px';
+        tdDel.style.textAlign='center';
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.textContent='×';
+        btn.className='btn danger';
+        btn.style.padding='2px 6px';
+        btn.style.fontSize='11px';
+        btn.addEventListener('click',()=> removeMerchCartItem(line.merchId));
+        tdDel.appendChild(btn);
+        tr.append(tdName,tdQty,tdLine,tdDel);
+        tbody.appendChild(tr);
+      });
+      totalEl.textContent = formatMoney(total);
+    }
+    function renderMerchSalesLog(){
+      const host=document.getElementById('merchSalesLog');
+      if(!host) return;
+      host.innerHTML='';
+      const sales = Array.isArray(appData.sales) ? [...appData.sales] : [];
+      sales.sort((a,b)=>{
+        const ta = a.timestamp || '';
+        const tb = b.timestamp || '';
+        return ta>tb ? -1 : (ta<tb ? 1 : 0);
+      });
+      if(!sales.length){
+        const p=document.createElement('div');
+        p.textContent='No merch sales recorded yet.';
+        p.style.color='#6b7280';
+        p.style.fontSize='12px';
+        host.appendChild(p);
+        return;
+      }
+      sales.forEach(sale=>{
+        const row=document.createElement('div');
+        row.style.display='flex';
+        row.style.alignItems='center';
+        row.style.justifyContent='space-between';
+        row.style.gap='8px';
+        row.style.padding='4px 0';
+        const left=document.createElement('div');
+        left.style.flex='1';
+        const t = sale.timestamp ? new Date(sale.timestamp) : null;
+        const when = t ? t.toLocaleString() : '';
+        const gigLabel = getGigLabelById(sale.gigId || '');
+        const itemsDesc = Array.isArray(sale.items) ? sale.items.map(it=>{
+          const m = appData.merch && appData.merch[it.merchId];
+          const n = m ? (m.name||'Item') : 'Item';
+          return n + ' x' + it.qty;
+        }).join(', ') : '';
+        const methodLabel = sale.paymentMethod || 'Cash';
+        const methodPart = methodLabel ? ' • ' + methodLabel : '';
+        left.textContent = when + ' • ' + gigLabel + methodPart + ' • ' + formatMoney(sale.total||0) + (itemsDesc ? ' • ' + itemsDesc : '');
+        const right=document.createElement('div');
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.textContent='Delete';
+        btn.className='btn danger';
+        btn.style.padding='2px 6px';
+        btn.style.fontSize='11px';
+        btn.addEventListener('click',()=>{
+          if(!confirm('Delete this sale and restore inventory?')) return;
+          if(Array.isArray(sale.items)){
+            sale.items.forEach(it=>{
+              const m=appData.merch && appData.merch[it.merchId];
+              if(m){
+                const inv = Number(m.inventory||0);
+                m.inventory = inv + Number(it.qty||0);
+              }
+            });
+          }
+          appData.sales = sales.filter(x=>x.id!==sale.id);
+          saveAll();
+          renderMerchTab();
+          try{ renderFinanceTab(); }catch(_){ }
+        });
+        right.appendChild(btn);
+        row.append(left,right);
+        host.appendChild(row);
+      });
+    }
+
+    // --- Tickets ---
+    function renderTicketsTab(){
+      const gigSel=document.getElementById('ticketGigSelect');
+      const nameEl=document.getElementById('ticketEventName');
+      const dateEl=document.getElementById('ticketEventDate');
+      const priceEl=document.getElementById('ticketPrice');
+      const ageEl=document.getElementById('ticketAgeRestriction');
+
+      if(gigSel){
+        const prevVal=gigSel.value;
+        buildGigSelectOptions(gigSel,false);
+        if(prevVal && gigSel.querySelector('option[value="'+prevVal+'"]')){
+          gigSel.value=prevVal;
+        } else if(selectedTourDateId){
+          gigSel.value=selectedTourDateId;
+        }
+
+        // Auto-fill ticket fields from the currently selected gig when empty
+        const gigId = gigSel.value || '';
+        if(gigId && typeof tourDates!=='undefined' && Array.isArray(tourDates)){
+          const td = tourDates.find(d=>d.id===gigId);
+          if(td){
+            const gObj = td.gig || {};
+            const bandName = (gObj.band || td.band || '').trim();
+            const venue = (td.venue || gObj.venue || '').trim();
+            const dateStr = (td.date || '').trim();
+            const rawShow = (td.showTime || gObj.showTime || '').trim();
+
+            if(nameEl && !nameEl.value){
+              const parts=[];
+              if(bandName) parts.push(bandName);
+              if(venue) parts.push('@ '+venue);
+              nameEl.value = parts.join(' ');
+            }
+            if(dateEl && !dateEl.value && dateStr){
+              // Expecting YYYY-MM-DD from tour data already; if not, leave as-is
+              dateEl.value = dateStr;
+            }
+            if(ageEl && !ageEl.value){
+              ageEl.value = 'All ages';
+            }
+            // Price and quantity remain manual so different tiers can be created
+          }
+        }
+      }
+      renderTicketBatches();
+    }
+    function generateTicketCode(eventName, dateStr, index){
+      const base = String(eventName||'TICKET').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4) || 'TIX';
+      const dPart = dateStr ? String(dateStr).replace(/-/g,'').slice(2) : '';
+      const seq = String(index+1).padStart(3,'0');
+      const rand = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);
+      return [base,dPart,seq,rand].filter(Boolean).join('-');
+    }
+    function renderTicketBatches(){
+      const host=document.getElementById('ticketBatchList');
+      if(!host) return;
+      host.innerHTML='';
+      const batches = Array.isArray(appData.tickets) ? [...appData.tickets] : [];
+      batches.sort((a,b)=>{
+        const ta=a.timestamp||''; const tb=b.timestamp||'';
+        return ta>tb ? -1 : (ta<tb ? 1 : 0);
+      });
+      if(!batches.length){
+        const p=document.createElement('div');
+        p.textContent='No ticket batches yet. Create one above.';
+        p.style.color='#6b7280';
+        p.style.fontSize='12px';
+        host.appendChild(p);
+        return;
+      }
+      batches.forEach(batch=>{
+        const card=document.createElement('div');
+        card.style.border='1px solid #e5e7eb';
+        card.style.borderRadius='8px';
+        card.style.padding='8px 10px';
+        card.style.marginBottom='8px';
+        const header=document.createElement('div');
+        header.style.display='flex';
+        header.style.alignItems='center';
+        header.style.justifyContent='space-between';
+        const title=document.createElement('div');
+        title.style.fontSize='13px';
+        title.style.fontWeight='600';
+        const dateStr = batch.date || '';
+        const gigLabel = getGigLabelById(batch.gigId || '');
+        title.textContent=(batch.eventName||'Event') + (dateStr? ' • '+dateStr:'') + (gigLabel? ' • '+gigLabel:'');
+        const controls=document.createElement('div');
+        controls.style.display='flex';
+        controls.style.gap='4px';
+        const btnPrint=document.createElement('button');
+        btnPrint.type='button';
+        btnPrint.textContent='Print Tickets';
+        btnPrint.className='btn secondary';
+        btnPrint.style.padding='2px 6px';
+        btnPrint.style.fontSize='11px';
+        btnPrint.addEventListener('click',()=>{ printTicketBatch(batch.id); });
+        const btnDel=document.createElement('button');
+        btnDel.type='button';
+        btnDel.textContent='Delete';
+        btnDel.className='btn danger';
+        btnDel.style.padding='2px 6px';
+        btnDel.style.fontSize='11px';
+        btnDel.addEventListener('click',()=>{
+          if(!confirm('Delete this ticket batch? This will not modify any external exports you have already made.')) return;
+          appData.tickets = appData.tickets.filter(t=>t.id!==batch.id);
+          saveAll();
+          renderTicketBatches();
+          try{ renderFinanceTab(); }catch(_){ }
+        });
+        controls.append(btnPrint,btnDel);
+        header.append(title,controls);
+        card.appendChild(header);
+        const stats=document.createElement('div');
+        stats.style.fontSize='11px';
+        stats.style.color='#4b5563';
+        stats.style.margin='4px 0';
+        const ticketsArr = Array.isArray(batch.tickets) ? batch.tickets : [];
+        const qty = ticketsArr.length || Number(batch.quantity||0) || 0;
+        const redeemed = ticketsArr.filter(t=>t.redeemed).length;
+        const total = (Number(batch.price||0) * qty) || 0;
+        stats.textContent = qty + ' tickets • ' + formatMoney(batch.price||0) + ' each • Potential ' + formatMoney(total) + ' • Redeemed ' + redeemed;
+        card.appendChild(stats);
+        if(ticketsArr.length){
+          const tbl=document.createElement('table');
+          tbl.style.width='100%';
+          tbl.style.borderCollapse='collapse';
+          tbl.style.fontSize='11px';
+          const thead=document.createElement('thead');
+          thead.innerHTML='<tr style="background:#f9fafb"><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e5e7eb">Code</th><th style="text-align:center;padding:4px 6px;border-bottom:1px solid #e5e7eb;width:70px">Redeemed</th></tr>';
+          const tbody=document.createElement('tbody');
+          ticketsArr.forEach(tix=>{
+            const tr=document.createElement('tr');
+            tr.style.borderBottom='1px solid #e5e7eb';
+            const tdCode=document.createElement('td');
+            tdCode.style.padding='4px 6px';
+            tdCode.textContent=tix.code||'';
+            const tdRed=document.createElement('td');
+            tdRed.style.padding='4px 6px';
+            tdRed.style.textAlign='center';
+            const cb=document.createElement('input');
+            cb.type='checkbox';
+            cb.checked=!!tix.redeemed;
+            cb.addEventListener('change',()=>{
+              tix.redeemed = !!cb.checked;
+              saveAll();
+              try{ renderFinanceTab(); }catch(_){ }
+            });
+            tdRed.appendChild(cb);
+            tr.append(tdCode,tdRed);
+            tbody.appendChild(tr);
+          });
+          tbl.append(thead,tbody);
+          card.appendChild(tbl);
+        }
+        host.appendChild(card);
+      });
+    }
+
+    // --- Finances ---
+    function renderFinanceTab(){
+      const gigSel=document.getElementById('financeGigSelect');
+      if(gigSel){
+        const prevVal=gigSel.value;
+        buildGigSelectOptions(gigSel,true);
+        let nextVal='';
+        if(prevVal && gigSel.querySelector('option[value="'+prevVal+'"]')){
+          nextVal=prevVal;
+        }else if(typeof selectedTourDateId!=='undefined' && selectedTourDateId && gigSel.querySelector('option[value="'+selectedTourDateId+'"]')){
+          // Default finances view to the currently selected calendar date
+          nextVal=selectedTourDateId;
+        }else{
+          nextVal='all';
+        }
+        gigSel.value = nextVal;
+      }
+      updateFinanceSummary();
+      renderIncomeList();
+      renderExpenseList();
+      renderExpensePresets();
+      renderFinanceTransactions();
+      updateBandSplitSummary();
+    }
+    function financeMatchesGig(recordGigId, selectedGigId){
+      if(!selectedGigId || selectedGigId==='all') return true;
+      return (recordGigId || '') === selectedGigId;
+    }
+    function collectFinanceSummary(selectedGigId){
+      const res={
+        merchTotal:0,
+        ticketTotal:0,
+        otherIncomeTotal:0,
+        expenseTotal:0,
+        transactions:[],
+        incomeByMethod:{}
+      };
+      const txPush=(tx)=>{ res.transactions.push(tx); };
+      const sales = Array.isArray(appData.sales) ? appData.sales : [];
+      sales.forEach(sale=>{
+        if(!financeMatchesGig(sale.gigId || '', selectedGigId)) return;
+        const total = Number(sale.total||0) || 0;
+        res.merchTotal += total;
+        const desc = Array.isArray(sale.items) ? sale.items.map(it=>{
+          const m=appData.merch && appData.merch[it.merchId];
+          const n=m ? (m.name||'Item') : 'Item';
+          return n + ' x' + it.qty;
+        }).join(', ') : '';
+        const methodLabel = sale.paymentMethod || 'Cash';
+        const methodSuffix = methodLabel ? ' ('+methodLabel+')' : '';
+        if(methodLabel){
+          const key=String(methodLabel);
+          if(!res.incomeByMethod[key]) res.incomeByMethod[key]=0;
+          res.incomeByMethod[key]+=total;
+        }
+        txPush({
+          id: sale.id || generateId(),
+          gigId: sale.gigId || '',
+          type: 'merch',
+          timestamp: sale.timestamp || new Date().toISOString(),
+          amount: total,
+          description: 'Merch sale'+methodSuffix + (desc? ': '+desc:''),
+          paymentMethod: methodLabel
+        });
+      });
+      const batches = Array.isArray(appData.tickets) ? appData.tickets : [];
+      batches.forEach(batch=>{
+        if(!financeMatchesGig(batch.gigId || '', selectedGigId)) return;
+        const ticketsArr = Array.isArray(batch.tickets) ? batch.tickets : [];
+        const printedQty = Number(batch.quantity || (ticketsArr.length||0) || 0) || 0;
+        const soldQty = ticketsArr.filter(t=>t.redeemed).length;
+        const total = (Number(batch.price||0) * soldQty) || 0;
+        if(total!==0){
+          res.ticketTotal += total;
+          txPush({
+            id: batch.id || generateId(),
+            gigId: batch.gigId || '',
+            type: 'ticket',
+            timestamp: batch.timestamp || new Date().toISOString(),
+            amount: total,
+            description: 'Tickets sold: ' + (batch.eventName||'Event') + ' - Sold ' + soldQty + ' of ' + printedQty,
+            paymentMethod: ''
+          });
+        }
+      });
+      const incomeArr = Array.isArray(appData.income) ? appData.income : [];
+      incomeArr.forEach(inc=>{
+        if(!financeMatchesGig(inc.gigId || '', selectedGigId)) return;
+        const amt = Number(inc.amount||0) || 0;
+        if(!amt) return;
+        res.otherIncomeTotal += amt;
+        const label = inc.label || 'Income';
+        const notes = inc.notes || '';
+        txPush({
+          id: inc.id || generateId(),
+          gigId: inc.gigId || '',
+          type: 'income',
+          timestamp: inc.timestamp || new Date().toISOString(),
+          amount: amt,
+          description: label + (notes? ': '+notes:''),
+          paymentMethod: inc.paymentMethod || ''
+        });
+      });
+      const expenses = Array.isArray(appData.expenses) ? appData.expenses : [];
+      expenses.forEach(exp=>{
+        if(!financeMatchesGig(exp.gigId || '', selectedGigId)) return;
+        const amt = Number(exp.amount||0) || 0;
+        res.expenseTotal += amt;
+        const label = exp.category || 'Expense';
+        const desc = exp.notes || '';
+        txPush({
+          id: exp.id || generateId(),
+          gigId: exp.gigId || '',
+          type: 'expense',
+          timestamp: exp.timestamp || new Date().toISOString(),
+          amount: -amt,
+          description: label + (desc? ': '+desc:''),
+          paymentMethod: exp.paymentMethod || ''
+        });
+      });
+      res.transactions.sort((a,b)=>{
+        const ta=a.timestamp||''; const tb=b.timestamp||'';
+        return ta<tb ? -1 : (ta>tb ? 1 : 0);
+      });
+      return res;
+    }
+    function updateFinanceSummary(){
+      const gigSel=document.getElementById('financeGigSelect');
+      const gigId = gigSel ? (gigSel.value||'') : 'all';
+      const summary=collectFinanceSummary(gigId);
+      const merchEl=document.getElementById('financeMerchTotal');
+      const ticketEl=document.getElementById('financeTicketTotal');
+      const otherIncEl=document.getElementById('financeOtherIncomeTotal');
+      const expEl=document.getElementById('financeExpenseTotal');
+      const incEl=document.getElementById('financeIncomeTotal');
+      const netEl=document.getElementById('financeNetTotal');
+      const income = summary.merchTotal + summary.ticketTotal + (summary.otherIncomeTotal||0);
+      const net = income - summary.expenseTotal;
+      if(merchEl) merchEl.textContent=formatMoney(summary.merchTotal);
+      if(ticketEl) ticketEl.textContent=formatMoney(summary.ticketTotal);
+      if(otherIncEl) otherIncEl.textContent=formatMoney(summary.otherIncomeTotal||0);
+      if(expEl) expEl.textContent=formatMoney(summary.expenseTotal);
+      if(incEl) incEl.textContent=formatMoney(income);
+      if(netEl) netEl.textContent=formatMoney(net);
+      const breakdownEl=document.getElementById('financePaymentBreakdown');
+      if(breakdownEl){
+        const map=summary.incomeByMethod || {};
+        const keys=Object.keys(map).filter(k=>map[k] && map[k]!==0);
+        if(!keys.length){
+          breakdownEl.textContent='Income by payment method: no merch sales yet for this selection.';
+        }else{
+          const parts=keys.sort((a,b)=>a.localeCompare(b)).map(k=>k+': '+formatMoney(map[k]));
+          breakdownEl.textContent='Income by payment method (merch): '+parts.join('  b7 ');
+        }
+      }
+    }
+    function renderExpensePresets(){
+      const host=document.getElementById('expensePresets');
+      if(!host) return;
+      host.innerHTML='';
+      const presets = Array.isArray(appData.expensePresets) ? appData.expensePresets.filter(v=>typeof v==='string' && v.trim()) : [];
+      if(!presets.length) return;
+      const label=document.createElement('div');
+      label.textContent='Quick categories:';
+      label.style.flexBasis='100%';
+      label.style.fontSize='11px';
+      label.style.color='#4b5563';
+      label.style.marginBottom='2px';
+      host.appendChild(label);
+      const catInput=document.getElementById('expenseCategory');
+      presets.forEach(cat=>{
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.textContent=cat;
+        btn.className='btn secondary';
+        btn.style.padding='2px 8px';
+        btn.style.fontSize='11px';
+        btn.style.borderRadius='999px';
+        btn.addEventListener('click',()=>{
+          if(catInput){
+            catInput.value = cat;
+            catInput.focus();
+          }
+        });
+        host.appendChild(btn);
+      });
+    }
+    function renderExpenseList(){
+      const host=document.getElementById('expenseList');
+      const gigSel=document.getElementById('financeGigSelect');
+      if(!host) return;
+      host.innerHTML='';
+      const gigId = gigSel ? (gigSel.value||'') : 'all';
+      const expenses = Array.isArray(appData.expenses) ? appData.expenses.filter(e=>financeMatchesGig(e.gigId||'', gigId)) : [];
+      if(!expenses.length){
+        const p=document.createElement('div');
+        p.textContent='No expenses for this selection.';
+        p.style.color='#6b7280';
+        p.style.fontSize='12px';
+        host.appendChild(p);
+        return;
+      }
+      expenses.sort((a,b)=>{
+        const ta=a.timestamp||''; const tb=b.timestamp||'';
+        return ta<tb ? -1 : (ta>tb ? 1 : 0);
+      });
+      expenses.forEach(exp=>{
+        const row=document.createElement('div');
+        row.style.display='flex';
+        row.style.alignItems='center';
+        row.style.justifyContent='space-between';
+        row.style.gap='8px';
+        row.style.padding='4px 0';
+        const left=document.createElement('div');
+        left.style.flex='1';
+        left.style.fontSize='12px';
+        const when = exp.timestamp ? new Date(exp.timestamp).toLocaleString() : '';
+        const labelParts=[when,exp.category||'Expense',exp.notes||''].filter(Boolean);
+        left.textContent=labelParts.join(' • ');
+        const right=document.createElement('div');
+        const amtSpan=document.createElement('span');
+        amtSpan.textContent=formatMoney(exp.amount||0);
+        amtSpan.style.marginRight='6px';
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.textContent='×';
+        btn.className='btn danger';
+        btn.style.padding='2px 6px';
+        btn.style.fontSize='11px';
+        btn.addEventListener('click',()=>{
+          if(!confirm('Delete this expense?')) return;
+          appData.expenses = (appData.expenses||[]).filter(e=>e.id!==exp.id);
+          saveAll();
+          renderExpenseList();
+          updateFinanceSummary();
+          renderFinanceTransactions();
+          updateBandSplitSummary();
+        });
+        right.append(amtSpan,btn);
+        row.append(left,right);
+        host.appendChild(row);
+      });
+    }
+    function renderIncomeList(){
+      const host=document.getElementById('incomeList');
+      const gigSel=document.getElementById('financeGigSelect');
+      if(!host) return;
+      host.innerHTML='';
+      const gigId = gigSel ? (gigSel.value||'') : 'all';
+      const incomeArr = Array.isArray(appData.income) ? appData.income.filter(e=>financeMatchesGig(e.gigId||'', gigId)) : [];
+      if(!incomeArr.length){
+        const p=document.createElement('div');
+        p.textContent='No income records for this selection.';
+        p.style.color='#6b7280';
+        p.style.fontSize='12px';
+        host.appendChild(p);
+        return;
+      }
+      incomeArr.sort((a,b)=>{
+        const ta=a.timestamp||''; const tb=b.timestamp||'';
+        return ta<tb ? -1 : (ta>tb ? 1 : 0);
+      });
+      incomeArr.forEach(inc=>{
+        const row=document.createElement('div');
+        row.style.display='flex';
+        row.style.alignItems='center';
+        row.style.justifyContent='space-between';
+        row.style.gap='8px';
+        row.style.padding='4px 0';
+        const left=document.createElement('div');
+        left.style.flex='1';
+        left.style.fontSize='12px';
+        const when = inc.timestamp ? new Date(inc.timestamp).toLocaleString() : '';
+        const labelParts=[when,inc.label||'Income',inc.notes||''].filter(Boolean);
+        left.textContent=labelParts.join(' • ');
+        const right=document.createElement('div');
+        const amtSpan=document.createElement('span');
+        amtSpan.textContent=formatMoney(inc.amount||0);
+        amtSpan.style.marginRight='6px';
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.textContent='×';
+        btn.className='btn danger';
+        btn.style.padding='2px 6px';
+        btn.style.fontSize='11px';
+        btn.addEventListener('click',()=>{
+          if(!confirm('Delete this income record?')) return;
+          appData.income = (appData.income||[]).filter(e=>e.id!==inc.id);
+          saveAll();
+          renderIncomeList();
+          updateFinanceSummary();
+          renderFinanceTransactions();
+          updateBandSplitSummary();
+        });
+        right.append(amtSpan,btn);
+        row.append(left,right);
+        host.appendChild(row);
+      });
+    }
+    function renderFinanceTransactions(){
+      const host=document.getElementById('financeTransactions');
+      const gigSel=document.getElementById('financeGigSelect');
+      if(!host) return;
+      host.innerHTML='';
+      const gigId = gigSel ? (gigSel.value||'') : 'all';
+      const summary = collectFinanceSummary(gigId);
+      if(!summary.transactions.length){
+        const p=document.createElement('div');
+        p.textContent='No transactions yet.';
+        p.style.color='#6b7280';
+        p.style.fontSize='12px';
+        host.appendChild(p);
+        return;
+      }
+      summary.transactions.forEach(tx=>{
+        const row=document.createElement('div');
+        row.style.display='flex';
+        row.style.alignItems='center';
+        row.style.justifyContent='space-between';
+        row.style.gap='8px';
+        row.style.padding='4px 0';
+        const left=document.createElement('div');
+        left.style.flex='1';
+        left.style.fontSize='12px';
+        const when = tx.timestamp ? new Date(tx.timestamp).toLocaleString() : '';
+        const label = '['+tx.type.toUpperCase()+'] ' + (tx.description||'');
+        const gigLabel = getGigLabelById(tx.gigId || '');
+        left.textContent = when + ' • ' + gigLabel + ' • ' + label;
+        const right=document.createElement('div');
+        const amt=document.createElement('span');
+        amt.textContent=formatMoney(tx.amount);
+        amt.style.marginRight='6px';
+        amt.style.color = tx.amount<0 ? '#b91c1c' : '#14532d';
+        right.appendChild(amt);
+        row.append(left,right);
+        host.appendChild(row);
+      });
+    }
+    function updateBandSplitSummary(){
+      const gigSel=document.getElementById('financeGigSelect');
+      const gigId = gigSel ? (gigSel.value||'') : 'all';
+      const summary=collectFinanceSummary(gigId);
+      const net = summary.merchTotal + summary.ticketTotal - summary.expenseTotal;
+      const resultsEl=document.getElementById('splitResults');
+      if(resultsEl){
+        resultsEl.innerHTML='';
+        const p=document.createElement('div');
+        p.style.fontSize='12px';
+        p.style.color='#4b5563';
+        p.textContent='Current net profit: ' + formatMoney(net) + '. Use Equal Split or Custom % to preview per-member amounts.';
+        resultsEl.appendChild(p);
+      }
+    }
+    function applyEqualSplit(){
+      const gigSel=document.getElementById('financeGigSelect');
+      const gigId = gigSel ? (gigSel.value||'') : 'all';
+      const summary=collectFinanceSummary(gigId);
+      const net = summary.merchTotal + summary.ticketTotal - summary.expenseTotal;
+      const resultsEl=document.getElementById('splitResults');
+      if(!resultsEl) return;
+      resultsEl.innerHTML='';
+      if(net<=0){
+        const p=document.createElement('div');
+        p.textContent='Net profit is not positive. Nothing to split.';
+        p.style.fontSize='12px';
+        p.style.color='#b91c1c';
+        resultsEl.appendChild(p);
+        return;
+      }
+      const nStr = prompt('How many band members?', '4');
+      const n = parseInt(nStr||'0',10);
+      if(!Number.isFinite(n) || n<=0){
+        return;
+      }
+      const share = net / n;
+      const list=document.createElement('div');
+      list.style.fontSize='12px';
+      for(let i=1;i<=n;i++){
+        const line=document.createElement('div');
+        line.textContent='Member ' + i + ': ' + formatMoney(share);
+        list.appendChild(line);
+      }
+      resultsEl.appendChild(list);
+    }
+    function ensureCustomSplitRows(){
+      const host=document.getElementById('splitCustomRows');
+      if(!host) return;
+      if(host.children.length>0) return;
+      for(let i=0;i<4;i++){
+        addCustomSplitRow();
+      }
+    }
+    function addCustomSplitRow(){
+      const host=document.getElementById('splitCustomRows');
+      if(!host) return;
+      const row=document.createElement('div');
+      row.style.display='flex';
+      row.style.gap='4px';
+      row.style.alignItems='center';
+      const name=document.createElement('input');
+      name.type='text';
+      name.placeholder='Name';
+      name.style.flex='1 1 120px';
+      name.style.padding='4px 6px';
+      name.style.border='1px solid #d1d5db';
+      name.style.borderRadius='4px';
+      name.style.fontSize='12px';
+      const pct=document.createElement('input');
+      pct.type='number';
+      pct.min='0';
+      pct.max='100';
+      pct.placeholder='%';
+      pct.style.width='60px';
+      pct.style.padding='4px 6px';
+      pct.style.border='1px solid #d1d5db';
+      pct.style.borderRadius='4px';
+      pct.style.fontSize='12px';
+      pct.addEventListener('input',updateCustomSplitResults);
+      const remove=document.createElement('button');
+      remove.type='button';
+      remove.textContent='×';
+      remove.className='btn danger';
+      remove.style.padding='2px 6px';
+      remove.style.fontSize='11px';
+      remove.addEventListener('click',()=>{ row.remove(); updateCustomSplitResults(); });
+      row.append(name,pct,remove);
+      host.appendChild(row);
+    }
+    function updateCustomSplitResults(){
+      const gigSel=document.getElementById('financeGigSelect');
+      const gigId = gigSel ? (gigSel.value||'') : 'all';
+      const summary=collectFinanceSummary(gigId);
+      const net = summary.merchTotal + summary.ticketTotal - summary.expenseTotal;
+      const resultsEl=document.getElementById('splitResults');
+      const host=document.getElementById('splitCustomRows');
+      if(!resultsEl || !host) return;
+      resultsEl.innerHTML='';
+      if(net<=0){
+        const p=document.createElement('div');
+        p.textContent='Net profit is not positive. Nothing to split.';
+        p.style.fontSize='12px';
+        p.style.color='#b91c1c';
+        resultsEl.appendChild(p);
+        return;
+      }
+      const rows = Array.from(host.children||[]);
+      let totalPct=0;
+      const rowsData = rows.map(row=>{
+        const inputs=row.querySelectorAll('input');
+        const nameIn=inputs[0];
+        const pctIn=inputs[1];
+        const pctVal=parseFloat(pctIn && pctIn.value ? pctIn.value : '0');
+        if(!isFinite(pctVal) || pctVal<=0) return null;
+        totalPct += pctVal;
+        return {name: (nameIn && nameIn.value)||'', pct:pctVal};
+      }).filter(Boolean);
+      if(!rowsData.length || totalPct<=0){
+        const p=document.createElement('div');
+        p.textContent='Add at least one member with a positive percentage.';
+        p.style.fontSize='12px';
+        p.style.color='#b91c1c';
+        resultsEl.appendChild(p);
+        return;
+      }
+      const warn=document.createElement('div');
+      warn.style.fontSize='11px';
+      warn.style.color = Math.abs(totalPct-100)>0.01 ? '#b91c1c' : '#4b5563';
+      warn.textContent='Total %: ' + totalPct.toFixed(1) + (Math.abs(totalPct-100)>0.01 ? ' (does not sum to 100%)' : '');
+      resultsEl.appendChild(warn);
+      rowsData.forEach(r=>{
+        const line=document.createElement('div');
+        line.style.fontSize='12px';
+        const share = net * (r.pct/100);
+        const name = r.name || 'Member';
+        line.textContent=name + ' (' + r.pct.toFixed(1) + '%): ' + formatMoney(share);
+        resultsEl.appendChild(line);
+      });
+    }
+
     
     // Setlist Options Dialog - shown when clicking Setlist tab with no existing setlist
     function showSetlistOptionsDialog(tourDate, tabBtn){
@@ -3099,7 +5058,7 @@
       function proceedToTab(){
         document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
         tabBtn.classList.add('active');
-        ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+        ['db','set','adv','tour','live','merch','tickets','finance'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
         document.getElementById('set').style.display='block';
         previousTab = 'set';
         buildSheet('sheetInline');
@@ -7485,6 +9444,35 @@
         if(headerVenue){
           headerVenue.textContent = tourDate.venue || 'No venue set';
         }
+
+        // Keep Merch / POS gig selector in sync with the currently selected tour date
+        try{
+          const merchGigSel=document.getElementById('merchGigSelect');
+          const gigIdForPos = tourDate.id || '';
+          if(merchGigSel && gigIdForPos && merchGigSel.querySelector('option[value="'+gigIdForPos+'"]')){
+            merchGigSel.value = gigIdForPos;
+            merchGigSel.dispatchEvent(new Event('change',{bubbles:true}));
+          }
+        }catch(_){ }
+
+        // Keep Finances view aligned to the selected tour date so reports are day-based by default
+        try{
+          const financeGigSel=document.getElementById('financeGigSelect');
+          const gigIdForFinance = tourDate.id || '';
+          if(financeGigSel && gigIdForFinance && financeGigSel.querySelector('option[value="'+gigIdForFinance+'"]')){
+            financeGigSel.value = gigIdForFinance;
+            financeGigSel.dispatchEvent(new Event('change',{bubbles:true}));
+          }
+        }catch(_){ }
+        // Keep Tickets Catalog gig selector aligned to the selected tour date
+        try{
+          const ticketGigSel=document.getElementById('ticketGigSelect');
+          const gigIdForTickets = tourDate.id || '';
+          if(ticketGigSel && gigIdForTickets && ticketGigSel.querySelector('option[value="'+gigIdForTickets+'"]')){
+            ticketGigSel.value = gigIdForTickets;
+            ticketGigSel.dispatchEvent(new Event('change',{bubbles:true}));
+          }
+        }catch(_){ }
         
         // Map is now manual: placeholder shows last loaded map until user reloads
       }
@@ -7510,7 +9498,7 @@
             document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
             const setTab = document.querySelector('.tab[data-tab="set"]');
             if(setTab) setTab.classList.add('active');
-            ['db','set','adv','tour','live'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+            ['db','set','adv','tour','live','merch','tickets','finance'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
             const setEl = document.getElementById('set');
             if(setEl) setEl.style.display='block';
           };
@@ -15284,9 +17272,9 @@ function closeStageModal(){
       var stageEl=document.getElementById('stageSvgFull') || document.getElementById('stageSvg');
       const stage = stageEl ? stageEl.outerHTML : '';
       const dbOut = db.map(s=>{ const {audioData, ...rest}=s||{}; return rest; });
-      // Save EVERYTHING - complete backup
+      // Save EVERYTHING - complete backup, including merch/POS/tickets/finances (appData)
       const data={
-        version:4,
+        version:5,
         type:'fastfast-band',
         db:dbOut,
         setlist,
@@ -15305,7 +17293,8 @@ function closeStageModal(){
         currentBandPresetId,
         stagePresets,
         setlistPresets,
-        lastUsedSetlist
+        lastUsedSetlist,
+        appData
       };
       const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=((gig.band? gig.band.replace(/\s+/g,'_')+'_':'')+'profile.band'); a.click(); URL.revokeObjectURL(a.href);
@@ -15369,6 +17358,35 @@ function closeStageModal(){
             if(obj && Array.isArray(obj.stagePresets)){ stagePresets = obj.stagePresets; }
             if(obj && Array.isArray(obj.setlistPresets)){ setlistPresets = obj.setlistPresets; }
             if(obj && obj.lastUsedSetlist){ lastUsedSetlist = obj.lastUsedSetlist; }
+            // Restore finance/merch/ticket data from .BAND if present (same schema as local storage)
+            if(obj && obj.appData && typeof obj.appData==='object'){
+              const loaded=obj.appData;
+              appData.merch = loaded.merch && typeof loaded.merch==='object' ? loaded.merch : {};
+              appData.sales = Array.isArray(loaded.sales) ? loaded.sales : [];
+              appData.tickets = Array.isArray(loaded.tickets) ? loaded.tickets : [];
+              appData.gigs = loaded.gigs && typeof loaded.gigs==='object' ? loaded.gigs : {};
+              appData.expenses = Array.isArray(loaded.expenses) ? loaded.expenses : [];
+              appData.income = Array.isArray(loaded.income) ? loaded.income : [];
+              appData.expensePresets = Array.isArray(loaded.expensePresets) ? loaded.expensePresets : [];
+              if((!appData.expensePresets || !appData.expensePresets.length) && Array.isArray(appData.expenses) && appData.expenses.length){
+                const cats = Array.from(new Set(appData.expenses.map(e=> (e && typeof e.category==='string' ? e.category.trim() : '') ).filter(Boolean)));
+                appData.expensePresets = cats;
+              }
+              const exp = loaded.exports && typeof loaded.exports==='object' ? loaded.exports : {};
+              appData.exports = { lastExportTimestamp: exp.lastExportTimestamp || null };
+              const pay = loaded.paymentLinks && typeof loaded.paymentLinks==='object' ? loaded.paymentLinks : {};
+              appData.paymentLinks = {
+                paypal: pay.paypal || '',
+                square: pay.square || '',
+                interac: pay.interac || ''
+              };
+              const qr = loaded.paymentQr && typeof loaded.paymentQr==='object' ? loaded.paymentQr : {};
+              appData.paymentQr = {
+                paypal: qr.paypal || '',
+                square: qr.square || '',
+                interac: qr.interac || ''
+              };
+            }
             if(obj && obj.stage){
               const container=document.getElementById('stageStore');
               if(container){
@@ -16502,6 +18520,1486 @@ function closeStageModal(){
         });
       }
     })();
+  </script>
+  <script>
+  (function setupMerchTicketsFinance(){
+    'use strict';
+
+    function csvEscape(val){
+      if(val==null) return '';
+      const s=String(val);
+      if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }
+    function getGigMetaForExport(gigId){
+      const id = gigId || '';
+      if(!id) return {name:'',date:''};
+      if(appData && appData.gigs && appData.gigs[id]){
+        const g=appData.gigs[id];
+        return {name:g.name||g.venue||'', date:g.date||''};
+      }
+      if(Array.isArray(tourDates)){
+        const td=tourDates.find(t=>t && t.id===id);
+        if(td) return {name:td.venue||td.name||'', date:td.date||''};
+      }
+      return {name:'',date:''};
+    }
+    function buildFinanceCsv(onlyNew){
+      const summary = collectFinanceSummary('all');
+      const txs = Array.isArray(summary.transactions) ? summary.transactions : [];
+      if(!txs.length) return {csv:'', newest:null, count:0};
+      const lastTs = appData && appData.exports && appData.exports.lastExportTimestamp ? appData.exports.lastExportTimestamp : null;
+      let filtered = txs;
+      if(onlyNew && lastTs){
+        filtered = txs.filter(tx=>{
+          if(!tx.timestamp) return true;
+          return String(tx.timestamp) > String(lastTs);
+        });
+      }
+      if(!filtered.length) return {csv:'', newest:lastTs, count:0};
+      filtered.sort((a,b)=>{
+        const ta=a.timestamp||''; const tb=b.timestamp||'';
+        return ta<tb ? -1 : (ta>tb ? 1 : 0);
+      });
+      const header=['transactionId','type','gigId','gigName','gigDate','timestamp','amount','currency','description','direction','paymentMethod'];
+      const rows=[header.join(',')];
+      let newestTs = lastTs;
+      filtered.forEach(tx=>{
+        const gid = tx.gigId || '';
+        const meta = getGigMetaForExport(gid);
+        const ts = tx.timestamp || new Date().toISOString();
+        if(!newestTs || String(ts) > String(newestTs)) newestTs = ts;
+        const amtNum = typeof tx.amount==='number' ? tx.amount : Number(tx.amount||0);
+        const amt = typeof tx.amount==='number' ? tx.amount.toFixed(2) : String(tx.amount||'');
+        const direction = (tx.type==='expense' || (Number.isFinite(amtNum) && amtNum<0)) ? 'Outgoing' : 'Income';
+        const paymentMethod = tx.paymentMethod || '';
+        const cols=[
+          csvEscape(tx.id || generateId()),
+          csvEscape(tx.type || ''),
+          csvEscape(gid),
+          csvEscape(meta.name),
+          csvEscape(meta.date),
+          csvEscape(ts),
+          csvEscape(amt),
+          'USD',
+          csvEscape(tx.description||''),
+          csvEscape(direction),
+          csvEscape(paymentMethod)
+        ];
+        rows.push(cols.join(','));
+      });
+      return {csv:rows.join('\r\n'), newest:newestTs, count:filtered.length};
+    }
+    function triggerCsvDownload(baseName, csv){
+      if(!csv) return;
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      const now=new Date();
+      const stamp=now.toISOString().replace(/[:T]/g,'-').split('.')[0];
+      a.href=url;
+      a.download=baseName+'-'+stamp+'.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    async function simplePrint(buildFn){
+      let modal=document.getElementById('simplePrintModal');
+      if(modal) modal.remove();
+      modal=document.createElement('div');
+      modal.id='simplePrintModal';
+      modal.className='modal open';
+      const sheet=document.createElement('div');
+      sheet.className='sheet';
+      sheet.style.maxWidth='8.5in';
+      sheet.style.margin='0 auto';
+      sheet.style.background='#ffffff';
+      sheet.style.color='#111827';
+      modal.appendChild(sheet);
+      document.body.appendChild(modal);
+      try{
+        if(typeof buildFn==='function') buildFn(sheet);
+        await printPromise();
+        window.print();
+        await printPromise();
+      }finally{
+        modal.remove();
+      }
+    }
+
+    function wireMerch(){
+      const saveBtn=document.getElementById('merchSaveBtn');
+      const clearBtn=document.getElementById('merchClearBtn');
+      const clearCartBtn=document.getElementById('merchClearCartBtn');
+      const recordBtn=document.getElementById('merchRecordSaleBtn');
+      const printCatalogBtn=document.getElementById('merchPrintBtn');
+      const printSalesBtn=document.getElementById('merchSalesPrintBtn');
+      const imgDrop=document.getElementById('merchImageDrop');
+      const imgInput=document.getElementById('merchImageInput');
+      const imgPrev=document.getElementById('merchImagePreview');
+      const imgClear=document.getElementById('merchImageClearBtn');
+      const cartArea=document.getElementById('merchCartArea');
+      const merchTabTickets=document.getElementById('merchTabTickets');
+      const merchTabCat=document.getElementById('merchTabCatalog');
+      const merchTabPos=document.getElementById('merchTabPOS');
+      const merchPaymentCash=document.getElementById('merchPaymentMethodCash');
+      const itemQrDrop1=document.getElementById('merchQrDrop1');
+      const itemQrDrop2=document.getElementById('merchQrDrop2');
+      const itemQrDrop3=document.getElementById('merchQrDrop3');
+      const itemQrInput1=document.getElementById('merchQrInput1');
+      const itemQrInput2=document.getElementById('merchQrInput2');
+      const itemQrInput3=document.getElementById('merchQrInput3');
+      const itemQrPrev1=document.getElementById('merchQrPreview1');
+      const itemQrPrev2=document.getElementById('merchQrPreview2');
+      const itemQrPrev3=document.getElementById('merchQrPreview3');
+
+      function loadMerchImageFile(file){
+        if(!file || !file.type || !file.type.startsWith('image/')){
+          showToast('Please use an image file for merch photos.','warning');
+          return;
+        }
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const base=e.target && e.target.result ? String(e.target.result) : '';
+          if(!base) return;
+          const img=new Image();
+          img.onload=()=>{
+            try{
+              const maxSide=160;
+              const scale=Math.min(maxSide/img.width, maxSide/img.height, 1);
+              const w=Math.max(1, Math.round(img.width*scale));
+              const h=Math.max(1, Math.round(img.height*scale));
+              const canvas=document.createElement('canvas');
+              canvas.width=w; canvas.height=h;
+              const ctx=canvas.getContext('2d');
+              ctx.fillStyle='#ffffff';
+              ctx.fillRect(0,0,w,h);
+              ctx.drawImage(img,0,0,w,h);
+              currentMerchImageData = canvas.toDataURL('image/jpeg',0.78);
+              if(imgPrev){
+                imgPrev.src=currentMerchImageData;
+                imgPrev.style.display='block';
+              }
+            }catch(_){
+              currentMerchImageData = base;
+              if(imgPrev){
+                imgPrev.src=currentMerchImageData;
+                imgPrev.style.display='block';
+              }
+            }
+          };
+          img.src=base;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function loadItemQrImage(index,file){
+        if(!file || !file.type || !file.type.startsWith('image/')){
+          showToast('Please use an image file for the QR code.','warning');
+          return;
+        }
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const data=e.target && e.target.result ? String(e.target.result) : '';
+          if(!data) return;
+          currentMerchQrData[index] = data;
+          const prev = index===0 ? itemQrPrev1 : index===1 ? itemQrPrev2 : itemQrPrev3;
+          if(prev){
+            prev.src = data;
+            prev.style.display='block';
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+
+      if(imgDrop){
+        imgDrop.addEventListener('click',()=>{
+          if(imgInput) imgInput.click();
+        });
+        imgDrop.addEventListener('dragover',e=>{
+          e.preventDefault();
+          imgDrop.style.backgroundColor='#e0f2fe';
+          imgDrop.style.borderColor='#0ea5e9';
+        });
+        imgDrop.addEventListener('dragleave',e=>{
+          e.preventDefault();
+          imgDrop.style.backgroundColor='#f9fafb';
+          imgDrop.style.borderColor='#d1d5db';
+        });
+        imgDrop.addEventListener('drop',e=>{
+          e.preventDefault();
+          imgDrop.style.backgroundColor='#f9fafb';
+          imgDrop.style.borderColor='#d1d5db';
+          const files=e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+          if(!files.length) return;
+          loadMerchImageFile(files[0]);
+        });
+      }
+      if(imgInput){
+        imgInput.addEventListener('change',()=>{
+          const files=Array.from(imgInput.files||[]);
+          if(!files.length) return;
+          loadMerchImageFile(files[0]);
+        });
+      }
+      if(imgClear){
+        imgClear.addEventListener('click',()=>{
+          currentMerchImageData = null;
+          if(imgPrev){
+            imgPrev.src='';
+            imgPrev.style.display='none';
+          }
+        });
+      }
+
+      function wireItemQrDrop(dropEl,inputEl,index){
+        if(!dropEl) return;
+        dropEl.addEventListener('click',()=>{
+          if(inputEl) inputEl.click();
+        });
+        dropEl.addEventListener('dragover',e=>{
+          e.preventDefault();
+          dropEl.style.backgroundColor='#e0f2fe';
+          dropEl.style.borderColor='#0ea5e9';
+        });
+        dropEl.addEventListener('dragleave',e=>{
+          e.preventDefault();
+          dropEl.style.backgroundColor='#ffffff';
+          dropEl.style.borderColor='#d1d5db';
+        });
+        dropEl.addEventListener('drop',e=>{
+          e.preventDefault();
+          dropEl.style.backgroundColor='#ffffff';
+          dropEl.style.borderColor='#d1d5db';
+          const files=e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+          if(!files.length) return;
+          loadItemQrImage(index,files[0]);
+        });
+        if(inputEl){
+          inputEl.addEventListener('change',()=>{
+            const files=Array.from(inputEl.files||[]);
+            if(!files.length) return;
+            loadItemQrImage(index,files[0]);
+          });
+        }
+      }
+
+      wireItemQrDrop(itemQrDrop1,itemQrInput1,0);
+      wireItemQrDrop(itemQrDrop2,itemQrInput2,1);
+      wireItemQrDrop(itemQrDrop3,itemQrInput3,2);
+      if(cartArea){
+        cartArea.addEventListener('dragover',e=>{
+          if(e.dataTransfer && Array.from(e.dataTransfer.types||[]).indexOf('text/x-merch-id')!==-1){
+            e.preventDefault();
+            e.dataTransfer.dropEffect='copy';
+            cartArea.style.backgroundColor='#eff6ff';
+            cartArea.style.borderTopColor='#3b82f6';
+          }
+        });
+        cartArea.addEventListener('dragleave',e=>{
+          e.preventDefault();
+          cartArea.style.backgroundColor='';
+          cartArea.style.borderTopColor='#e5e7eb';
+        });
+        cartArea.addEventListener('drop',e=>{
+          e.preventDefault();
+          cartArea.style.backgroundColor='';
+          cartArea.style.borderTopColor='#e5e7eb';
+          const merchId=e.dataTransfer ? e.dataTransfer.getData('text/x-merch-id') : '';
+          if(merchId){
+            addMerchToCart(merchId,1);
+          }
+        });
+      }
+
+      if(merchTabTickets && merchTabCat && merchTabPos){
+        const ticketsPane=document.getElementById('merchTicketsPane');
+        const catPane=document.getElementById('merchCatalogPane');
+        const posPane=document.getElementById('merchPosPane');
+        const activate = (which)=>{
+          [merchTabTickets,merchTabCat,merchTabPos].forEach(btn=>btn.classList.remove('primary'));
+          if(which==='tickets'){
+            merchTabTickets.classList.add('primary');
+          }else if(which==='catalog'){
+            merchTabCat.classList.add('primary');
+          }else{
+            merchTabPos.classList.add('primary');
+          }
+          if(ticketsPane) ticketsPane.style.display = (which==='tickets' ? 'flex' : 'none');
+          if(catPane) catPane.style.display = (which==='catalog' ? 'flex' : 'none');
+          if(posPane) posPane.style.display = (which==='pos' ? 'flex' : 'none');
+          if(which==='tickets'){
+            try{ renderTicketsTab(); }catch(_){ }
+          }else if(which==='catalog' || which==='pos'){
+            // Keep merch views fresh when switching back
+            renderMerchCatalog();
+            renderMerchPOS();
+            renderMerchSalesLog();
+          }
+        };
+        merchTabTickets.addEventListener('click',()=>activate('tickets'));
+        merchTabCat.addEventListener('click',()=>activate('catalog'));
+        merchTabPos.addEventListener('click',()=>activate('pos'));
+      }
+      if(merchPaymentCash){
+        merchPaymentCash.addEventListener('click',()=>{
+          if(!currentMerchCart.items || !currentMerchCart.items.length){
+            showToast('Add items to the sale first.','warning');
+            return;
+          }
+          // Calculate current cart total
+          let total=0;
+          currentMerchCart.items.forEach(line=>{
+            const item=appData.merch && appData.merch[line.merchId];
+            if(!item) return;
+            const price=Number(item.price||0);
+            const qty=Number(line.qty||0);
+            if(qty<=0) return;
+            total += price*qty;
+          });
+          if(total<=0){
+            showToast('Sale has no billable items.','warning');
+            return;
+          }
+          currentMerchPaymentMethod = 'Cash';
+          const input = prompt('Amount received (leave blank for exact):', '');
+          if(input===null){
+            return;
+          }
+          const trimmed = input.trim();
+          if(!trimmed){
+            showToast('Recorded as cash (exact amount).','info');
+            return;
+          }
+          const paid = parseFloat(trimmed.replace(/[^0-9.\-]/g,''));
+          if(!Number.isFinite(paid) || paid<=0){
+            showToast('Enter a valid amount received, e.g. 50.','warning');
+            return;
+          }
+          if(paid+0.0001 < total){
+            const short = total - paid;
+            showToast('Amount received is short by '+formatMoney(short)+'.','warning');
+            return;
+          }
+          const change = paid - total;
+          if(change>0.004){
+            showToast('Give back '+formatMoney(change)+' in change.','info',8000);
+          }else{
+            showToast('Recorded as cash (exact amount).','info');
+          }
+        });
+      }
+
+      // POS ticket controls inside Merch POS
+      const posTicketBatchSelect=document.getElementById('posTicketBatchSelect');
+      const posTicketPriceLabel=document.getElementById('posTicketPriceLabel');
+      const posTicketStats=document.getElementById('posTicketStats');
+      const posTicketDoorCashBtn=document.getElementById('posTicketDoorCashBtn');
+      const posTicketCodeInput=document.getElementById('posTicketCodeInput');
+      const posTicketRedeemBtn=document.getElementById('posTicketRedeemBtn');
+      const posTicketScanQrBtn=document.getElementById('posTicketScanQrBtn');
+
+      function refreshPosTicketControls(){
+        if(!posTicketBatchSelect) return;
+        const gigSel=document.getElementById('merchGigSelect');
+        const gigId = gigSel ? (gigSel.value||'') : '';
+        while(posTicketBatchSelect.firstChild) posTicketBatchSelect.removeChild(posTicketBatchSelect.firstChild);
+        const batches = Array.isArray(appData.tickets) ? appData.tickets : [];
+        const filtered = batches.filter(b=>!gigId || (b.gigId||'')===gigId);
+        const optPlaceholder=document.createElement('option');
+        optPlaceholder.value='';
+        optPlaceholder.textContent = filtered.length ? 'Select ticket batch…' : 'No ticket batches for this gig';
+        posTicketBatchSelect.appendChild(optPlaceholder);
+        filtered.forEach(batch=>{
+          const opt=document.createElement('option');
+          opt.value=batch.id||'';
+          const labelParts=[batch.eventName||'Event'];
+          const gigLabel=getGigLabelById(batch.gigId||'');
+          if(gigLabel) labelParts.push(gigLabel);
+          opt.textContent=labelParts.join(' • ');
+          posTicketBatchSelect.appendChild(opt);
+        });
+        // Auto-select the most likely batch for this gig/date
+        let defaultBatchId='';
+        if(filtered.length){
+          const showDate = (typeof gig!=='undefined' && gig && gig.date) ? gig.date : '';
+          if(showDate){
+            const matchByDate = filtered.find(b=> (b.date||'') === showDate);
+            if(matchByDate && matchByDate.id) defaultBatchId = matchByDate.id;
+          }
+          // If no exact date match, keep existing selection when still valid
+          if(!defaultBatchId){
+            const prev = posTicketBatchSelect.value||'';
+            if(prev && filtered.some(b=>b.id===prev)) defaultBatchId = prev;
+          }
+          // Otherwise fall back to the first batch for this gig
+          if(!defaultBatchId && filtered[0] && filtered[0].id){
+            defaultBatchId = filtered[0].id;
+          }
+        }
+        if(defaultBatchId && posTicketBatchSelect.querySelector('option[value="'+defaultBatchId+'"]')){
+          posTicketBatchSelect.value = defaultBatchId;
+        }
+        updatePosTicketSummary();
+      }
+
+      function updatePosTicketSummary(){
+        if(!posTicketBatchSelect) return;
+        const batchId = posTicketBatchSelect.value||'';
+        const batches = Array.isArray(appData.tickets) ? appData.tickets : [];
+        const batch = batches.find(b=>b.id===batchId) || null;
+        if(!batch){
+          if(posTicketPriceLabel) posTicketPriceLabel.textContent='';
+          if(posTicketStats) posTicketStats.textContent='';
+          return;
+        }
+        const ticketsArr = Array.isArray(batch.tickets) ? batch.tickets : [];
+        const qtyTotal = Number(batch.quantity || (ticketsArr.length||0) || 0) || 0;
+        const soldQty = ticketsArr.filter(t=>t.redeemed).length;
+        if(posTicketPriceLabel) posTicketPriceLabel.textContent='Price: '+formatMoney(batch.price||0);
+        if(posTicketStats) posTicketStats.textContent='Sold '+soldQty+' of '+qtyTotal;
+      }
+
+      if(posTicketBatchSelect){
+        posTicketBatchSelect.addEventListener('change',updatePosTicketSummary);
+        // Initial fill
+        refreshPosTicketControls();
+        const gigSel=document.getElementById('merchGigSelect');
+        if(gigSel){
+          gigSel.addEventListener('change',refreshPosTicketControls);
+        }
+      }
+
+      if(posTicketDoorCashBtn){
+        posTicketDoorCashBtn.addEventListener('click',()=>{
+          if(!posTicketBatchSelect) return;
+          const batchId = posTicketBatchSelect.value||'';
+          if(!batchId){
+            showToast('Choose a ticket batch first.','warning');
+            return;
+          }
+          const batches = Array.isArray(appData.tickets) ? appData.tickets : [];
+          const batch = batches.find(b=>b.id===batchId);
+          if(!batch){ showToast('Ticket batch not found.','warning'); return; }
+          if(!Array.isArray(batch.tickets)) batch.tickets=[];
+          const idx = batch.tickets.length;
+          const code = generateTicketCode(batch.eventName||'Event', batch.date||'', idx);
+          batch.tickets.push({ code, redeemed:true });
+          saveAll();
+          try{ renderTicketsTab(); }catch(_){ }
+          try{ renderFinanceTab(); }catch(_){ }
+          updatePosTicketSummary();
+          if(window.lastTicketRedeemSource === 'scanner-cash'){
+            // Scanner Cash Sale will show its own confirmation / change toast
+            window.lastTicketRedeemSource = 'manual';
+          }else{
+            showToast('Door ticket sold (cash).','success');
+          }
+        });
+      }
+
+      window.lastTicketRedeemSource = 'manual';
+
+      if(posTicketRedeemBtn){
+        posTicketRedeemBtn.addEventListener('click',()=>{
+          const raw = posTicketCodeInput ? (posTicketCodeInput.value||'') : '';
+          const code = raw.trim();
+          if(!code){ showToast('Enter or scan a ticket code first.','warning'); return; }
+          const gigSel=document.getElementById('merchGigSelect');
+          const activeGigId = gigSel ? (gigSel.value||'') : '';
+          if(!activeGigId){
+            showToast('Choose the active gig for this POS first.','warning');
+            return;
+          }
+
+          const batches = Array.isArray(appData.tickets) ? appData.tickets : [];
+          let foundBatch = null;
+          let foundTicket = null;
+
+          outer: for(const batch of batches){
+            const ticketsArr = Array.isArray(batch.tickets) ? batch.tickets : [];
+            for(const tix of ticketsArr){
+              if(String(tix.code||'').toUpperCase()===code.toUpperCase()){
+                foundBatch = batch;
+                foundTicket = tix;
+                break outer;
+              }
+            }
+          }
+
+          if(!foundBatch || !foundTicket){
+            const fromScanner = window.lastTicketRedeemSource === 'scanner';
+            if(fromScanner){
+              const overlay=document.getElementById('qrErrorOverlay');
+              const msgEl=document.getElementById('qrErrorMessage');
+              if(msgEl) msgEl.textContent='Ticket not found: '+code;
+              if(overlay){ overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false'); }
+              if(typeof qrScannerPaused!=='undefined'){ qrScannerPaused = true; }
+              try{ playErrorSound(); }catch(_){ }
+            }else{
+              showToast('Ticket code not found.','warning');
+              try{ playErrorSound(); }catch(_){ }
+            }
+            return;
+          }
+
+          // Enforce that ticket batch belongs to the active gig (day/venue)
+          if((foundBatch.gigId||'') !== activeGigId){
+            const fromScanner = window.lastTicketRedeemSource === 'scanner';
+            const msg='Ticket is for a different show/date: '+(foundTicket.code||'');
+            if(fromScanner){
+              const overlay=document.getElementById('qrErrorOverlay');
+              const msgEl=document.getElementById('qrErrorMessage');
+              if(msgEl) msgEl.textContent=msg;
+              if(overlay){ overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false'); }
+              if(typeof qrScannerPaused!=='undefined'){ qrScannerPaused = true; }
+              try{ playErrorSound(); }catch(_){ }
+            }else{
+              showToast(msg,'warning');
+              try{ playErrorSound(); }catch(_){ }
+            }
+            return;
+          }
+
+          const tix = foundTicket;
+          if(tix.redeemed){
+            // Stronger duplicate handling when coming from the scanner
+            if(window.lastTicketRedeemSource === 'scanner'){
+              const overlay=document.getElementById('qrErrorOverlay');
+              const msgEl=document.getElementById('qrErrorMessage');
+              if(msgEl) msgEl.textContent='Ticket already redeemed: '+(tix.code||'');
+              if(overlay){ overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false'); }
+              if(typeof qrScannerPaused!=='undefined'){ qrScannerPaused = true; }
+              try{ playErrorSound(); }catch(_){ }
+            }else{
+              showToast('This ticket code is already redeemed.','info');
+              try{ playErrorSound(); }catch(_){ }
+            }
+            return;
+          }
+
+          // Mark redeemed and update everything
+          tix.redeemed=true;
+          saveAll();
+          try{ renderTicketsTab(); }catch(_){ }
+          try{ renderFinanceTab(); }catch(_){ }
+          updatePosTicketSummary();
+          // Successful redemption
+          showToast('Ticket redeemed.','success');
+          // Update session counter/list if scanner UI is open
+          const countEl=document.getElementById('qrScannerCount');
+          const listEl=document.getElementById('qrScannerList');
+          if(countEl){
+            const cur=parseInt(countEl.textContent||'0',10)||0;
+            countEl.textContent=String(cur+1);
+          }
+          if(listEl){
+            const row=document.createElement('div');
+            row.textContent=tix.code||'';
+            listEl.insertBefore(row, listEl.firstChild);
+          }
+
+          const fromScanner = window.lastTicketRedeemSource === 'scanner';
+          // Always play success sound on redemption
+          try{ playSuccessSound(); }catch(_){ }
+          // If coming from the live scanner, flash green and pause for 2 seconds
+          if(fromScanner){
+            const overlay=document.getElementById('qrSuccessOverlay');
+            const msgEl=document.getElementById('qrSuccessMessage');
+            if(msgEl) msgEl.textContent='Ticket OK: '+(tix.code||'');
+            if(typeof qrScannerPaused!=='undefined'){ qrScannerPaused = true; }
+            if(overlay){
+              overlay.classList.add('open');
+              overlay.setAttribute('aria-hidden','false');
+              setTimeout(()=>{
+                if(overlay){ overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); }
+                if(typeof qrScannerPaused!=='undefined'){ qrScannerPaused = false; }
+              },2000);
+            }
+          }
+        });
+      }
+      if(posTicketScanQrBtn){
+        posTicketScanQrBtn.addEventListener('click',()=>{
+          if(typeof openQrScanner !== 'function'){
+            showToast('QR scanner is not available in this version.','warning');
+            return;
+          }
+          openQrScanner(decoded=>{
+            if(!decoded) return;
+            if(posTicketCodeInput){
+              posTicketCodeInput.value = String(decoded).trim();
+            }
+            window.lastTicketRedeemSource = 'scanner';
+            if(posTicketRedeemBtn){
+              posTicketRedeemBtn.click();
+            }
+          });
+        });
+      }
+      if(saveBtn){
+        saveBtn.addEventListener('click',()=>{
+          const nameEl=document.getElementById('merchName');
+          const catEl=document.getElementById('merchCategory');
+          const priceEl=document.getElementById('merchPrice');
+          const invEl=document.getElementById('merchInventory');
+          const qrLabel1=document.getElementById('merchQrLabel1');
+          const qrLabel2=document.getElementById('merchQrLabel2');
+          const qrLabel3=document.getElementById('merchQrLabel3');
+          const name=(nameEl && nameEl.value.trim())||'';
+          const category=(catEl && catEl.value.trim())||'';
+          const priceVal=priceEl && priceEl.value!=='' ? parseFloat(priceEl.value) : 0;
+          const invVal=invEl && invEl.value!=='' ? parseInt(invEl.value,10) : 0;
+          if(!name){ showToast('Enter an item name first.','warning'); return; }
+          if(!Number.isFinite(priceVal) || priceVal<0){ showToast('Enter a valid non-negative price.','warning'); return; }
+          const inventory = Number.isFinite(invVal) && invVal>=0 ? invVal : 0;
+          if(!appData.merch) appData.merch={};
+          const qrCodes=[];
+          const labels=[qrLabel1,qrLabel2,qrLabel3];
+          for(let i=0;i<3;i++){
+            const img=currentMerchQrData[i] || null;
+            const lblEl=labels[i];
+            let lbl=lblEl && lblEl.value ? lblEl.value.trim() : '';
+            if(img){
+              if(!lbl) lbl='QR '+(i+1);
+              qrCodes.push({ label: lbl, image: img });
+            }
+          }
+          let id = editingMerchId;
+          if(!id){ id='merch_'+Date.now()+'_'+Math.random().toString(36).substr(2,6); }
+          appData.merch[id]={
+            id,
+            name,
+            category,
+            price:priceVal,
+            inventory,
+            thumb: currentMerchImageData || null,
+            qrCodes
+          };
+          editingMerchId=null;
+          if(nameEl) nameEl.value='';
+          if(catEl) catEl.value='';
+          if(priceEl) priceEl.value='';
+          if(invEl) invEl.value='';
+          if(imgPrev){ imgPrev.src=''; imgPrev.style.display='none'; }
+          currentMerchImageData = null;
+          saveAll();
+          renderMerchTab();
+          try{ renderFinanceTab(); }catch(_){ }
+          showToast('Merch item saved.','success');
+        });
+      }
+      if(clearBtn){
+        clearBtn.addEventListener('click',()=>{
+          const nameEl=document.getElementById('merchName');
+          const catEl=document.getElementById('merchCategory');
+          const priceEl=document.getElementById('merchPrice');
+          const invEl=document.getElementById('merchInventory');
+          const qrLabel1=document.getElementById('merchQrLabel1');
+          const qrLabel2=document.getElementById('merchQrLabel2');
+          const qrLabel3=document.getElementById('merchQrLabel3');
+          const qrPrev1=document.getElementById('merchQrPreview1');
+          const qrPrev2=document.getElementById('merchQrPreview2');
+          const qrPrev3=document.getElementById('merchQrPreview3');
+          if(nameEl) nameEl.value='';
+          if(catEl) catEl.value='';
+          if(priceEl) priceEl.value='';
+          if(invEl) invEl.value='';
+          editingMerchId=null;
+          currentMerchImageData = null;
+           currentMerchQrData = [null,null,null];
+          if(imgPrev){ imgPrev.src=''; imgPrev.style.display='none'; }
+          if(qrLabel1) qrLabel1.value='';
+          if(qrLabel2) qrLabel2.value='';
+          if(qrLabel3) qrLabel3.value='';
+          if(qrPrev1){ qrPrev1.src=''; qrPrev1.style.display='none'; }
+          if(qrPrev2){ qrPrev2.src=''; qrPrev2.style.display='none'; }
+          if(qrPrev3){ qrPrev3.src=''; qrPrev3.style.display='none'; }
+        });
+      }
+      if(clearCartBtn){
+        clearCartBtn.addEventListener('click',()=>{
+          clearMerchCart();
+        });
+      }
+      if(recordBtn){
+        recordBtn.addEventListener('click',()=>{
+          if(!currentMerchCart.items || !currentMerchCart.items.length){
+            showToast('Add items to the sale first.','warning');
+            return;
+          }
+          const gigSel=document.getElementById('merchGigSelect');
+          const gigId = gigSel ? (gigSel.value||'') : '';
+          const lines=[];
+          let total=0;
+          currentMerchCart.items.forEach(line=>{
+            const item=appData.merch && appData.merch[line.merchId];
+            if(!item) return;
+            const price=Number(item.price||0);
+            const qty=Number(line.qty||0);
+            if(qty<=0) return;
+            const lineTotal=price*qty;
+            total+=lineTotal;
+            lines.push({merchId:line.merchId, qty, price});
+          });
+          if(!lines.length || total<=0){
+            showToast('Sale has no billable items.','warning');
+            return;
+          }
+          const saleId='sale_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+          const ts=new Date().toISOString();
+          const paymentLabel = currentMerchPaymentMethod && String(currentMerchPaymentMethod).trim() ? String(currentMerchPaymentMethod).trim() : 'Cash';
+          const sale={
+            id:saleId,
+            gigId,
+            timestamp:ts,
+            items:lines,
+            total,
+            paymentMethod: paymentLabel
+          };
+          if(!Array.isArray(appData.sales)) appData.sales=[];
+          appData.sales.push(sale);
+          lines.forEach(l=>{
+            const m=appData.merch && appData.merch[l.merchId];
+            if(!m) return;
+            const inv=Number(m.inventory||0);
+            if(inv>0){
+              const next=Math.max(0, inv-Number(l.qty||0));
+              m.inventory=next;
+            }
+          });
+          clearMerchCart();
+          saveAll();
+          renderMerchTab();
+          try{ renderFinanceTab(); }catch(_){ }
+          showToast('Sale recorded.','success');
+        });
+      }
+      if(printCatalogBtn){
+        printCatalogBtn.addEventListener('click',()=>{
+          const items=getAllMerchItems();
+          if(!items.length){ showToast('No merch items to print yet.','info'); return; }
+          simplePrint(sheet=>{
+            const h=document.createElement('h2'); h.textContent='Merch Catalog'; h.style.marginBottom='8px';
+            sheet.appendChild(h);
+            const tbl=document.createElement('table');
+            tbl.style.width='100%'; tbl.style.borderCollapse='collapse'; tbl.style.fontSize='12px';
+            const thead=document.createElement('thead');
+            thead.innerHTML='<tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:4px 6px">Item</th><th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:4px 6px">Price</th><th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:4px 6px">Inventory</th></tr>';
+            const tbody=document.createElement('tbody');
+            items.forEach(it=>{
+              const tr=document.createElement('tr');
+              tr.innerHTML='<td style="padding:4px 6px;border-bottom:1px solid #f3f4f6">'+(it.name||'')+'</td>'+
+                           '<td style="padding:4px 6px;text-align:right;border-bottom:1px solid #f3f4f6">'+formatMoney(it.price||0)+'</td>'+
+                           '<td style="padding:4px 6px;text-align:right;border-bottom:1px solid #f3f4f6">'+String(Number(it.inventory||0))+'</td>';
+              tbody.appendChild(tr);
+            });
+            tbl.append(thead,tbody);
+            sheet.appendChild(tbl);
+          });
+        });
+      }
+      if(printSalesBtn){
+        printSalesBtn.addEventListener('click',()=>{
+          const sales = Array.isArray(appData.sales) ? appData.sales.slice() : [];
+          if(!sales.length){ showToast('No merch sales to print yet.','info'); return; }
+          sales.sort((a,b)=>{
+            const ta=a.timestamp||''; const tb=b.timestamp||'';
+            return ta<tb ? -1 : (ta>tb ? 1 : 0);
+          });
+          simplePrint(sheet=>{
+            const h=document.createElement('h2'); h.textContent='Merch Sales Log'; h.style.marginBottom='8px';
+            sheet.appendChild(h);
+            const tbl=document.createElement('table');
+            tbl.style.width='100%'; tbl.style.borderCollapse='collapse'; tbl.style.fontSize='11px';
+            const thead=document.createElement('thead');
+            thead.innerHTML='<tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:4px 6px">When</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:4px 6px">Gig</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:4px 6px">Items</th><th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:4px 6px">Total</th></tr>';
+            const tbody=document.createElement('tbody');
+            sales.forEach(sale=>{
+              const t = sale.timestamp ? new Date(sale.timestamp) : null;
+              const when = t ? t.toLocaleString() : '';
+              const gigLabel=getGigLabelById(sale.gigId||'');
+              const itemsDesc = Array.isArray(sale.items) ? sale.items.map(it=>{
+                const m=appData.merch && appData.merch[it.merchId];
+                const n=m ? (m.name||'Item') : 'Item';
+                return n+' x'+it.qty;
+              }).join(', ') : '';
+              const methodLabel = sale.paymentMethod || 'Cash';
+              const itemsWithMethod = (methodLabel ? '['+methodLabel+'] ' : '') + itemsDesc;
+              const tr=document.createElement('tr');
+              tr.innerHTML='<td style="padding:4px 6px;border-bottom:1px solid #f3f4f6">'+when+'</td>'+
+                           '<td style="padding:4px 6px;border-bottom:1px solid #f3f4f6">'+gigLabel+'</td>'+
+                           '<td style="padding:4px 6px;border-bottom:1px solid #f3f4f6">'+itemsWithMethod+'</td>'+
+                           '<td style="padding:4px 6px;text-align:right;border-bottom:1px solid #f3f4f6">'+formatMoney(sale.total||0)+'</td>';
+              tbody.appendChild(tr);
+            });
+            tbl.append(thead,tbody);
+            sheet.appendChild(tbl);
+          });
+        });
+      }
+    }
+
+    function wireTickets(){
+      const createBtn=document.getElementById('ticketCreateBatchBtn');
+      const summaryPrintBtn=document.getElementById('ticketsPrintBtn');
+      const gigSelForChange=document.getElementById('ticketGigSelect');
+      if(gigSelForChange){
+        gigSelForChange.addEventListener('change',()=>{
+          // Re-render ticket form defaults when gig selection changes
+          try{ renderTicketsTab(); }catch(_){ }
+        });
+      }
+      if(createBtn){
+        createBtn.addEventListener('click',()=>{
+          const nameEl=document.getElementById('ticketEventName');
+          const dateEl=document.getElementById('ticketEventDate');
+          const priceEl=document.getElementById('ticketPrice');
+          const qtyEl=document.getElementById('ticketQuantity');
+          const gigSel=document.getElementById('ticketGigSelect');
+          const ageEl=document.getElementById('ticketAgeRestriction');
+          const eventName = (nameEl && nameEl.value.trim()) || '';
+          const dateStr = dateEl && dateEl.value ? dateEl.value : '';
+          const priceVal = priceEl && priceEl.value!=='' ? parseFloat(priceEl.value) : 0;
+          const qtyVal = qtyEl && qtyEl.value!=='' ? parseInt(qtyEl.value,10) : 0;
+          const gigId = gigSel ? (gigSel.value||'') : '';
+          const ageRestriction = ageEl ? (ageEl.value||'') : '';
+          if(!eventName){ showToast('Enter an event name first.','warning'); return; }
+          if(!Number.isFinite(priceVal) || priceVal<0){ showToast('Enter a valid non-negative ticket price.','warning'); return; }
+          if(!Number.isFinite(qtyVal) || qtyVal<=0){ showToast('Enter a positive ticket quantity.','warning'); return; }
+          const tickets=[];
+          for(let i=0;i<qtyVal;i++){
+            tickets.push({
+              code:generateTicketCode(eventName, dateStr, i),
+              redeemed:false
+            });
+          }
+          if(!Array.isArray(appData.tickets)) appData.tickets=[];
+          const batchId='tix_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+          appData.tickets.push({
+            id:batchId,
+            eventName,
+            date:dateStr,
+            price:priceVal,
+            quantity:qtyVal,
+            tickets,
+            gigId,
+            ageRestriction: ageRestriction || 'All ages',
+            timestamp:new Date().toISOString()
+          });
+          saveAll();
+          renderTicketsTab();
+          try{ renderFinanceTab(); }catch(_){ }
+          showToast('Ticket batch created.','success');
+        });
+      }
+      if(summaryPrintBtn){
+        summaryPrintBtn.addEventListener('click',()=>{
+          const nameEl=document.getElementById('ticketEventName');
+          const dateEl=document.getElementById('ticketEventDate');
+          const priceEl=document.getElementById('ticketPrice');
+          const qtyEl=document.getElementById('ticketQuantity');
+          const gigSel=document.getElementById('ticketGigSelect');
+          const ageEl=document.getElementById('ticketAgeRestriction');
+          const eventName = (nameEl && nameEl.value.trim()) || '';
+          const dateStr = dateEl && dateEl.value ? dateEl.value : '';
+          const priceVal = priceEl && priceEl.value!=='' ? parseFloat(priceEl.value) : 0;
+          const qtyVal = qtyEl && qtyEl.value!=='' ? parseInt(qtyEl.value,10) : 0;
+          const gigId = gigSel ? (gigSel.value||'') : '';
+          const ageRestriction = ageEl ? (ageEl.value||'') : '';
+          if(!eventName){ showToast('Enter an event name first.','warning'); return; }
+          if(!Number.isFinite(priceVal) || priceVal<0){ showToast('Enter a valid non-negative ticket price.','warning'); return; }
+          if(!Number.isFinite(qtyVal) || qtyVal<=0){ showToast('Enter a positive ticket quantity.','warning'); return; }
+
+          const tickets=[];
+          for(let i=0;i<qtyVal;i++){
+            tickets.push({
+              code:generateTicketCode(eventName, dateStr, i),
+              redeemed:false
+            });
+          }
+
+          const previewBatch={
+            eventName,
+            date:dateStr,
+            price:priceVal,
+            quantity:qtyVal,
+            tickets,
+            gigId,
+            ageRestriction: ageRestriction || 'All ages'
+          };
+
+          ensureQrGeneratorLoaded(qrOk=>{
+            if(!qrOk){
+              showToast('Previewing tickets without QR images (generator not available).','info');
+            }
+            simplePrint(sheet=>{
+              const title=document.createElement('h2');
+              title.textContent='Tickets: '+(previewBatch.eventName||'Event');
+              title.style.marginBottom='4px';
+              sheet.appendChild(title);
+
+              const meta=document.createElement('div');
+              meta.style.fontSize='11px';
+              meta.style.color='#4b5563';
+              const gigLabel=getGigLabelById(previewBatch.gigId||'');
+              const parts=[];
+              if(previewBatch.date) parts.push(previewBatch.date);
+              if(gigLabel) parts.push(gigLabel);
+              meta.textContent=parts.join(' • ');
+              sheet.appendChild(meta);
+
+              const grid=document.createElement('div');
+              grid.style.display='flex';
+              grid.style.flexWrap='wrap';
+              grid.style.gap='8px';
+              grid.style.marginTop='12px';
+
+              tickets.forEach(tix=>{
+                const card=document.createElement('div');
+                card.style.border='1px solid #d1d5db';
+                card.style.borderRadius='6px';
+                card.style.padding='10px 12px';
+                card.style.width='48%';
+                card.style.fontSize='12px';
+                card.style.display='flex';
+                card.style.flexDirection='row';
+                card.style.alignItems='stretch';
+                card.style.justifyContent='space-between';
+                card.style.gap='8px';
+
+                const infoCol=document.createElement('div');
+                infoCol.style.flex='1 1 auto';
+                infoCol.style.textAlign='left';
+
+                const qrCol=document.createElement('div');
+                qrCol.style.flex='0 0 110px';
+                qrCol.style.display='flex';
+                qrCol.style.alignItems='center';
+                qrCol.style.justifyContent='center';
+
+                // Optional QR image for this ticket code
+                if(qrOk){
+                  const qrImg=createTicketQrImageElement(tix.code||'');
+                  if(qrImg) qrCol.appendChild(qrImg);
+                }
+
+                // Pull gig details for band, venue, address, and doors time
+                let bandName='';
+                let venue='';
+                let address='';
+                let doorsLabel='';
+                const age = (previewBatch.ageRestriction || 'All ages');
+                if(typeof tourDates!=='undefined' && Array.isArray(tourDates)){
+                  const td = tourDates.find(d=>d.id===(previewBatch.gigId||''));
+                  if(td){
+                    const gObj = td.gig || {};
+                    bandName = (gObj.band || td.band || '').trim();
+                    venue = (td.venue || gObj.venue || '').trim();
+                    address = (td.address || gObj.address || '').trim();
+                    const rawShow = (td.showTime || gObj.showTime || '').trim();
+                    if(rawShow){
+                      try{
+                        const hhmm = parseTimeToHHMM(rawShow);
+                        doorsLabel = hhmm ? formatHHMMToLabel(hhmm) : rawShow;
+                      }catch(_){
+                        doorsLabel = rawShow;
+                      }
+                    }
+                  }
+                }
+                if(!bandName) bandName = previewBatch.eventName || 'Event';
+
+                const bandEl=document.createElement('div');
+                bandEl.textContent=bandName;
+                bandEl.style.fontWeight='700';
+                bandEl.style.fontSize='14px';
+                bandEl.style.marginBottom='2px';
+
+                const venueEl=document.createElement('div');
+                venueEl.textContent=venue;
+                venueEl.style.fontWeight='500';
+                venueEl.style.marginBottom='2px';
+
+                // Date line for the ticket (using previewBatch.date as entered)
+                const dateText = previewBatch.date || '';
+                const dateEl=document.createElement('div');
+                dateEl.textContent = dateText ? dateText : '';
+                dateEl.style.marginBottom = dateText ? '2px' : '0';
+
+                let addrEl=null;
+                if(address){
+                  addrEl=document.createElement('div');
+                  addrEl.textContent=address;
+                  addrEl.style.marginBottom='2px';
+                }
+
+                let doorsEl=null;
+                if(doorsLabel){
+                  doorsEl=document.createElement('div');
+                  doorsEl.textContent='Doors '+doorsLabel;
+                  doorsEl.style.marginBottom='2px';
+                }
+
+                const ageEl=document.createElement('div');
+                ageEl.textContent=age;
+                ageEl.style.marginBottom='4px';
+
+                const code=document.createElement('div');
+                code.textContent=tix.code||'';
+                code.style.fontSize='14px';
+                code.style.fontWeight='700';
+                code.style.letterSpacing='1px';
+                code.style.marginBottom='2px';
+
+                const price=document.createElement('div');
+                price.textContent='Price '+formatMoney(previewBatch.price||0);
+                price.style.color='#374151';
+
+                const children=[];
+                children.push(bandEl,venueEl);
+                if(addrEl) children.push(addrEl);
+                if(dateText) children.push(dateEl);
+                if(doorsEl) children.push(doorsEl);
+                children.push(ageEl,price,code);
+                infoCol.append(...children);
+
+                card.append(infoCol, qrCol);
+                grid.appendChild(card);
+              });
+              sheet.appendChild(grid);
+            });
+          });
+        });
+      }
+
+      window.printTicketBatch = function(batchId){
+        const batches = Array.isArray(appData.tickets) ? appData.tickets : [];
+        const batch = batches.find(b=>b.id===batchId);
+        if(!batch){ showToast('Ticket batch not found.','warning'); return; }
+        const ticketsArr = Array.isArray(batch.tickets) ? batch.tickets : [];
+        if(!ticketsArr.length){ showToast('This batch has no ticket codes to print.','info'); return; }
+
+        // Load QR generator so each ticket can include its own QR image
+        ensureQrGeneratorLoaded(qrOk=>{
+          if(!qrOk){
+            showToast('Printing tickets without QR images (generator not available).','info');
+          }
+          simplePrint(sheet=>{
+            const title=document.createElement('h2');
+            title.textContent='Tickets: '+(batch.eventName||'Event');
+            title.style.marginBottom='4px';
+            sheet.appendChild(title);
+
+            const meta=document.createElement('div');
+            meta.style.fontSize='11px';
+            meta.style.color='#4b5563';
+            const gigLabel=getGigLabelById(batch.gigId||'');
+            const parts=[];
+            if(batch.date) parts.push(batch.date);
+            if(gigLabel) parts.push(gigLabel);
+            meta.textContent=parts.join(' • ');
+            sheet.appendChild(meta);
+
+            const grid=document.createElement('div');
+            grid.style.display='flex';
+            grid.style.flexWrap='wrap';
+            grid.style.gap='8px';
+            grid.style.marginTop='12px';
+
+            ticketsArr.forEach(tix=>{
+              const card=document.createElement('div');
+              card.style.border='1px solid #d1d5db';
+              card.style.borderRadius='6px';
+              card.style.padding='10px 12px';
+              card.style.width='48%';
+              card.style.fontSize='12px';
+              card.style.display='flex';
+              card.style.flexDirection='row';
+              card.style.alignItems='stretch';
+              card.style.justifyContent='space-between';
+              card.style.gap='8px';
+
+              const infoCol=document.createElement('div');
+              infoCol.style.flex='1 1 auto';
+              infoCol.style.textAlign='left';
+
+              const qrCol=document.createElement('div');
+              qrCol.style.flex='0 0 110px';
+              qrCol.style.display='flex';
+              qrCol.style.alignItems='center';
+              qrCol.style.justifyContent='center';
+
+                // Optional QR image for this ticket code
+                if(qrOk){
+                  const qrImg=createTicketQrImageElement(tix.code||'');
+                  if(qrImg) qrCol.appendChild(qrImg);
+                }
+
+              // Pull gig details for band, venue, address, and doors time
+              let bandName='';
+              let venue='';
+              let address='';
+              let doorsLabel='';
+              const age = (batch.ageRestriction || 'All ages');
+              if(typeof tourDates!=='undefined' && Array.isArray(tourDates)){
+                const td = tourDates.find(d=>d.id===(batch.gigId||''));
+                if(td){
+                  const gObj = td.gig || {};
+                  bandName = (gObj.band || td.band || '').trim();
+                  venue = (td.venue || gObj.venue || '').trim();
+                  address = (td.address || gObj.address || '').trim();
+                  const rawShow = (td.showTime || gObj.showTime || '').trim();
+                  if(rawShow){
+                    try{
+                      const hhmm = parseTimeToHHMM(rawShow);
+                      doorsLabel = hhmm ? formatHHMMToLabel(hhmm) : rawShow;
+                    }catch(_){
+                      doorsLabel = rawShow;
+                    }
+                  }
+                }
+              }
+              if(!bandName) bandName = batch.eventName || 'Event';
+
+              const bandEl=document.createElement('div');
+              bandEl.textContent=bandName;
+              bandEl.style.fontWeight='700';
+              bandEl.style.fontSize='14px';
+              bandEl.style.marginBottom='2px';
+
+              const venueEl=document.createElement('div');
+              venueEl.textContent=venue;
+              venueEl.style.fontWeight='500';
+              venueEl.style.marginBottom='2px';
+
+              // Date line for the ticket (using batch.date as entered)
+              const dateText = batch.date || '';
+              const dateEl=document.createElement('div');
+              dateEl.textContent = dateText ? dateText : '';
+              dateEl.style.marginBottom = dateText ? '2px' : '0';
+
+              let addrEl=null;
+              if(address){
+                addrEl=document.createElement('div');
+                addrEl.textContent=address;
+                addrEl.style.marginBottom='2px';
+              }
+
+              let doorsEl=null;
+              if(doorsLabel){
+                doorsEl=document.createElement('div');
+                doorsEl.textContent='Doors '+doorsLabel;
+                doorsEl.style.marginBottom='2px';
+              }
+
+              const ageEl=document.createElement('div');
+              ageEl.textContent=age;
+              ageEl.style.marginBottom='4px';
+
+              const code=document.createElement('div');
+              code.textContent=tix.code||'';
+              code.style.fontSize='14px';
+              code.style.fontWeight='700';
+              code.style.letterSpacing='1px';
+              code.style.marginBottom='2px';
+
+              const price=document.createElement('div');
+              price.textContent='Price '+formatMoney(batch.price||0);
+              price.style.color='#374151';
+
+              const children=[];
+              children.push(bandEl,venueEl);
+              if(addrEl) children.push(addrEl);
+              if(dateText) children.push(dateEl);
+              if(doorsEl) children.push(doorsEl);
+              children.push(ageEl,price,code);
+              infoCol.append(...children);
+
+              card.append(infoCol, qrCol);
+              grid.appendChild(card);
+            });
+            sheet.appendChild(grid);
+          });
+        });
+      };
+    }
+
+    function wireFinance(){
+      const addIncBtn=document.getElementById('incomeAddBtn');
+      const addExpBtn=document.getElementById('expenseAddBtn');
+      const gigSel=document.getElementById('financeGigSelect');
+      const exportAllBtn=document.getElementById('financeExportAllBtn');
+      const exportNewBtn=document.getElementById('financeExportNewBtn');
+      const printBtn=document.getElementById('financePrintBtn');
+      const clearGigBtn=document.getElementById('financeClearGigBtn');
+      const splitEqualBtn=document.getElementById('splitEqualBtn');
+      const splitCustomBtn=document.getElementById('splitCustomBtn');
+      const splitAddBtn=document.getElementById('splitAddMemberBtn');
+      if(addIncBtn){
+        addIncBtn.addEventListener('click',()=>{
+          const amtEl=document.getElementById('incomeAmount');
+          const labelEl=document.getElementById('incomeLabel');
+          const notesEl=document.getElementById('incomeNotes');
+          const amtVal=amtEl && amtEl.value!=='' ? parseFloat(amtEl.value) : 0;
+          const label=(labelEl && labelEl.value.trim()) || '';
+          const notes=notesEl ? notesEl.value.trim() : '';
+          if(!Number.isFinite(amtVal) || amtVal<=0){ showToast('Enter a positive income amount.','warning'); return; }
+          const gigId = gigSel ? (gigSel.value||'') : 'all';
+          const effGigId = gigId==='all' ? '' : gigId;
+          if(!Array.isArray(appData.income)) appData.income=[];
+          appData.income.push({
+            id:'inc_'+Date.now()+'_'+Math.random().toString(36).substr(2,6),
+            gigId:effGigId,
+            amount:amtVal,
+            label:label||'Event fee',
+            notes,
+            timestamp:new Date().toISOString()
+          });
+          if(amtEl) amtEl.value='';
+          if(labelEl) labelEl.value='';
+          if(notesEl) notesEl.value='';
+          saveAll();
+          renderIncomeList();
+          updateFinanceSummary();
+          renderFinanceTransactions();
+          updateBandSplitSummary();
+          showToast('Income added.','success');
+        });
+      }
+      if(addExpBtn){
+        addExpBtn.addEventListener('click',()=>{
+          const amtEl=document.getElementById('expenseAmount');
+          const catEl=document.getElementById('expenseCategory');
+          const notesEl=document.getElementById('expenseNotes');
+          const amtVal=amtEl && amtEl.value!=='' ? parseFloat(amtEl.value) : 0;
+          const cat=(catEl && catEl.value.trim()) || '';
+          const notes=notesEl ? notesEl.value.trim() : '';
+          if(!Number.isFinite(amtVal) || amtVal<=0){ showToast('Enter a positive expense amount.','warning'); return; }
+          const gigId = gigSel ? (gigSel.value||'') : 'all';
+          const effGigId = gigId==='all' ? '' : gigId;
+          if(!Array.isArray(appData.expensePresets)) appData.expensePresets=[];
+          if(cat && !appData.expensePresets.includes(cat)){
+            appData.expensePresets.push(cat);
+          }
+          if(!Array.isArray(appData.expenses)) appData.expenses=[];
+          appData.expenses.push({
+            id:'exp_'+Date.now()+'_'+Math.random().toString(36).substr(2,6),
+            gigId:effGigId,
+            amount:amtVal,
+            category:cat||'Expense',
+            notes,
+            timestamp:new Date().toISOString()
+          });
+          if(amtEl) amtEl.value='';
+          if(catEl) catEl.value='';
+          if(notesEl) notesEl.value='';
+          saveAll();
+          renderExpenseList();
+          renderExpensePresets();
+          updateFinanceSummary();
+          renderFinanceTransactions();
+          updateBandSplitSummary();
+          showToast('Expense added.','success');
+        });
+      }
+      if(gigSel){
+        gigSel.addEventListener('change',()=>{
+          updateFinanceSummary();
+          renderExpenseList();
+          renderFinanceTransactions();
+          updateBandSplitSummary();
+        });
+      }
+      if(clearGigBtn){
+        clearGigBtn.addEventListener('click',()=>{
+          const gigIdRaw = gigSel ? (gigSel.value||'all') : 'all';
+          if(gigIdRaw==='all'){
+            if(!confirm('Delete ALL sales, ticket redemptions, income and expenses for ALL gigs/dates from the internal ledger? This cannot be undone and does not affect any CSVs you already exported.')) return;
+            if(Array.isArray(appData.sales)){
+              appData.sales = [];
+            }
+            if(Array.isArray(appData.income)){
+              appData.income = [];
+            }
+            if(Array.isArray(appData.expenses)){
+              appData.expenses = [];
+            }
+            if(Array.isArray(appData.tickets)){
+              appData.tickets.forEach(batch=>{
+                if(Array.isArray(batch.tickets)){
+                  batch.tickets.forEach(t=>{ t.redeemed = false; });
+                }
+              });
+            }
+            saveAll();
+            try{ renderTicketsTab(); }catch(_){ }
+            try{ renderFinanceTab(); }catch(_){ }
+            showToast('Ledger cleared for all gigs.','success');
+            return;
+          }
+          const targetGigId = gigIdRaw || '';
+          if(!confirm('Delete all sales, ticket redemptions, income and expenses for this date from the internal ledger? This cannot be undone and does not affect any CSVs you already exported.')) return;
+          if(Array.isArray(appData.sales)){
+            appData.sales = appData.sales.filter(s=> (s.gigId||'') !== targetGigId);
+          }
+          if(Array.isArray(appData.income)){
+            appData.income = appData.income.filter(i=> (i.gigId||'') !== targetGigId);
+          }
+          if(Array.isArray(appData.expenses)){
+            appData.expenses = appData.expenses.filter(e=> (e.gigId||'') !== targetGigId);
+          }
+          // Reset ticket redemptions for batches tied to this gig/date so Ticket Income goes to zero
+          if(Array.isArray(appData.tickets)){
+            appData.tickets.forEach(batch=>{
+              if((batch.gigId||'') !== targetGigId) return;
+              if(Array.isArray(batch.tickets)){
+                batch.tickets.forEach(t=>{ t.redeemed = false; });
+              }
+            });
+          }
+          saveAll();
+          try{ renderTicketsTab(); }catch(_){ }
+          try{ renderFinanceTab(); }catch(_){ }
+          showToast('Ledger cleared for this date.','success');
+        });
+      }
+      if(exportAllBtn){
+        exportAllBtn.addEventListener('click',()=>{
+          const res=buildFinanceCsv(false);
+          if(!res.csv){ showToast('No transactions to export yet.','info'); return; }
+          triggerCsvDownload('fastfast-finances-all', res.csv);
+          if(!appData.exports) appData.exports={ lastExportTimestamp:null };
+          appData.exports.lastExportTimestamp = res.newest;
+          saveAll();
+          showToast('Exported '+res.count+' transactions.','success');
+        });
+      }
+      if(exportNewBtn){
+        exportNewBtn.addEventListener('click',()=>{
+          const res=buildFinanceCsv(true);
+          if(!res.csv){
+            if(appData && appData.exports && appData.exports.lastExportTimestamp){
+              showToast('No new transactions since last export.','info');
+            }else{
+              showToast('No transactions to export yet.','info');
+            }
+            return;
+          }
+          triggerCsvDownload('fastfast-finances-new', res.csv);
+          if(!appData.exports) appData.exports={ lastExportTimestamp:null };
+          appData.exports.lastExportTimestamp = res.newest;
+          saveAll();
+          showToast('Exported '+res.count+' new transactions.','success');
+        });
+      }
+      if(printBtn){
+        printBtn.addEventListener('click',()=>{
+          const selGigId = gigSel ? (gigSel.value||'all') : 'all';
+          const summary = collectFinanceSummary(selGigId);
+          simplePrint(sheet=>{
+            const title=document.createElement('h2');
+            title.textContent='Finances Summary';
+            title.style.marginBottom='8px';
+            sheet.appendChild(title);
+            const sub=document.createElement('div');
+            sub.style.fontSize='11px';
+            sub.style.color='#4b5563';
+            const label = selGigId==='all' ? 'All gigs' : getGigLabelById(selGigId);
+            sub.textContent=label;
+            sheet.appendChild(sub);
+            const income = summary.merchTotal + summary.ticketTotal + (summary.otherIncomeTotal||0);
+            const net = income - summary.expenseTotal;
+            const blocks=document.createElement('div');
+            blocks.style.display='flex';
+            blocks.style.gap='12px';
+            blocks.style.margin='10px 0';
+            function addBlock(labelText, value, color){
+              const box=document.createElement('div');
+              box.style.border='1px solid #e5e7eb';
+              box.style.borderRadius='6px';
+              box.style.padding='6px 8px';
+              const l=document.createElement('div'); l.textContent=labelText; l.style.fontSize='11px'; l.style.color='#4b5563';
+              const v=document.createElement('div'); v.textContent=formatMoney(value); v.style.fontWeight='700'; v.style.fontSize='13px'; v.style.color=color;
+              box.append(l,v); blocks.appendChild(box);
+            }
+            addBlock('Merch income', summary.merchTotal, '#14532d');
+            addBlock('Ticket income', summary.ticketTotal, '#1d4ed8');
+            addBlock('Other income', summary.otherIncomeTotal||0, '#0369a1');
+            addBlock('Expenses', summary.expenseTotal, '#b91c1c');
+            addBlock('Net profit', net, net>=0 ? '#14532d' : '#b91c1c');
+            sheet.appendChild(blocks);
+            const map=summary.incomeByMethod || {};
+            const keys=Object.keys(map).filter(k=>map[k] && map[k]!==0);
+            if(keys.length){
+              const line=document.createElement('div');
+              line.style.fontSize='11px';
+              line.style.color='#4b5563';
+              const parts=keys.sort((a,b)=>a.localeCompare(b)).map(k=>k+': '+formatMoney(map[k]));
+              line.textContent='Income by payment method (merch): '+parts.join('  b7 ');
+              sheet.appendChild(line);
+            }
+            const txTitle=document.createElement('h3'); txTitle.textContent='Transactions'; txTitle.style.margin='8px 0 4px';
+            sheet.appendChild(txTitle);
+            if(!summary.transactions.length){
+              const p=document.createElement('div'); p.textContent='No transactions yet.'; p.style.fontSize='11px'; p.style.color='#6b7280'; sheet.appendChild(p);
+            }else{
+              const tbl=document.createElement('table');
+              tbl.style.width='100%'; tbl.style.borderCollapse='collapse'; tbl.style.fontSize='10px';
+              const thead=document.createElement('thead');
+              thead.innerHTML='<tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:4px 6px">When</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:4px 6px">Type</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:4px 6px">Gig</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:4px 6px">Description</th><th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:4px 6px">Amount</th></tr>';
+              const tbody=document.createElement('tbody');
+              summary.transactions.forEach(tx=>{
+                const t = tx.timestamp ? new Date(tx.timestamp) : null;
+                const when = t ? t.toLocaleString() : '';
+                const gigLabel=getGigLabelById(tx.gigId||'');
+                const tr=document.createElement('tr');
+                tr.innerHTML='<td style="padding:4px 6px;border-bottom:1px solid #f3f4f6">'+when+'</td>'+
+                             '<td style="padding:4px 6px;border-bottom:1px solid #f3f4f6">'+(tx.type||'')+'</td>'+
+                             '<td style="padding:4px 6px;border-bottom:1px solid #f3f4f6">'+gigLabel+'</td>'+
+                             '<td style="padding:4px 6px;border-bottom:1px solid #f3f4f6">'+(tx.description||'')+'</td>'+
+                             '<td style="padding:4px 6px;text-align:right;border-bottom:1px solid #f3f4f6">'+formatMoney(tx.amount||0)+'</td>';
+                tbody.appendChild(tr);
+              });
+              tbl.append(thead,tbody);
+              sheet.appendChild(tbl);
+            }
+          });
+        });
+      }
+      if(splitEqualBtn){
+        splitEqualBtn.addEventListener('click',()=>{
+          applyEqualSplit();
+        });
+      }
+      if(splitCustomBtn){
+        splitCustomBtn.addEventListener('click',()=>{
+          const area=document.getElementById('splitCustomArea');
+          if(!area) return;
+          const isVisible=area.style.display!=='none';
+          area.style.display = isVisible ? 'none' : 'block';
+          if(!isVisible){
+            ensureCustomSplitRows();
+            updateCustomSplitResults();
+          }
+        });
+      }
+      if(splitAddBtn){
+        splitAddBtn.addEventListener('click',()=>{
+          addCustomSplitRow();
+          updateCustomSplitResults();
+        });
+      }
+    }
+
+    try{
+      wireMerch();
+      wireTickets();
+      wireFinance();
+    }catch(_){ }
+
+  })();
   </script>
   <!-- Lightweight libs for client PDF/ZIP export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
