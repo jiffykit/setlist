@@ -6175,7 +6175,6 @@
 
     function renderDB(){
       const list=$('#dbList'); list.innerHTML='';
-      if(!db.length){ list.textContent='No songs yet.'; return; }
       
       // Ensure dbColumns exists (may have been lost during date switch)
       if(!gig.dbColumns){
@@ -6600,6 +6599,13 @@
       const byLeastUsed=(a,b)=> (a.usageCount||0) - (b.usageCount||0) || a.title.localeCompare(b.title);
       const sorter = sortVal==='added'? byAdded : sortVal==='band'? byBand : sortVal==='mood'? byMood : sortVal==='rating'? byRating : sortVal==='mostUsed'? byMostUsed : sortVal==='leastUsed'? byLeastUsed : byAlpha;
       rows.sort(sorter);
+      if(!rows.length){
+        const empty=document.createElement('div');
+        empty.textContent='No songs yet. Click + to add your first song.';
+        empty.style.cssText='margin:8px 0;font-size:12px;color:#6b7280;padding:6px 8px;border:1px dashed #e5e7eb;border-radius:4px;background:#f9fafb;';
+        list.appendChild(empty);
+        return;
+      }
       rows.forEach(s=>{
         const row=document.createElement('div'); row.className='db-row'; row.style.display='flex'; row.style.gap='4px'; row.style.alignItems='center'; row.style.padding='4px'; row.style.border='1px solid #e5e7eb'; row.style.borderRadius='4px'; row.style.margin='4px 0';
         
