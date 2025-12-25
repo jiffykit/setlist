@@ -1579,7 +1579,6 @@
           <div class="card" style="margin-bottom:12px;flex:1 1 320px;min-width:280px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
               <h2 style="margin:0">Tickets Catalog</h2>
-              <button id="ticketsPrintBtn" class="btn secondary" type="button">Preview tickets</button>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
               <input id="ticketEventName" type="text" placeholder="Event name" style="flex:2 1 160px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px">
@@ -1595,6 +1594,18 @@
             <div style="display:flex;gap:8px">
               <button id="ticketCreateBatchBtn" class="btn primary" type="button">Create Batch</button>
               <div style="font-size:11px;color:#6b7280;align-self:center">Codes are printable and human-readable. QR codes are optional and can be added later if needed.</div>
+            </div>
+            <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start">
+              <div style="flex:1 1 240px;min-width:220px">
+                <div style="font-size:12px;font-weight:600;margin-bottom:4px;color:#374151">Ticket preview</div>
+                <div id="ticketPreviewFrame" style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;background:#f9fafb;min-height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+                  <div style="font-size:11px;color:#9ca3af;text-align:center">Preview updates as you edit the fields above.</div>
+                </div>
+              </div>
+              <div style="flex:1 1 220px;min-width:220px">
+                <div style="font-size:12px;font-weight:600;margin-bottom:4px;color:#374151">Text & font options (per line)</div>
+                <div id="ticketStyleControls" style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#4b5563"></div>
+              </div>
             </div>
           </div>
           <div class="card" style="flex:1 1 320px;min-width:280px">
@@ -4600,6 +4611,267 @@
     }
 
     // --- Tickets ---
+
+    function getDefaultTicketTextStyles(){
+      return {
+        band:{ size:14, font:'system' },
+        venue:{ size:12, font:'system' },
+        address:{ size:11, font:'system' },
+        date:{ size:11, font:'system' },
+        doors:{ size:11, font:'system' },
+        age:{ size:11, font:'system' },
+        price:{ size:11, font:'system' },
+        code:{ size:14, font:'mono' }
+      };
+    }
+
+    function getTicketTextStyles(){
+      if(typeof appData!=='object' || appData===null) return getDefaultTicketTextStyles();
+      const defaults=getDefaultTicketTextStyles();
+      if(!appData.ticketTextStyles) appData.ticketTextStyles={};
+      const styles=appData.ticketTextStyles;
+      Object.keys(defaults).forEach(key=>{
+        if(!styles[key]) styles[key]={};
+        if(typeof styles[key].size!=='number') styles[key].size = defaults[key].size;
+        if(!styles[key].font) styles[key].font = defaults[key].font;
+      });
+      return styles;
+    }
+
+    function applyTicketTextStyle(el, role){
+      if(!el) return;
+      const defaults=getDefaultTicketTextStyles();
+      const styles=getTicketTextStyles();
+      const cfg=(styles && styles[role]) || defaults[role] || {};
+      const baseSize = (typeof cfg.size==='number' && cfg.size>0) ? cfg.size : (defaults[role] ? defaults[role].size : 11);
+      el.style.fontSize = baseSize+'px';
+      const fontKey = cfg.font || (defaults[role] && defaults[role].font) || 'system';
+      let stack='system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+      if(fontKey==='serif') stack='"Times New Roman",Georgia,serif';
+      else if(fontKey==='mono') stack='"SF Mono",Menlo,Consolas,monospace';
+      el.style.fontFamily = stack;
+    }
+
+    function renderTicketStyleControls(){
+      const host=document.getElementById('ticketStyleControls');
+      if(!host) return;
+      host.innerHTML='';
+      const defaults=getDefaultTicketTextStyles();
+      const styles=getTicketTextStyles();
+      const rows=[
+        {id:'band',label:'Band / Event'},
+        {id:'venue',label:'Venue'},
+        {id:'address',label:'Address'},
+        {id:'date',label:'Date'},
+        {id:'doors',label:'Doors time'},
+        {id:'age',label:'Age restriction'},
+        {id:'price',label:'Price line'},
+        {id:'code',label:'Ticket code'}
+      ];
+      const fontOptions=[
+        {value:'system',label:'System sans'},
+        {value:'serif',label:'Serif'},
+        {value:'mono',label:'Monospace'}
+      ];
+      rows.forEach(row=>{
+        const wrap=document.createElement('div');
+        wrap.style.display='flex';
+        wrap.style.alignItems='center';
+        wrap.style.gap='4px';
+        wrap.style.marginBottom='2px';
+
+        const lab=document.createElement('div');
+        lab.textContent=row.label+':';
+        lab.style.flex='1 1 40%';
+        lab.style.fontSize='11px';
+        lab.style.color='#4b5563';
+
+        const sizeInput=document.createElement('input');
+        sizeInput.type='number';
+        sizeInput.min='8';
+        sizeInput.max='24';
+        const sVal=(styles[row.id] && typeof styles[row.id].size==='number') ? styles[row.id].size : defaults[row.id].size;
+        sizeInput.value=String(sVal);
+        sizeInput.style.width='52px';
+        sizeInput.style.padding='2px 4px';
+        sizeInput.style.fontSize='11px';
+        sizeInput.title='Font size in points';
+
+        const fontSel=document.createElement('select');
+        fontSel.style.flex='0 0 90px';
+        fontSel.style.fontSize='11px';
+        fontSel.style.padding='2px 4px';
+        const fVal=(styles[row.id] && styles[row.id].font) || defaults[row.id].font;
+        fontOptions.forEach(opt=>{
+          const o=document.createElement('option');
+          o.value=opt.value;
+          o.textContent=opt.label;
+          if(opt.value===fVal) o.selected=true;
+          fontSel.appendChild(o);
+        });
+
+        sizeInput.addEventListener('change',()=>{
+          const n=parseInt(sizeInput.value,10);
+          if(!Number.isFinite(n) || n<=0) return;
+          const all=getTicketTextStyles();
+          if(!all[row.id]) all[row.id]={};
+          all[row.id].size=n;
+          try{ saveAll(); }catch(_){ }
+          try{ renderTicketPreviewFromForm(); }catch(_){ }
+        });
+
+        fontSel.addEventListener('change',()=>{
+          const v=fontSel.value||'system';
+          const all=getTicketTextStyles();
+          if(!all[row.id]) all[row.id]={};
+          all[row.id].font=v;
+          try{ saveAll(); }catch(_){ }
+          try{ renderTicketPreviewFromForm(); }catch(_){ }
+        });
+
+        wrap.append(lab,sizeInput,fontSel);
+        host.appendChild(wrap);
+      });
+    }
+
+    function renderTicketPreviewFromForm(){
+      const frame=document.getElementById('ticketPreviewFrame');
+      if(!frame) return;
+      frame.innerHTML='';
+
+      const nameEl=document.getElementById('ticketEventName');
+      const dateEl=document.getElementById('ticketEventDate');
+      const priceEl=document.getElementById('ticketPrice');
+      const ageEl=document.getElementById('ticketAgeRestriction');
+      const gigSel=document.getElementById('ticketGigSelect');
+
+      const eventName=(nameEl && nameEl.value.trim()) || 'Band / Event Name';
+      const dateStr = dateEl && dateEl.value ? dateEl.value : '';
+      const priceVal = priceEl && priceEl.value!=='' ? parseFloat(priceEl.value) : 0;
+      const age = (ageEl && ageEl.value) ? ageEl.value : 'All ages';
+
+      let bandName='';
+      let venue='';
+      let address='';
+      let doorsLabel='';
+      const gigId = gigSel ? (gigSel.value||'') : '';
+      if(gigId && typeof tourDates!=='undefined' && Array.isArray(tourDates)){
+        const td = tourDates.find(d=>d.id===gigId);
+        if(td){
+          const gObj = td.gig || {};
+          bandName = (gObj.band || td.band || '').trim();
+          venue = (td.venue || gObj.venue || '').trim();
+          address = (td.address || gObj.address || '').trim();
+          const rawShow = (td.showTime || gObj.showTime || '').trim();
+          if(rawShow){
+            try{
+              const hhmm = parseTimeToHHMM(rawShow);
+              doorsLabel = hhmm ? formatHHMMToLabel(hhmm) : rawShow;
+            }catch(_){
+              doorsLabel = rawShow;
+            }
+          }
+        }
+      }
+      if(!bandName) bandName = eventName;
+
+      const card=document.createElement('div');
+      card.style.border='1px solid #d1d5db';
+      card.style.borderRadius='6px';
+      card.style.padding='10px 12px';
+      card.style.background='#ffffff';
+      card.style.display='flex';
+      card.style.alignItems='stretch';
+      card.style.justifyContent='space-between';
+      card.style.gap='10px';
+      card.style.width='100%';
+
+      const infoCol=document.createElement('div');
+      infoCol.style.flex='1 1 auto';
+      infoCol.style.textAlign='left';
+
+      const qrCol=document.createElement('div');
+      qrCol.style.flex='0 0 90px';
+      qrCol.style.display='flex';
+      qrCol.style.alignItems='center';
+      qrCol.style.justifyContent='center';
+
+      const qrPlaceholder=document.createElement('div');
+      qrPlaceholder.style.width='80px';
+      qrPlaceholder.style.height='80px';
+      qrPlaceholder.style.border='2px dashed #9ca3af';
+      qrPlaceholder.style.borderRadius='6px';
+      qrPlaceholder.style.display='flex';
+      qrPlaceholder.style.alignItems='center';
+      qrPlaceholder.style.justifyContent='center';
+      qrPlaceholder.style.color='#9ca3af';
+      qrPlaceholder.style.fontSize='11px';
+      qrPlaceholder.textContent='QR sample';
+      qrCol.appendChild(qrPlaceholder);
+
+      const bandEl=document.createElement('div');
+      bandEl.textContent=bandName;
+      bandEl.style.fontWeight='700';
+      bandEl.style.marginBottom='2px';
+      applyTicketTextStyle(bandEl,'band');
+
+      const venueEl=document.createElement('div');
+      venueEl.textContent=venue || 'Venue name';
+      venueEl.style.fontWeight='500';
+      venueEl.style.marginBottom='2px';
+      applyTicketTextStyle(venueEl,'venue');
+
+      const dateText = dateStr || '';
+      const dateEl2=document.createElement('div');
+      dateEl2.textContent = dateText || 'Date';
+      dateEl2.style.marginBottom='2px';
+      applyTicketTextStyle(dateEl2,'date');
+
+      let addrEl=null;
+      if(address){
+        addrEl=document.createElement('div');
+        addrEl.textContent=address;
+        addrEl.style.marginBottom='2px';
+        applyTicketTextStyle(addrEl,'address');
+      }
+
+      let doorsEl=null;
+      if(doorsLabel){
+        doorsEl=document.createElement('div');
+        doorsEl.textContent='Doors '+doorsLabel;
+        doorsEl.style.marginBottom='2px';
+        applyTicketTextStyle(doorsEl,'doors');
+      }
+
+      const ageEl2=document.createElement('div');
+      ageEl2.textContent=age;
+      ageEl2.style.marginBottom='4px';
+      applyTicketTextStyle(ageEl2,'age');
+
+      const priceEl2=document.createElement('div');
+      const priceText = priceVal>0 ? 'Price '+formatMoney(priceVal) : 'Price $0.00';
+      priceEl2.textContent=priceText;
+      priceEl2.style.color='#374151';
+      applyTicketTextStyle(priceEl2,'price');
+
+      const codeEl=document.createElement('div');
+      const sampleCode = generateTicketCode(eventName, dateStr || '', 0);
+      codeEl.textContent=sampleCode;
+      codeEl.style.fontWeight='700';
+      codeEl.style.letterSpacing='1px';
+      applyTicketTextStyle(codeEl,'code');
+
+      const children=[bandEl,venueEl];
+      if(addrEl) children.push(addrEl);
+      if(dateText || !addrEl) children.push(dateEl2);
+      if(doorsEl) children.push(doorsEl);
+      children.push(ageEl2,priceEl2,codeEl);
+      infoCol.append(...children);
+
+      card.append(infoCol,qrCol);
+      frame.appendChild(card);
+    }
+
     function renderTicketsTab(){
       const gigSel=document.getElementById('ticketGigSelect');
       const nameEl=document.getElementById('ticketEventName');
@@ -4645,6 +4917,8 @@
         }
       }
       renderTicketBatches();
+      try{ renderTicketStyleControls(); }catch(_){ }
+      try{ renderTicketPreviewFromForm(); }catch(_){ }
     }
     function generateTicketCode(eventName, dateStr, index){
       const base = String(eventName||'TICKET').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4) || 'TIX';
@@ -19602,8 +19876,16 @@ function closeStageModal(){
 
     function wireTickets(){
       const createBtn=document.getElementById('ticketCreateBatchBtn');
-      const summaryPrintBtn=document.getElementById('ticketsPrintBtn');
       const gigSelForChange=document.getElementById('ticketGigSelect');
+      const previewInputs=['ticketEventName','ticketEventDate','ticketPrice','ticketAgeRestriction'];
+      previewInputs.forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){
+          el.addEventListener('input',()=>{
+            try{ renderTicketPreviewFromForm(); }catch(_){ }
+          });
+        }
+      });
       if(gigSelForChange){
         gigSelForChange.addEventListener('change',()=>{
           // Re-render ticket form defaults when gig selection changes
@@ -19653,185 +19935,6 @@ function closeStageModal(){
           showToast('Ticket batch created.','success');
         });
       }
-      if(summaryPrintBtn){
-        summaryPrintBtn.addEventListener('click',()=>{
-          const nameEl=document.getElementById('ticketEventName');
-          const dateEl=document.getElementById('ticketEventDate');
-          const priceEl=document.getElementById('ticketPrice');
-          const qtyEl=document.getElementById('ticketQuantity');
-          const gigSel=document.getElementById('ticketGigSelect');
-          const ageEl=document.getElementById('ticketAgeRestriction');
-          const eventName = (nameEl && nameEl.value.trim()) || '';
-          const dateStr = dateEl && dateEl.value ? dateEl.value : '';
-          const priceVal = priceEl && priceEl.value!=='' ? parseFloat(priceEl.value) : 0;
-          const qtyVal = qtyEl && qtyEl.value!=='' ? parseInt(qtyEl.value,10) : 0;
-          const gigId = gigSel ? (gigSel.value||'') : '';
-          const ageRestriction = ageEl ? (ageEl.value||'') : '';
-          if(!eventName){ showToast('Enter an event name first.','warning'); return; }
-          if(!Number.isFinite(priceVal) || priceVal<0){ showToast('Enter a valid non-negative ticket price.','warning'); return; }
-          if(!Number.isFinite(qtyVal) || qtyVal<=0){ showToast('Enter a positive ticket quantity.','warning'); return; }
-
-          const tickets=[];
-          for(let i=0;i<qtyVal;i++){
-            tickets.push({
-              code:generateTicketCode(eventName, dateStr, i),
-              redeemed:false
-            });
-          }
-
-          const previewBatch={
-            eventName,
-            date:dateStr,
-            price:priceVal,
-            quantity:qtyVal,
-            tickets,
-            gigId,
-            ageRestriction: ageRestriction || 'All ages'
-          };
-
-          ensureQrGeneratorLoaded(qrOk=>{
-            if(!qrOk){
-              showToast('Previewing tickets without QR images (generator not available).','info');
-            }
-            simplePrint(sheet=>{
-              const title=document.createElement('h2');
-              title.textContent='Tickets: '+(previewBatch.eventName||'Event');
-              title.style.marginBottom='4px';
-              sheet.appendChild(title);
-
-              const meta=document.createElement('div');
-              meta.style.fontSize='11px';
-              meta.style.color='#4b5563';
-              const gigLabel=getGigLabelById(previewBatch.gigId||'');
-              const parts=[];
-              if(previewBatch.date) parts.push(previewBatch.date);
-              if(gigLabel) parts.push(gigLabel);
-              meta.textContent=parts.join(' • ');
-              sheet.appendChild(meta);
-
-              const grid=document.createElement('div');
-              grid.style.display='flex';
-              grid.style.flexWrap='wrap';
-              grid.style.gap='8px';
-              grid.style.marginTop='12px';
-
-              tickets.forEach(tix=>{
-                const card=document.createElement('div');
-                card.style.border='1px solid #d1d5db';
-                card.style.borderRadius='6px';
-                card.style.padding='10px 12px';
-                card.style.width='48%';
-                card.style.fontSize='12px';
-                card.style.display='flex';
-                card.style.flexDirection='row';
-                card.style.alignItems='stretch';
-                card.style.justifyContent='space-between';
-                card.style.gap='8px';
-
-                const infoCol=document.createElement('div');
-                infoCol.style.flex='1 1 auto';
-                infoCol.style.textAlign='left';
-
-                const qrCol=document.createElement('div');
-                qrCol.style.flex='0 0 110px';
-                qrCol.style.display='flex';
-                qrCol.style.alignItems='center';
-                qrCol.style.justifyContent='center';
-
-                // Optional QR image for this ticket code
-                if(qrOk){
-                  const qrImg=createTicketQrImageElement(tix.code||'');
-                  if(qrImg) qrCol.appendChild(qrImg);
-                }
-
-                // Pull gig details for band, venue, address, and doors time
-                let bandName='';
-                let venue='';
-                let address='';
-                let doorsLabel='';
-                const age = (previewBatch.ageRestriction || 'All ages');
-                if(typeof tourDates!=='undefined' && Array.isArray(tourDates)){
-                  const td = tourDates.find(d=>d.id===(previewBatch.gigId||''));
-                  if(td){
-                    const gObj = td.gig || {};
-                    bandName = (gObj.band || td.band || '').trim();
-                    venue = (td.venue || gObj.venue || '').trim();
-                    address = (td.address || gObj.address || '').trim();
-                    const rawShow = (td.showTime || gObj.showTime || '').trim();
-                    if(rawShow){
-                      try{
-                        const hhmm = parseTimeToHHMM(rawShow);
-                        doorsLabel = hhmm ? formatHHMMToLabel(hhmm) : rawShow;
-                      }catch(_){
-                        doorsLabel = rawShow;
-                      }
-                    }
-                  }
-                }
-                if(!bandName) bandName = previewBatch.eventName || 'Event';
-
-                const bandEl=document.createElement('div');
-                bandEl.textContent=bandName;
-                bandEl.style.fontWeight='700';
-                bandEl.style.fontSize='14px';
-                bandEl.style.marginBottom='2px';
-
-                const venueEl=document.createElement('div');
-                venueEl.textContent=venue;
-                venueEl.style.fontWeight='500';
-                venueEl.style.marginBottom='2px';
-
-                // Date line for the ticket (using previewBatch.date as entered)
-                const dateText = previewBatch.date || '';
-                const dateEl=document.createElement('div');
-                dateEl.textContent = dateText ? dateText : '';
-                dateEl.style.marginBottom = dateText ? '2px' : '0';
-
-                let addrEl=null;
-                if(address){
-                  addrEl=document.createElement('div');
-                  addrEl.textContent=address;
-                  addrEl.style.marginBottom='2px';
-                }
-
-                let doorsEl=null;
-                if(doorsLabel){
-                  doorsEl=document.createElement('div');
-                  doorsEl.textContent='Doors '+doorsLabel;
-                  doorsEl.style.marginBottom='2px';
-                }
-
-                const ageEl=document.createElement('div');
-                ageEl.textContent=age;
-                ageEl.style.marginBottom='4px';
-
-                const code=document.createElement('div');
-                code.textContent=tix.code||'';
-                code.style.fontSize='14px';
-                code.style.fontWeight='700';
-                code.style.letterSpacing='1px';
-                code.style.marginBottom='2px';
-
-                const price=document.createElement('div');
-                price.textContent='Price '+formatMoney(previewBatch.price||0);
-                price.style.color='#374151';
-
-                const children=[];
-                children.push(bandEl,venueEl);
-                if(addrEl) children.push(addrEl);
-                if(dateText) children.push(dateEl);
-                if(doorsEl) children.push(doorsEl);
-                children.push(ageEl,price,code);
-                infoCol.append(...children);
-
-                card.append(infoCol, qrCol);
-                grid.appendChild(card);
-              });
-              sheet.appendChild(grid);
-            });
-          });
-        });
-      }
 
       window.printTicketBatch = function(batchId){
         const batches = Array.isArray(appData.tickets) ? appData.tickets : [];
@@ -19866,6 +19969,8 @@ function closeStageModal(){
             const pages=[];
             let currentPage=null;
             let grid=null;
+
+            const textStyles = getTicketTextStyles(); // ensure defaults
 
             ticketsArr.forEach((tix, idx)=>{
               // Start a new physical page every 10 tickets
@@ -19944,25 +20049,28 @@ function closeStageModal(){
               const bandEl=document.createElement('div');
               bandEl.textContent=bandName;
               bandEl.style.fontWeight='700';
-              bandEl.style.fontSize='14px';
+              applyTicketTextStyle(bandEl,'band');
               bandEl.style.marginBottom='2px';
 
               const venueEl=document.createElement('div');
               venueEl.textContent=venue;
               venueEl.style.fontWeight='500';
               venueEl.style.marginBottom='2px';
+              applyTicketTextStyle(venueEl,'venue');
 
               // Date line for the ticket (using batch.date as entered)
               const dateText = batch.date || '';
               const dateEl=document.createElement('div');
               dateEl.textContent = dateText ? dateText : '';
               dateEl.style.marginBottom = dateText ? '2px' : '0';
+              applyTicketTextStyle(dateEl,'date');
 
               let addrEl=null;
               if(address){
                 addrEl=document.createElement('div');
                 addrEl.textContent=address;
                 addrEl.style.marginBottom='2px';
+                applyTicketTextStyle(addrEl,'address');
               }
 
               let doorsEl=null;
@@ -19970,22 +20078,25 @@ function closeStageModal(){
                 doorsEl=document.createElement('div');
                 doorsEl.textContent='Doors '+doorsLabel;
                 doorsEl.style.marginBottom='2px';
+                applyTicketTextStyle(doorsEl,'doors');
               }
 
               const ageEl=document.createElement('div');
               ageEl.textContent=age;
               ageEl.style.marginBottom='4px';
+              applyTicketTextStyle(ageEl,'age');
 
               const code=document.createElement('div');
               code.textContent=tix.code||'';
-              code.style.fontSize='14px';
               code.style.fontWeight='700';
               code.style.letterSpacing='1px';
               code.style.marginBottom='2px';
+              applyTicketTextStyle(code,'code');
 
               const price=document.createElement('div');
               price.textContent='Price '+formatMoney(batch.price||0);
               price.style.color='#374151';
+              applyTicketTextStyle(price,'price');
 
               const children=[];
               children.push(bandEl,venueEl);
